@@ -1,0 +1,60 @@
+import {
+  CalendarDots as CalendarDays,
+  Kanban as Columns3,
+  Note as FileText,
+  FolderSimple as FolderClosed,
+  Hexagon,
+  House as Home,
+  GearSix as Settings,
+  Target
+} from "@phosphor-icons/react";
+import type { ReactNode } from "react";
+
+export type AppView = "dashboard" | "goals" | "kanban" | "timeline" | "notes" | "courses" | "settings";
+
+const navItems: Array<{ view: AppView; label: string; icon: ReactNode }> = [
+  { view: "dashboard", label: "Today", icon: <Home size={18} /> },
+  { view: "goals", label: "Goals", icon: <Target size={18} /> },
+  { view: "kanban", label: "Board", icon: <Columns3 size={18} /> },
+  { view: "timeline", label: "Timeline", icon: <CalendarDays size={18} /> },
+  { view: "notes", label: "Notes", icon: <FileText size={18} /> },
+  { view: "courses", label: "Projects", icon: <FolderClosed size={18} /> },
+  { view: "settings", label: "Settings", icon: <Settings size={18} /> }
+];
+
+export function AppShell({
+  view,
+  onViewChange,
+  children
+}: {
+  view: AppView;
+  onViewChange: (view: AppView) => void;
+  children: ReactNode;
+}) {
+  return (
+    <div className="app-shell">
+      <aside className="sidebar glass-panel">
+        <a className="brand-mark" href="/" aria-label="Home">
+          <Hexagon size={22} />
+          <span>Plan</span>
+        </a>
+        <nav aria-label="Primary">
+          {navItems.map((item) => (
+            <button
+              key={item.view}
+              className={view === item.view ? "nav-item active" : "nav-item"}
+              type="button"
+              title={item.label}
+              aria-label={item.label}
+              onClick={() => onViewChange(item.view)}
+            >
+              {item.icon}
+              <span>{item.label}</span>
+            </button>
+          ))}
+        </nav>
+      </aside>
+      <main>{children}</main>
+    </div>
+  );
+}

@@ -1,0 +1,17 @@
+node_modules/
+dist/
+dev-dist/
+coverage/
+playwright-report/
+test-results/
+.vite/
+.DS_Store
+*.local
+*.log
+*.tsbuildinfo
+apps/push-api/data/
+
+# Secrets — never commit real env files (the example is tracked)
+.env
+.env.*
+!.env.example

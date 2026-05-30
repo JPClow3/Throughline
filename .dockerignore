@@ -1,0 +1,30 @@
+# Dependencies
+node_modules
+**/node_modules
+
+# Build output
+**/dist
+**/dev-dist
+*.tsbuildinfo
+
+# Test / coverage artifacts
+coverage
+playwright-report
+test-results
+
+# Runtime data (push store is mounted as a volume)
+apps/push-api/data
+
+# VCS & local
+.git
+.gitignore
+.github
+*.log
+.env
+.env.*
+!.env.example
+
+# Editor / OS
+.vscode
+.idea
+.DS_Store

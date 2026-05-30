@@ -1,0 +1,83 @@
+# Dokploy "Compose" stack: static web (nginx) + push-api (Fastify/tsx) +
+# ofelia cron sidecar that triggers /dispatch-due. Ingress/TLS is handled by
+# Dokploy's Traefik via the labels below. Set values in a .env (see .env.example).
+#
+# Routing (same domain):
+#   https://APP_HOST/        -> web:80
+#   https://APP_HOST/api/*   -> push-api:8787  (Traefik strips the /api prefix)
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        # Same-origin: the browser calls /api on the same host.
+        VITE_PUSH_API_URL: /api
+        VITE_VAPID_PUBLIC_KEY: ${VITE_VAPID_PUBLIC_KEY:-}
+    restart: unless-stopped
+    networks:
+      - dokploy-network
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=dokploy-network
+      - traefik.http.routers.lgtodo-web.rule=Host(`${APP_HOST}`)
+      - traefik.http.routers.lgtodo-web.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}
+      - traefik.http.routers.lgtodo-web.tls=true
+      - traefik.http.routers.lgtodo-web.tls.certresolver=${TRAEFIK_CERTRESOLVER:-letsencrypt}
+      - traefik.http.routers.lgtodo-web.priority=1
+      - traefik.http.services.lgtodo-web.loadbalancer.server.port=80
+
+  push-api:
+    build:
+      context: .
+      dockerfile: apps/push-api/Dockerfile
+    restart: unless-stopped
+    environment:
+      HOST: 0.0.0.0
+      PORT: "8787"
+      PUSH_STORE_PATH: /data/push-store.json
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-}
+      # Optional hardening (recommended in production):
+      DISPATCH_TOKEN: ${DISPATCH_TOKEN:-}
+      CORS_ORIGIN: ${CORS_ORIGIN:-}
+    volumes:
+      - push-data:/data
+    networks:
+      - dokploy-network
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=dokploy-network
+      # /api/* on the same host, higher priority than the web catch-all.
+      - traefik.http.routers.lgtodo-api.rule=Host(`${APP_HOST}`) && PathPrefix(`/api`)
+      - traefik.http.routers.lgtodo-api.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}
+      - traefik.http.routers.lgtodo-api.tls=true
+      - traefik.http.routers.lgtodo-api.tls.certresolver=${TRAEFIK_CERTRESOLVER:-letsencrypt}
+      - traefik.http.routers.lgtodo-api.priority=10
+      - traefik.http.routers.lgtodo-api.middlewares=lgtodo-api-strip
+      - traefik.http.middlewares.lgtodo-api-strip.stripprefix.prefixes=/api
+      - traefik.http.services.lgtodo-api.loadbalancer.server.port=8787
+      # ofelia: fire POST /dispatch-due inside this container on a schedule.
+      - ofelia.enabled=true
+      - ofelia.job-exec.dispatch-due.schedule=@every 5m
+      - 'ofelia.job-exec.dispatch-due.command=wget -qO- --post-data="" --header="Authorization: Bearer ${DISPATCH_TOKEN:-}" http://127.0.0.1:8787/dispatch-due'
+
+  ofelia:
+    image: mcuadros/ofelia:latest
+    restart: unless-stopped
+    depends_on:
+      - push-api
+    command: daemon --docker
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - dokploy-network
+
+volumes:
+  push-data:
+
+networks:
+  dokploy-network:
+    external: true

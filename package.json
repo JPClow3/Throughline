@@ -1,0 +1,55 @@
+{
+  "name": "throughline",
+  "version": "0.1.0-beta.1",
+  "private": true,
+  "license": "UNLICENSED",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w apps/web",
+    "dev:web": "npm run dev -w apps/web",
+    "dev:push": "npm run dev -w apps/push-api",
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:unit": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test --project=desktop --project=mobile",
+    "test:e2e:desktop": "playwright test --project=desktop",
+    "test:perf": "playwright test --project=performance",
+    "test:stress": "playwright test --project=stress",
+    "test:all": "npm run lint && npm run typecheck && npm run test:coverage && npm run build && npm run test:e2e && npm run test:perf && npm run test:stress",
+    "preview": "npm run preview -w apps/web"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.60.0",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/node": "^24.10.1",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@types/web-push": "^3.6.4",
+    "@vitejs/plugin-react": "^6.0.2",
+    "@vitest/coverage-v8": "^4.1.7",
+    "eslint": "^9.39.1",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "fake-indexeddb": "^6.2.5",
+    "globals": "^16.5.0",
+    "jsdom": "^27.2.0",
+    "playwright": "^1.60.0",
+    "tsx": "^4.22.3",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.48.0",
+    "vite": "^8.0.14",
+    "vitest": "^4.1.7"
+  }
+}
