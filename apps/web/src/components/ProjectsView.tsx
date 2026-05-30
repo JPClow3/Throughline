@@ -1,4 +1,4 @@
-import { Course, Task } from "@liquidglass-todo/domain";
+import { Course, Task } from "@throughline/domain";
 import { ProjectsManager } from "./ProjectsManager";
 
 type ProjectsViewProps = {

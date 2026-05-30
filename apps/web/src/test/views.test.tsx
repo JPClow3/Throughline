@@ -1,4 +1,4 @@
-import { createNote, sampleCourses, sampleGoals, sampleNotes, sampleTasks } from "@liquidglass-todo/domain";
+import { createNote, sampleCourses, sampleGoals, sampleNotes, sampleTasks } from "@throughline/domain";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";

@@ -1,4 +1,4 @@
-import { createTask, sampleCourses } from "@liquidglass-todo/domain";
+import { createTask, sampleCourses } from "@throughline/domain";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { TaskCard } from "../components/TaskCard";

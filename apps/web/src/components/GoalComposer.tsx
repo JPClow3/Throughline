@@ -1,4 +1,4 @@
-import { Course, Goal } from "@liquidglass-todo/domain";
+import { Course, Goal } from "@throughline/domain";
 import { Plus } from "@phosphor-icons/react";
 import { FormEvent, useState } from "react";
 import type { GoalInput } from "../data/repositories";

@@ -1,4 +1,4 @@
-import { Course, Note, Task, TaskStatus, kanbanColumns, taskStatuses } from "@liquidglass-todo/domain";
+import { Course, Note, Task, TaskStatus, kanbanColumns, taskStatuses } from "@throughline/domain";
 import { DndContext, closestCorners, useDroppable } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";

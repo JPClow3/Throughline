@@ -1,5 +1,5 @@
 {
-  "name": "@liquidglass-todo/web",
+  "name": "@throughline/web",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -14,7 +14,7 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@fontsource-variable/geist": "^5.2.9",
-    "@liquidglass-todo/domain": "0.1.0",
+    "@throughline/domain": "0.1.0",
     "@phosphor-icons/react": "^2.1.10",
     "@tailwindcss/vite": "^4.1.17",
     "dexie": "^4.4.3",

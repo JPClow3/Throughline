@@ -1,4 +1,4 @@
-import { Note } from "@liquidglass-todo/domain";
+import { Note } from "@throughline/domain";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useCallback } from "react";
 import {

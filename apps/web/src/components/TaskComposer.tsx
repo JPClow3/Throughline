@@ -1,4 +1,4 @@
-import { Course, Goal, Priority, RpgAttribute, Subtask, priorities, rpgAttributes } from "@liquidglass-todo/domain";
+import { Course, Goal, Priority, RpgAttribute, Subtask, priorities, rpgAttributes } from "@throughline/domain";
 import { CaretDown as ChevronDown, Plus } from "@phosphor-icons/react";
 import { FormEvent, useState } from "react";
 import type { TaskInput } from "../data/repositories";

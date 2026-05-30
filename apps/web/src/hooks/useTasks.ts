@@ -1,6 +1,6 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { useCallback, useEffect } from "react";
-import { Task, TaskStatus } from "@liquidglass-todo/domain";
+import { Task, TaskStatus } from "@throughline/domain";
 import { seedIfEmpty } from "../data/db";
 import { syncRedactedRemindersFromLocalState } from "../data/reminderSync";
 import {

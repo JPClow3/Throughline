@@ -1,4 +1,4 @@
-import { Course, Goal, Priority, Task, TaskStatus, kanbanColumns, priorities, taskStatuses } from "@liquidglass-todo/domain";
+import { Course, Goal, Priority, Task, TaskStatus, kanbanColumns, priorities, taskStatuses } from "@throughline/domain";
 import { Trash as Trash2 } from "@phosphor-icons/react";
 import { FormEvent, useState } from "react";
 

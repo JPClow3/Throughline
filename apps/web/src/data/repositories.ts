@@ -18,7 +18,7 @@ import {
   createTask,
   deriveUserProgress,
   nextGoalTaskOrder
-} from "@liquidglass-todo/domain";
+} from "@throughline/domain";
 import { z } from "zod";
 import { db, refreshProgress } from "./db";
 import { AppearanceSettings, ReminderSyncState, appearanceSettingsId, reminderSyncStateId } from "./types";

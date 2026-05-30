@@ -11,7 +11,7 @@ import {
   noteExcerpt,
   notesForGoal,
   tasksForGoal
-} from "@liquidglass-todo/domain";
+} from "@throughline/domain";
 import {
   ArrowLeft,
   CaretDown,

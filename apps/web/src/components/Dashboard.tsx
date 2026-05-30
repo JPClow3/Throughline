@@ -1,4 +1,4 @@
-import { Course, Note, Task, UserProgress } from "@liquidglass-todo/domain";
+import { Course, Note, Task, UserProgress } from "@throughline/domain";
 import { CalendarBlank, Flame, ListChecks, Plus, Trophy } from "@phosphor-icons/react";
 import type { CSSProperties } from "react";
 import { capitalizeFirst } from "../lib/format";

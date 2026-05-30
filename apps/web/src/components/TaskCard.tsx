@@ -1,4 +1,4 @@
-import { Course, Task, TaskStatus, kanbanColumns } from "@liquidglass-todo/domain";
+import { Course, Task, TaskStatus, kanbanColumns } from "@throughline/domain";
 import { Check, Clock as Clock3, Diamond as Gem, ListChecks, Note as StickyNote, Target } from "@phosphor-icons/react";
 import { motion } from "motion/react";
 import type { CSSProperties } from "react";

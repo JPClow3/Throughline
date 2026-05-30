@@ -1,4 +1,4 @@
-import { Goal, Task, deriveUserProgress } from "@liquidglass-todo/domain";
+import { Goal, Task, deriveUserProgress } from "@throughline/domain";
 import { IconContext } from "@phosphor-icons/react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { MotionConfig, motion } from "motion/react";

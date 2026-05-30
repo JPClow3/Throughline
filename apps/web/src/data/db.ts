@@ -10,7 +10,7 @@ import {
   TaskSchema,
   UserProgress,
   deriveUserProgress
-} from "@liquidglass-todo/domain";
+} from "@throughline/domain";
 import Dexie, { Table } from "dexie";
 import { AppSetting } from "./types";
 

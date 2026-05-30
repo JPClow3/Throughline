@@ -1,4 +1,4 @@
-import { Note } from "@liquidglass-todo/domain";
+import { Note } from "@throughline/domain";
 
 /** Map of taskId -> number of notes linked to it, for showing a note glyph on cards. */
 export function countNotesByTask(notes: Note[]): Map<string, number> {

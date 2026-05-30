@@ -1,4 +1,4 @@
-import { RedactedReminder } from "@liquidglass-todo/domain";
+import { RedactedReminder } from "@throughline/domain";
 import { WebPushSubscription } from "./store";
 
 export function fakeSubscription(endpoint = "https://push.example.test/subscription/1"): WebPushSubscription {

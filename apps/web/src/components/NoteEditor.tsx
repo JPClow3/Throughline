@@ -1,4 +1,4 @@
-import { Goal, Note, Task } from "@liquidglass-todo/domain";
+import { Goal, Note, Task } from "@throughline/domain";
 import { LinkSimple as Link2, PushPin as Pin, Trash as Trash2, X } from "@phosphor-icons/react";
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";

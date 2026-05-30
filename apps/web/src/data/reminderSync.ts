@@ -1,4 +1,4 @@
-import { Task, createRedactedReminders } from "@liquidglass-todo/domain";
+import { Task, createRedactedReminders } from "@throughline/domain";
 import { getReminderSyncState, listTasks, saveReminderSyncState } from "./repositories";
 import { ReminderSyncResult } from "./types";
 

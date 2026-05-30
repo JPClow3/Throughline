@@ -28,7 +28,7 @@ afterEach(async () => {
 
 describe("push API", () => {
   it("reports health and creates subscriptions", async () => {
-    const app = createServer({ config, store, configureWebPush: false });
+    const app = await createServer({ config, store, configureWebPush: false });
     const health = await app.inject({ method: "GET", url: "/health" });
     const created = await app.inject({ method: "POST", url: "/subscriptions", payload: fakeSubscription() });
 
@@ -41,7 +41,7 @@ describe("push API", () => {
   });
 
   it("bulk replaces reminders by endpoint hash", async () => {
-    const app = createServer({ config, store, configureWebPush: false });
+    const app = await createServer({ config, store, configureWebPush: false });
     const created = await app.inject({ method: "POST", url: "/subscriptions", payload: fakeSubscription() });
     const endpointHash = created.json().endpointHash as string;
     const synced = await app.inject({
@@ -58,7 +58,7 @@ describe("push API", () => {
   });
 
   it("deletes subscriptions and their reminders", async () => {
-    const app = createServer({ config, store, configureWebPush: false });
+    const app = await createServer({ config, store, configureWebPush: false });
     const created = await app.inject({ method: "POST", url: "/subscriptions", payload: fakeSubscription() });
     const endpointHash = created.json().endpointHash as string;
     await app.inject({
@@ -75,7 +75,7 @@ describe("push API", () => {
   });
 
   it("keeps dispatch unavailable without VAPID configuration", async () => {
-    const app = createServer({ config, store, configureWebPush: false });
+    const app = await createServer({ config, store, configureWebPush: false });
     const response = await app.inject({ method: "POST", url: "/dispatch-due" });
 
     expect(response.statusCode).toBe(503);
@@ -84,9 +84,50 @@ describe("push API", () => {
     await app.close();
   });
 
+  it("accepts a body-less form-encoded dispatch (cron style)", async () => {
+    const app = await createServer({
+      config: {
+        ...config,
+        vapidPublicKey: "public",
+        vapidPrivateKey: "private",
+        vapidSubject: "mailto:test@example.com"
+      },
+      store,
+      configureWebPush: false,
+      sendNotification: vi.fn().mockResolvedValue(undefined)
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/dispatch-due",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      payload: ""
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ sent: 0 });
+
+    await app.close();
+  });
+
+  it("rate limits once the per-window cap is exceeded", async () => {
+    const app = await createServer({ config: { ...config, rateLimitMax: 2 }, store, configureWebPush: false });
+
+    const ip = "203.0.113.7";
+    const first = await app.inject({ method: "GET", url: "/health", remoteAddress: ip });
+    const second = await app.inject({ method: "GET", url: "/health", remoteAddress: ip });
+    const third = await app.inject({ method: "GET", url: "/health", remoteAddress: ip });
+
+    expect(first.statusCode).toBe(200);
+    expect(second.statusCode).toBe(200);
+    expect(third.statusCode).toBe(429);
+
+    await app.close();
+  });
+
   it("guards dispatch with a bearer token when configured", async () => {
     const sendNotification = vi.fn().mockResolvedValue(undefined);
-    const app = createServer({
+    const app = await createServer({
       config: {
         ...config,
         vapidPublicKey: "public",
@@ -115,7 +156,7 @@ describe("push API", () => {
 
   it("dispatches due reminders and marks them sent", async () => {
     const sendNotification = vi.fn().mockResolvedValue(undefined);
-    const app = createServer({
+    const app = await createServer({
       config: {
         ...config,
         vapidPublicKey: "public",

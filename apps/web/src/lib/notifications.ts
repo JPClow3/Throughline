@@ -1,4 +1,4 @@
-import { RedactedReminder, Task, createRedactedReminder } from "@liquidglass-todo/domain";
+import { RedactedReminder, Task, createRedactedReminder } from "@throughline/domain";
 
 export function notificationSupport() {
   return {

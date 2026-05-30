@@ -1,4 +1,4 @@
-import { Course, Task, kanbanColumns } from "@liquidglass-todo/domain";
+import { Course, Task, kanbanColumns } from "@throughline/domain";
 import { CalendarBlank } from "@phosphor-icons/react";
 import { useState, type CSSProperties } from "react";
 import { capitalizeFirst } from "../lib/format";

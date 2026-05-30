@@ -1,4 +1,4 @@
-import { RedactedReminderSchema } from "@liquidglass-todo/domain";
+import { RedactedReminderSchema } from "@throughline/domain";
 import { z } from "zod";
 
 export const PushSubscriptionSchema = z

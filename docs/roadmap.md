@@ -40,4 +40,4 @@
 ## Notes
 
 - Node may emit a `module.register()` deprecation warning through the current tooling; it does not fail checks.
-- The internal npm scope is still `@liquidglass-todo/*`; renaming it to match the product is an optional, non-user-facing refactor.
+- The npm workspace scope is `@throughline/*`, matching the product name.

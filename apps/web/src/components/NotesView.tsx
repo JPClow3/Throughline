@@ -1,4 +1,4 @@
-import { Goal, Note, Task, noteDisplayTitle, noteExcerpt, searchNotes } from "@liquidglass-todo/domain";
+import { Goal, Note, Task, noteDisplayTitle, noteExcerpt, searchNotes } from "@throughline/domain";
 import { Note as FileText, PushPin as Pin, Plus, MagnifyingGlass as Search } from "@phosphor-icons/react";
 import { useState } from "react";
 import type { NoteInput } from "../data/repositories";

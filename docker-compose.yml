@@ -43,6 +43,7 @@ services:
       # Optional hardening (recommended in production):
       DISPATCH_TOKEN: ${DISPATCH_TOKEN:-}
       CORS_ORIGIN: ${CORS_ORIGIN:-}
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-120}
     volumes:
       - push-data:/data
     networks:

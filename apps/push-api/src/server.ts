@@ -1,4 +1,5 @@
 import cors from "@fastify/cors";
+import rateLimit from "@fastify/rate-limit";
 import Fastify from "fastify";
 import webpush from "web-push";
 import { hasVapidConfig, PushApiConfig, readPushApiConfig } from "./config";
@@ -17,7 +18,7 @@ type CreateServerOptions = {
   sendNotification?: typeof webpush.sendNotification;
 };
 
-export function createServer(options: CreateServerOptions = {}) {
+export async function createServer(options: CreateServerOptions = {}) {
   const config = options.config ?? readPushApiConfig();
   const store = options.store ?? new JsonPushStore(config.storePath);
   const vapidConfigured = hasVapidConfig(config);
@@ -33,10 +34,23 @@ export function createServer(options: CreateServerOptions = {}) {
 
   const app = Fastify({ logger: true });
 
-  app.register(cors, {
+  // Register plugins before routes so their global hooks apply to every route.
+  await app.register(rateLimit, {
+    max: config.rateLimitMax ?? 120,
+    timeWindow: "1 minute"
+  });
+
+  await app.register(cors, {
     origin: config.corsOrigin ?? true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
   });
+
+  // Tolerate body-less POSTs (e.g. the cron hitting /dispatch-due via
+  // `wget --post-data=""`, which sends form-encoded) so they don't 415.
+  app.addContentTypeParser(
+    ["application/x-www-form-urlencoded", "text/plain"],
+    (_request, _payload, done) => done(null, undefined)
+  );
 
   app.get("/health", async () => ({
     ok: true,
@@ -119,9 +133,15 @@ export function createServer(options: CreateServerOptions = {}) {
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const config = readPushApiConfig();
-  const app = createServer({ config });
-  app.listen({ port: config.port, host: config.host }).catch((error) => {
-    app.log.error(error);
-    process.exit(1);
-  });
+  createServer({ config })
+    .then((app) =>
+      app.listen({ port: config.port, host: config.host }).catch((error) => {
+        app.log.error(error);
+        process.exit(1);
+      })
+    )
+    .catch((error) => {
+      console.error(error);
+      process.exit(1);
+    });
 }

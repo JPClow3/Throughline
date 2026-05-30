@@ -1,4 +1,4 @@
-import { Course, Task, createCourse } from "@liquidglass-todo/domain";
+import { Course, Task, createCourse } from "@throughline/domain";
 import { Check, PencilSimple, Plus, Trash as Trash2, X } from "@phosphor-icons/react";
 import { FormEvent, useState, type CSSProperties } from "react";
 

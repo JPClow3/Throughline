@@ -1,5 +1,5 @@
 {
-  "name": "@liquidglass-todo/push-api",
+  "name": "@throughline/push-api",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -12,7 +12,8 @@
   },
   "dependencies": {
     "@fastify/cors": "^11.2.0",
-    "@liquidglass-todo/domain": "0.1.0",
+    "@fastify/rate-limit": "^10.2.0",
+    "@throughline/domain": "0.1.0",
     "fastify": "^5.8.5",
     "tsx": "^4.22.3",
     "web-push": "^3.6.7",

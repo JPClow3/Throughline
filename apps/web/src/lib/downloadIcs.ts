@@ -1,4 +1,4 @@
-import { Course, Task, exportTasksToIcs } from "@liquidglass-todo/domain";
+import { Course, Task, exportTasksToIcs } from "@throughline/domain";
 
 export function downloadIcs(tasks: Task[], courses: Course[]) {
   const ics = exportTasksToIcs(tasks, { courses });

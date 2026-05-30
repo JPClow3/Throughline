@@ -9,6 +9,8 @@ export type PushApiConfig = {
   dispatchToken?: string;
   /** When set, CORS is restricted to this origin instead of allowing all. */
   corsOrigin?: string;
+  /** Max requests per IP per minute (rate limiting). */
+  rateLimitMax?: number;
 };
 
 export function readPushApiConfig(env: NodeJS.ProcessEnv = process.env): PushApiConfig {
@@ -20,7 +22,8 @@ export function readPushApiConfig(env: NodeJS.ProcessEnv = process.env): PushApi
     vapidPrivateKey: env.VAPID_PRIVATE_KEY,
     vapidSubject: env.VAPID_SUBJECT,
     dispatchToken: env.DISPATCH_TOKEN || undefined,
-    corsOrigin: env.CORS_ORIGIN || undefined
+    corsOrigin: env.CORS_ORIGIN || undefined,
+    rateLimitMax: Number(env.RATE_LIMIT_MAX ?? 120)
   };
 }
 

@@ -1,4 +1,4 @@
-import { RedactedReminder } from "@liquidglass-todo/domain";
+import { RedactedReminder } from "@throughline/domain";
 import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";

@@ -1,4 +1,4 @@
-import { Course, Goal, GoalStatus, Note, Task, TaskStatus, deriveGoalProgress } from "@liquidglass-todo/domain";
+import { Course, Goal, GoalStatus, Note, Task, TaskStatus, deriveGoalProgress } from "@throughline/domain";
 import { Plus, Target } from "@phosphor-icons/react";
 import { type CSSProperties } from "react";
 import type { NoteInput, TaskInput } from "../data/repositories";
