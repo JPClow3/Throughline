@@ -2587,13 +2587,11 @@ html {
 
 .landing-faq-item summary::after {
   content: "+";
+  display: inline-block;
   color: var(--ink-faint);
   font-weight: var(--fw-regular);
   font-size: 1.2rem;
-}
-
-.landing-faq-item[open] summary::after {
-  content: "–";
+  line-height: 1;
 }
 
 .landing-faq-item p {
@@ -2661,6 +2659,146 @@ html {
 
 .landing-footer-cols a:hover {
   color: var(--ink);
+}
+
+/* =========================================================================
+   Landing — fluidity, hover & micro-motion
+   ========================================================================= */
+
+/* Animated underline on nav links */
+.landing-nav-links a {
+  position: relative;
+  transition: color 0.18s ease;
+}
+
+.landing-nav-links a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.35rem;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--ink);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.landing-nav-links a:hover::after {
+  transform: scaleX(1);
+}
+
+/* Brand mark gives a tiny lift on hover */
+.landing-brand .landing-brand-mark,
+.landing-brand-mark {
+  transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.landing-brand:hover .landing-brand-mark {
+  transform: translateY(-1px) rotate(-6deg);
+}
+
+/* CTA buttons lift on the landing (scoped so the app's buttons are untouched) */
+.landing .primary-button,
+.landing .secondary-button,
+.landing-final .primary-button {
+  transition:
+    transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.18s ease,
+    background 0.14s ease,
+    border-color 0.14s ease;
+}
+
+.landing .primary-button:hover,
+.landing-final .primary-button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.landing .secondary-button:hover {
+  transform: translateY(-2px);
+}
+
+.landing .primary-button:active,
+.landing .secondary-button:active {
+  transform: translateY(0);
+}
+
+/* Arrow nudges forward inside CTAs */
+.landing .primary-button svg {
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.landing .primary-button:hover svg {
+  transform: translateX(3px);
+}
+
+/* Cards (steps + features) lift, deepen, and warm their border on hover */
+.landing-step,
+.landing-feature {
+  transition:
+    transform 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.24s ease,
+    border-color 0.24s ease;
+}
+
+.landing-step:hover,
+.landing-feature:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-strong);
+}
+
+/* Icon tiles get a playful nudge when their card is hovered */
+.landing-feature-icon {
+  transition: transform 0.24s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.landing-step:hover .landing-feature-icon,
+.landing-feature:hover .landing-feature-icon {
+  transform: scale(1.08) rotate(-4deg);
+}
+
+/* Screenshot frames float up under the cursor */
+.browser-frame {
+  transition:
+    transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.3s ease;
+}
+
+.landing-hero-shot .browser-frame:hover,
+.landing-showcase-shot .browser-frame:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-xl, var(--shadow-lg));
+}
+
+/* FAQ rows respond to hover and the marker eases between + / − */
+.landing-faq-item {
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.landing-faq-item:hover {
+  border-color: var(--border-strong);
+}
+
+.landing-faq-item summary {
+  transition: color 0.15s ease;
+}
+
+.landing-faq-item summary::after {
+  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.landing-faq-item[open] summary::after {
+  transform: rotate(135deg);
+  color: var(--ink);
+}
+
+/* Footer links get the same calm hover */
+.landing-footer-cols a,
+.landing-link {
+  transition: color 0.15s ease;
 }
 
 /* =========================================================================

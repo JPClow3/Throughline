@@ -26,6 +26,42 @@ function ThroughlineMark({ size = 22 }: { size?: number }) {
   );
 }
 
+const NODES: Array<[number, number, number]> = [
+  [5, 17, 2.4],
+  [12, 12, 2.4],
+  [19, 7, 3]
+];
+
+// The brand mark "draws" its line, then the nodes pop in — a small on-load moment.
+function AnimatedMark({ size = 20 }: { size?: number }) {
+  return (
+    <motion.svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true" initial="hidden" animate="show">
+      <motion.path
+        d="M5 17 L19 7"
+        stroke="currentColor"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        variants={{ hidden: { pathLength: 0, opacity: 0 }, show: { pathLength: 1, opacity: 1 } }}
+        transition={{ duration: 0.7, ease: "easeInOut" }}
+      />
+      {NODES.map(([cx, cy, r], index) => (
+        <motion.circle
+          key={index}
+          cx={cx}
+          cy={cy}
+          r={r}
+          fill="currentColor"
+          style={{ transformBox: "fill-box", transformOrigin: "center" }}
+          variants={{ hidden: { scale: 0, opacity: 0 }, show: { scale: 1, opacity: 1 } }}
+          transition={{ delay: 0.45 + index * 0.12, type: "spring", stiffness: 420, damping: 18 }}
+        />
+      ))}
+    </motion.svg>
+  );
+}
+
+const floatTransition = { duration: 7, repeat: Infinity, ease: "easeInOut" } as const;
+
 function Reveal({ children, delay = 0, className }: { children: ReactNode; delay?: number; className?: string }) {
   return (
     <motion.div
@@ -120,7 +156,7 @@ export function Landing() {
         <header className="landing-nav">
           <a className="landing-brand" href="#top">
             <span className="landing-brand-mark">
-              <ThroughlineMark size={20} />
+              <AnimatedMark size={20} />
             </span>
             Throughline
           </a>
@@ -166,7 +202,9 @@ export function Landing() {
               </span>
             </Reveal>
             <Reveal className="landing-hero-shot" delay={0.12}>
-              <BrowserFrame src="/shots/today.png" alt="Throughline Today view" />
+              <motion.div className="landing-float" animate={{ y: [0, -10, 0] }} transition={floatTransition}>
+                <BrowserFrame src="/shots/today.png" alt="Throughline Today view" />
+              </motion.div>
             </Reveal>
           </section>
 
@@ -196,16 +234,22 @@ export function Landing() {
             </Reveal>
             <div className="landing-showcase">
               {SHOWCASE.map((item, index) => (
-                <Reveal key={item.title}>
-                  <div className={`landing-showcase-row${index % 2 ? " is-reversed" : ""}`}>
-                    <div className="landing-showcase-text">
-                      <span className="eyebrow">{item.eyebrow}</span>
-                      <h3>{item.title}</h3>
-                      <p>{item.body}</p>
-                    </div>
-                    <BrowserFrame className="landing-showcase-shot" src={item.img} alt={item.alt} />
-                  </div>
-                </Reveal>
+                <div key={item.title} className={`landing-showcase-row${index % 2 ? " is-reversed" : ""}`}>
+                  <Reveal className="landing-showcase-text">
+                    <span className="eyebrow">{item.eyebrow}</span>
+                    <h3>{item.title}</h3>
+                    <p>{item.body}</p>
+                  </Reveal>
+                  <motion.div
+                    className="landing-showcase-shot"
+                    initial={{ opacity: 0, x: index % 2 ? -44 : 44 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true, margin: "-80px" }}
+                    transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    <BrowserFrame src={item.img} alt={item.alt} />
+                  </motion.div>
+                </div>
               ))}
             </div>
           </section>
