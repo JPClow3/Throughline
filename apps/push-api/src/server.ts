@@ -5,6 +5,7 @@ import rateLimit from "@fastify/rate-limit";
 import Fastify from "fastify";
 import webpush from "web-push";
 import { registerAuthRoutes } from "./auth";
+import { registerSyncRoutes } from "./sync";
 import { hasVapidConfig, PushApiConfig, readPushApiConfig } from "./config";
 import {
   BulkReminderSyncSchema,
@@ -62,6 +63,7 @@ export async function createServer(options: CreateServerOptions = {}) {
   );
 
   registerAuthRoutes(app, userStore, config);
+  registerSyncRoutes(app, userStore);
 
   app.get("/health", async () => ({
     ok: true,

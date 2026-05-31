@@ -89,3 +89,11 @@ Decision: The React Three Fiber ambient scene was removed entirely. The app uses
 Reason: The 3D backdrop read as an unfinished gimmick, and "glass refracting a 3D scene" didn't land. A solid base with opaque, crisp cards and floating frosted chrome is cleaner and is the Apple way to get Liquid Glass depth — translucent layers over the app's own content/colour, not over a decorative scene. (This supersedes decisions 005 and 010's relic.)
 
 Consequence: `three`, `@react-three/fiber`, `@react-three/drei`, `@types/three`, and `pngjs` were removed; the 3D visual constitution and the canvas e2e/pixel checks are retired. `lowPower3d` stays in settings storage for back-compat but has no UI. A single consistent `.view-head` header + one type/spacing scale now governs every view.
+
+## 012 - Accounts + End-To-End Encrypted Cloud Sync (Zero-Knowledge)
+
+Decision: Add real accounts (email + password) and cross-device sync, while keeping the app **local-first and fully offline**. The web app routes a marketing **landing page** at `/`, the auth screens at `/login` and `/signup`, and the planner behind an auth guard at `/app/*`. Sync runs as a background job over **end-to-end-encrypted** record blobs: the server (Fastify + `node:sqlite`, cookie sessions) stores only ciphertext it cannot read.
+
+Reason: The owner wanted a presentable landing page and a login, then full accounts with cloud sync. To preserve the privacy stance while syncing, the crypto is zero-knowledge — a DEK (random AES-256 key) encrypts records, wrapped by a KEK derived from the password via PBKDF2; only the wrapped DEK, salt, and a scrypt hash of an authKey reach the server. IndexedDB stays the UI source of truth so the app works offline; the engine reconciles with last-write-wins by `updatedAt` plus deletion tombstones.
+
+Consequence: This deliberately reverses "task data never leaves the device" → "data leaves only as ciphertext the server can't read." A forgotten password is unrecoverable (no key escrow) — surfaced at signup; a recovery-key mechanism is deferred. `Course` gained `createdAt`/`updatedAt` (Dexie v5 + a `tombstones` store). New deps: `react-router-dom`, `@fastify/cookie`. The push API now also serves `/auth/*` and `/sync/*`; SQLite lives on the existing data volume.

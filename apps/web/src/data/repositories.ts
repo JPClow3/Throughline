@@ -20,8 +20,15 @@ import {
   nextGoalTaskOrder
 } from "@throughline/domain";
 import { z } from "zod";
-import { db, refreshProgress } from "./db";
-import { AppearanceSettings, ReminderSyncState, appearanceSettingsId, reminderSyncStateId } from "./types";
+import { db, refreshProgress, type SyncEntity } from "./db";
+import {
+  AppearanceSettings,
+  CloudSyncState,
+  ReminderSyncState,
+  appearanceSettingsId,
+  cloudSyncStateId,
+  reminderSyncStateId
+} from "./types";
 
 export type TaskInput = {
   title: string;
@@ -55,6 +62,25 @@ export function defaultPushApiUrl() {
 
 function now() {
   return new Date().toISOString();
+}
+
+function recordTombstone(entity: SyncEntity, id: string) {
+  return db.tombstones.put({ key: `${entity}:${id}`, entity, id, deletedAt: now() });
+}
+
+export async function getCloudSyncState(): Promise<CloudSyncState> {
+  const stored = await db.settings.get(cloudSyncStateId);
+  if (stored?.id === cloudSyncStateId) {
+    return stored;
+  }
+  return { id: cloudSyncStateId, updatedAt: now() };
+}
+
+export async function saveCloudSyncState(patch: Partial<Omit<CloudSyncState, "id">>) {
+  const current = await getCloudSyncState();
+  const next: CloudSyncState = { ...current, ...patch, id: cloudSyncStateId, updatedAt: now() };
+  await db.settings.put(next);
+  return next;
 }
 
 export async function listTasks() {
@@ -112,21 +138,23 @@ export async function updateTask(task: Task) {
 
 export async function deleteTask(taskId: string) {
   await db.tasks.delete(taskId);
+  await recordTombstone("task", taskId);
   await refreshProgress();
 }
 
 export async function upsertCourse(course: Course) {
-  await db.courses.put(course);
+  await db.courses.put({ ...course, updatedAt: now() });
 }
 
 export async function deleteCourse(courseId: string) {
   // Detach the project from its tasks rather than deleting the tasks themselves.
-  await db.transaction("rw", db.courses, db.tasks, async () => {
+  await db.transaction("rw", db.courses, db.tasks, db.tombstones, async () => {
     const linkedTasks = await db.tasks.where("courseId").equals(courseId).toArray();
     await Promise.all(
       linkedTasks.map((task) => db.tasks.update(task.id, { courseId: undefined, updatedAt: now() }))
     );
     await db.courses.delete(courseId);
+    await recordTombstone("course", courseId);
   });
 }
 
@@ -160,12 +188,13 @@ export async function setGoalStatus(goalId: string, status: GoalStatus) {
 
 export async function deleteGoal(goalId: string) {
   // Keep the child tasks but detach them so they are not orphaned to a missing goal.
-  await db.transaction("rw", db.goals, db.tasks, async () => {
+  await db.transaction("rw", db.goals, db.tasks, db.tombstones, async () => {
     const childTasks = await db.tasks.where("goalId").equals(goalId).toArray();
     await Promise.all(
       childTasks.map((task) => db.tasks.update(task.id, { goalId: undefined, updatedAt: now() }))
     );
     await db.goals.delete(goalId);
+    await recordTombstone("goal", goalId);
   });
 }
 
@@ -196,6 +225,7 @@ export async function updateNote(note: Note) {
 
 export async function deleteNote(noteId: string) {
   await db.notes.delete(noteId);
+  await recordTombstone("note", noteId);
 }
 
 /** Add or remove a link between a note and a task/goal. */

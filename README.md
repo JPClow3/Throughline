@@ -6,7 +6,8 @@ Throughline is a calm, local-first planner where **goals hold the work**. Set an
 goal, break it into real tasks, and watch progress roll up — alongside a cross-linked
 **notes** notebook, a **board**, and a **timeline**. It's an installable PWA (browser,
 phone, and Windows) with an Apple-inspired, light-by-default Liquid Glass interface and a
-softer dark mode. Your data stays on your device.
+softer dark mode. It works fully offline; with an account, your data syncs across your
+devices **end-to-end encrypted** — the server only ever stores ciphertext it can't read.
 
 ## Start here
 
@@ -33,6 +34,7 @@ softer dark mode. Your data stays on your device.
 - **Projects** group related tasks, goals, and notes with a colour.
 - **Board & Timeline** views, each filterable by project.
 - **Calm first.** An optional game layer (XP, streaks) can be switched on in Settings.
+- **Private sync.** Create an account to sync across devices; records are encrypted on-device with a key derived from your password before they ever leave.
 
 ## Quick start
 
@@ -82,6 +84,8 @@ triggers reminder dispatch), designed for Dokploy on an EC2 host with Traefik TL
 ## Key decisions
 
 - Windows support means an installable/store-ready PWA, not a native wrapper.
-- Full task data stays local in IndexedDB; export/import a JSON backup from Settings.
+- Local-first: IndexedDB is the source of truth and the app works fully offline.
+- Optional accounts sync data across devices, end-to-end encrypted (zero-knowledge server). Also export/import a JSON backup from Settings.
+- Forgotten passwords cannot be recovered (the key derives from the password) — by design for E2E.
 - Push payloads are redacted — never task titles, descriptions, project names, or tags.
 - Calm planner first; the game layer is optional and off by default.

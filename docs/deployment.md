@@ -68,8 +68,12 @@ Open `http://<elastic-ip>:3000`, create the admin account.
    - `APP_HOST` = your domain
    - `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`
    - `VITE_VAPID_PUBLIC_KEY` = same as `VAPID_PUBLIC_KEY` (baked into the web bundle)
+   - `SESSION_SECRET` = a long random string (signs account session cookies)
    - `DISPATCH_TOKEN` = a long random string (protects `/dispatch-due`)
    - `CORS_ORIGIN` = `https://<APP_HOST>` (optional; tightens CORS)
+
+Accounts + encrypted sync use SQLite at `/data/throughline.db` on the same `push-data`
+volume; content is end-to-end encrypted on-device, so the server stores only ciphertext.
 4. The compose file already attaches services to `dokploy-network` and adds the
    Traefik routers/TLS labels. If your Dokploy Traefik uses a non-default cert
    resolver/entrypoint, override `TRAEFIK_CERTRESOLVER` / `TRAEFIK_ENTRYPOINT`.

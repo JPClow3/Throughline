@@ -21,21 +21,26 @@
 - Docker images (web→nginx, api→tsx) + Compose stack with an ofelia cron that drives `/dispatch-due`, designed for Dokploy + Traefik on EC2.
 - Unit/component tests (Vitest), desktop/mobile/perf/stress Playwright suites, CI workflow.
 
+### Accounts + sync
+- Marketing **landing page** at `/`; planner behind an auth guard at `/app/*` (react-router).
+- Email + password **accounts** with a zero-knowledge crypto design (PBKDF2 KEK + wrapped DEK, AES-GCM); SQLite-backed users/sessions on the push API (`node:sqlite`, cookie sessions, rate-limited auth).
+- **End-to-end-encrypted cloud sync**: background pull/push of encrypted record blobs, last-write-wins by `updatedAt` + deletion tombstones; the app stays fully offline-first.
+
 ## Next product milestones
 
-1. Inline subtask editing inside the task editor.
-2. Richer Board/Timeline filters (by goal, status, date range) in addition to project.
-3. Optional richer game layer (attribute goals, weekly/season challenges) behind the toggle.
-4. Keyboard-only Kanban alternative and a broader accessibility pass over glass contrast.
-5. PWA install polish and Microsoft Store packaging pass (PWABuilder).
-6. Rate limiting + lightweight observability on the push API.
+1. **Recovery key** at signup (so a forgotten password doesn't mean lost data) + a password-change re-wrap flow.
+2. Email verification / password reset (needs an SMTP provider).
+3. Inline subtask editing inside the task editor.
+4. Richer Board/Timeline filters (by goal, status, date range) in addition to project.
+5. Keyboard-only Kanban alternative and a broader accessibility pass over glass contrast.
+6. PWA install polish and Microsoft Store packaging pass (PWABuilder).
+7. Lightweight observability on the API; trustProxy + per-user rate-limit keying behind Traefik.
 
 ## Future architecture milestones
 
-1. Explicit sync design document before any cloud accounts.
-2. Authenticated sync API with local-first reconciliation.
-3. Encrypted or privacy-preserving cloud storage if full task sync is ever approved.
-4. Move the push store off a single-instance JSON file (SQLite/Redis) before scaling out.
+1. Real-time sync (websockets) instead of interval/trigger pull-push.
+2. Move the server stores off single-instance SQLite/JSON (Postgres/Redis) before scaling out.
+3. Multi-user collaboration / shared goals.
 
 ## Notes
 

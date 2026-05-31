@@ -49,6 +49,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      if (typeof localStorage === "undefined") {
+        if (!cancelled) setStatus("anon");
+        return;
+      }
       const savedEmail = localStorage.getItem(EMAIL_KEY);
       const savedDek = localStorage.getItem(DEK_KEY);
       if (savedEmail && savedDek) {

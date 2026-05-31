@@ -37,6 +37,9 @@ services:
       HOST: 0.0.0.0
       PORT: "8787"
       PUSH_STORE_PATH: /data/push-store.json
+      # Accounts + encrypted sync (SQLite on the same volume).
+      DB_PATH: /data/throughline.db
+      SESSION_SECRET: ${SESSION_SECRET:-}
       VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
       VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
       VAPID_SUBJECT: ${VAPID_SUBJECT:-}

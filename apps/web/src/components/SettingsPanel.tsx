@@ -2,8 +2,10 @@ import { Course, Task } from "@throughline/domain";
 import { useLiveQuery } from "dexie-react-hooks";
 import {
   ArrowCounterClockwise,
+  ArrowsClockwise,
   Bell,
   CalendarPlus,
+  CloudCheck,
   Database,
   DownloadSimple as Download,
   GameController as Gamepad2,
@@ -13,6 +15,7 @@ import {
   Palette,
   WifiHigh as RadioTower,
   PaperPlaneRight as Send,
+  SignOut,
   Sun,
   UploadSimple as Upload
 } from "@phosphor-icons/react";
@@ -34,16 +37,28 @@ import {
   requestNotificationPermission,
   showLocalQuestNotification
 } from "../lib/notifications";
+type AccountInfo = {
+  email: string | null;
+  syncStatus: "idle" | "syncing" | "offline" | "error";
+  lastSyncAt: string | null;
+};
+
 export function SettingsPanel({
   tasks,
   courses,
   appearanceSettings,
-  onAppearanceChange
+  onAppearanceChange,
+  account,
+  onSyncNow,
+  onSignOut
 }: {
   tasks: Task[];
   courses: Course[];
   appearanceSettings?: AppearanceSettings;
   onAppearanceChange: (patch: Partial<Omit<AppearanceSettings, "id">>) => Promise<AppearanceSettings>;
+  account?: AccountInfo;
+  onSyncNow?: () => void;
+  onSignOut?: () => void;
 }) {
   const support = useMemo(() => (typeof window === "undefined" ? null : notificationSupport()), []);
   const [permission, setPermission] = useState(() =>
@@ -154,6 +169,34 @@ export function SettingsPanel({
         </div>
       </header>
       <section className="settings-grid">
+        {account ? (
+          <div className="glass-panel settings-card">
+            <header>
+              <CloudCheck size={20} />
+              <h2>Account</h2>
+            </header>
+            <dl className="support-list">
+              <div>
+                <dt>Signed in</dt>
+                <dd>{account.email ?? "—"}</dd>
+              </div>
+              <div>
+                <dt>Sync</dt>
+                <dd>{syncLabel(account)}</dd>
+              </div>
+            </dl>
+            <div className="button-row">
+              <button className="secondary-button" type="button" onClick={() => onSyncNow?.()}>
+                <ArrowsClockwise size={16} /> Sync now
+              </button>
+              <button className="secondary-button" type="button" onClick={() => onSignOut?.()}>
+                <SignOut size={16} /> Sign out
+              </button>
+            </div>
+            <p>Your data is end-to-end encrypted before it syncs — the server can't read it.</p>
+          </div>
+        ) : null}
+
         <div className="glass-panel settings-card">
           <header>
             <Palette size={20} />
@@ -322,4 +365,17 @@ export function SettingsPanel({
       </section>
     </div>
   );
+}
+
+function syncLabel(account: AccountInfo): string {
+  switch (account.syncStatus) {
+    case "syncing":
+      return "Syncing…";
+    case "offline":
+      return "Offline · saved on this device";
+    case "error":
+      return "Paused · will retry";
+    default:
+      return account.lastSyncAt ? "Up to date" : "Ready to sync";
+  }
 }

@@ -10,11 +10,13 @@ import { Sheet } from "./components/Sheet";
 import { ViewSkeleton } from "./components/Skeleton";
 import { TaskComposer } from "./components/TaskComposer";
 import { TaskEditor } from "./components/TaskEditor";
+import { useAuth } from "./auth/AuthProvider";
 import { getAppearanceSettings, saveAppearanceSettings } from "./data/repositories";
 import { useGoals } from "./hooks/useGoals";
 import { useNotes } from "./hooks/useNotes";
 import { useTasks } from "./hooks/useTasks";
 import { useTheme } from "./hooks/useTheme";
+import { useSync } from "./sync/useSync";
 
 const KanbanBoard = React.lazy(() => import("./components/KanbanBoard").then((module) => ({ default: module.KanbanBoard })));
 const CalendarTimeline = React.lazy(() =>
@@ -58,6 +60,8 @@ export function App() {
   } = useTasks();
   const { goals, addGoal, updateGoal, setGoalStatus, removeGoal } = useGoals();
   const { notes, addNote, updateNote, removeNote, toggleNoteLink } = useNotes();
+  const { email, dekKey, logout } = useAuth();
+  const sync = useSync(dekKey);
   const appearanceSettings = useLiveQuery(() => getAppearanceSettings(), []);
   useTheme(appearanceSettings?.theme);
   const showGameLayer = appearanceSettings?.showGameLayer ?? false;
@@ -176,6 +180,9 @@ export function App() {
                       courses={courses}
                       appearanceSettings={appearanceSettings}
                       onAppearanceChange={saveAppearanceSettings}
+                      account={{ email, syncStatus: sync.status, lastSyncAt: sync.lastSyncAt }}
+                      onSyncNow={sync.syncNow}
+                      onSignOut={logout}
                     />
                   </React.Suspense>
                 ) : null}

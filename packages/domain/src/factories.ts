@@ -62,10 +62,22 @@ export function createId(prefix: string) {
   return `${prefix}_${random}`;
 }
 
-export function createCourse(input: Omit<Course, "id"> & { id?: string }): Course {
+type CourseDraft = {
+  name: string;
+  code?: string;
+  color: string;
+  icon: string;
+  professor?: string;
+  semester?: string;
+};
+
+export function createCourse(input: CourseDraft & { id?: string; createdAt?: string }): Course {
+  const now = new Date().toISOString();
   return CourseSchema.parse({
     id: input.id ?? createId("course"),
-    ...input
+    ...input,
+    createdAt: input.createdAt ?? now,
+    updatedAt: now
   });
 }
 
