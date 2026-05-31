@@ -1,6 +1,10 @@
 import { expect, test } from "@playwright/test";
 
 test("handles repeated task capture and board rendering", async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem("tl_email", "tester@example.com");
+    localStorage.setItem("tl_dek", btoa(String.fromCharCode.apply(null, Array.from(new Uint8Array(32)))));
+  });
   await page.goto("/app");
   await expect(page.getByRole("heading", { name: /Good (morning|afternoon|evening)/ })).toBeVisible();
 

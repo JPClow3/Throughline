@@ -3,10 +3,22 @@ import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 
+// Local full-stack dev: proxy /api → the push/auth/sync API, stripping the
+// prefix to mirror Traefik's StripPrefix in production (same-origin cookies).
+const apiProxy = {
+  "/api": {
+    target: process.env.VITE_DEV_API_TARGET ?? "http://127.0.0.1:8787",
+    changeOrigin: true,
+    rewrite: (path: string) => path.replace(/^\/api/, "")
+  }
+};
+
 export default defineConfig({
   build: {
     chunkSizeWarningLimit: 950
   },
+  server: { proxy: apiProxy },
+  preview: { proxy: apiProxy },
   plugins: [
     react(),
     tailwindcss(),

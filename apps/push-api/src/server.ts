@@ -1,7 +1,10 @@
+import { pathToFileURL } from "node:url";
+import cookie from "@fastify/cookie";
 import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
 import Fastify from "fastify";
 import webpush from "web-push";
+import { registerAuthRoutes } from "./auth";
 import { hasVapidConfig, PushApiConfig, readPushApiConfig } from "./config";
 import {
   BulkReminderSyncSchema,
@@ -10,10 +13,12 @@ import {
   ReminderEnvelopeSchema
 } from "./schemas";
 import { JsonPushStore, PushStore } from "./store";
+import { createUserStore, UserStore } from "./userStore";
 
 type CreateServerOptions = {
   config?: PushApiConfig;
   store?: PushStore;
+  userStore?: UserStore;
   configureWebPush?: boolean;
   sendNotification?: typeof webpush.sendNotification;
 };
@@ -21,6 +26,7 @@ type CreateServerOptions = {
 export async function createServer(options: CreateServerOptions = {}) {
   const config = options.config ?? readPushApiConfig();
   const store = options.store ?? new JsonPushStore(config.storePath);
+  const userStore = options.userStore ?? createUserStore(config.dbPath ?? "data/throughline.db");
   const vapidConfigured = hasVapidConfig(config);
   const sendNotification = options.sendNotification ?? webpush.sendNotification.bind(webpush);
 
@@ -42,8 +48,11 @@ export async function createServer(options: CreateServerOptions = {}) {
 
   await app.register(cors, {
     origin: config.corsOrigin ?? true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    credentials: true
   });
+
+  await app.register(cookie, { secret: config.sessionSecret });
 
   // Tolerate body-less POSTs (e.g. the cron hitting /dispatch-due via
   // `wget --post-data=""`, which sends form-encoded) so they don't 415.
@@ -51,6 +60,8 @@ export async function createServer(options: CreateServerOptions = {}) {
     ["application/x-www-form-urlencoded", "text/plain"],
     (_request, _payload, done) => done(null, undefined)
   );
+
+  registerAuthRoutes(app, userStore, config);
 
   app.get("/health", async () => ({
     ok: true,
@@ -131,7 +142,9 @@ export async function createServer(options: CreateServerOptions = {}) {
   return app;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+const isMainModule = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false;
+
+if (isMainModule) {
   const config = readPushApiConfig();
   createServer({ config })
     .then((app) =>

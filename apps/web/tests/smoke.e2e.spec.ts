@@ -1,5 +1,14 @@
 import { expect, test } from "@playwright/test";
 
+// The /app routes are auth-gated. Seed a local session marker so the guard
+// admits us without a running backend (background /auth/me just fails offline).
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem("tl_email", "tester@example.com");
+    localStorage.setItem("tl_dek", btoa(String.fromCharCode.apply(null, Array.from(new Uint8Array(32)))));
+  });
+});
+
 test("renders today and board", async ({ page }) => {
   await page.goto("/app");
   await expect(page.getByRole("heading", { name: /Good (morning|afternoon|evening)/ })).toBeVisible();

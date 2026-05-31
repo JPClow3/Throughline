@@ -11,6 +11,7 @@
     "vapid": "web-push generate-vapid-keys"
   },
   "dependencies": {
+    "@fastify/cookie": "^11.0.2",
     "@fastify/cors": "^11.2.0",
     "@fastify/rate-limit": "^10.2.0",
     "@throughline/domain": "0.1.0",

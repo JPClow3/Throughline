@@ -17,7 +17,8 @@ beforeEach(async () => {
   config = {
     host: "127.0.0.1",
     port: 0,
-    storePath: join(directory, "push-store.json")
+    storePath: join(directory, "push-store.json"),
+    dbPath: ":memory:"
   };
   store = new JsonPushStore(config.storePath);
 });
@@ -181,6 +182,66 @@ describe("push API", () => {
     expect(first.json()).toEqual({ sent: 1 });
     expect(second.json()).toEqual({ sent: 0 });
     expect(sendNotification).toHaveBeenCalledTimes(1);
+
+    await app.close();
+  });
+});
+
+describe("auth", () => {
+  const account = { email: "user@example.com", salt: "salt-blob", authKey: "auth-blob", wrappedDek: "wrapped-blob" };
+
+  function cookieFrom(response: { cookies: Array<{ name: string; value: string }> }) {
+    return response.cookies.find((c) => c.name === "tl_session")?.value;
+  }
+
+  it("signs up, authenticates the session, and logs out", async () => {
+    const app = await createServer({ config, store, configureWebPush: false });
+
+    const signup = await app.inject({ method: "POST", url: "/auth/signup", payload: account });
+    expect(signup.statusCode).toBe(201);
+    expect(signup.json()).toEqual({ email: account.email });
+    const token = cookieFrom(signup);
+    expect(token).toBeTruthy();
+
+    const me = await app.inject({ method: "GET", url: "/auth/me", cookies: { tl_session: token! } });
+    expect(me.statusCode).toBe(200);
+    expect(me.json()).toEqual({ email: account.email });
+
+    const meAnon = await app.inject({ method: "GET", url: "/auth/me" });
+    expect(meAnon.statusCode).toBe(401);
+
+    const logout = await app.inject({ method: "POST", url: "/auth/logout", cookies: { tl_session: token! } });
+    expect(logout.statusCode).toBe(204);
+    const meAfter = await app.inject({ method: "GET", url: "/auth/me", cookies: { tl_session: token! } });
+    expect(meAfter.statusCode).toBe(401);
+
+    await app.close();
+  });
+
+  it("rejects duplicate signup and returns salt + wrappedDek on login", async () => {
+    const app = await createServer({ config, store, configureWebPush: false });
+    await app.inject({ method: "POST", url: "/auth/signup", payload: account });
+
+    const dup = await app.inject({ method: "POST", url: "/auth/signup", payload: account });
+    expect(dup.statusCode).toBe(409);
+
+    const salt = await app.inject({ method: "POST", url: "/auth/salt", payload: { email: account.email } });
+    expect(salt.json()).toEqual({ salt: account.salt });
+
+    const login = await app.inject({
+      method: "POST",
+      url: "/auth/login",
+      payload: { email: account.email, authKey: account.authKey }
+    });
+    expect(login.statusCode).toBe(200);
+    expect(login.json()).toEqual({ email: account.email, salt: account.salt, wrappedDek: account.wrappedDek });
+
+    const bad = await app.inject({
+      method: "POST",
+      url: "/auth/login",
+      payload: { email: account.email, authKey: "wrong" }
+    });
+    expect(bad.statusCode).toBe(401);
 
     await app.close();
   });

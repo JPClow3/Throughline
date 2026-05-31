@@ -11,6 +11,12 @@ export type PushApiConfig = {
   corsOrigin?: string;
   /** Max requests per IP per minute (rate limiting). */
   rateLimitMax?: number;
+  /** SQLite database path for accounts + encrypted sync records. */
+  dbPath?: string;
+  /** Secret used to sign session cookies (optional but recommended). */
+  sessionSecret?: string;
+  /** Whether session cookies require HTTPS (default true; set false only for local plain-http). */
+  cookieSecure?: boolean;
 };
 
 export function readPushApiConfig(env: NodeJS.ProcessEnv = process.env): PushApiConfig {
@@ -23,7 +29,10 @@ export function readPushApiConfig(env: NodeJS.ProcessEnv = process.env): PushApi
     vapidSubject: env.VAPID_SUBJECT,
     dispatchToken: env.DISPATCH_TOKEN || undefined,
     corsOrigin: env.CORS_ORIGIN || undefined,
-    rateLimitMax: Number(env.RATE_LIMIT_MAX ?? 120)
+    rateLimitMax: Number(env.RATE_LIMIT_MAX ?? 120),
+    dbPath: env.DB_PATH ?? "data/throughline.db",
+    sessionSecret: env.SESSION_SECRET || undefined,
+    cookieSecure: env.COOKIE_SECURE !== "false"
   };
 }
 

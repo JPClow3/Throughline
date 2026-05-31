@@ -53,10 +53,10 @@ export function Landing() {
           Throughline
         </span>
         <nav className="landing-nav-actions">
-          <Link className="landing-link" to="/app">
+          <Link className="landing-link" to="/login">
             Log in
           </Link>
-          <Link className="primary-button" to="/app">
+          <Link className="primary-button" to="/signup">
             Get started
           </Link>
         </nav>
@@ -75,7 +75,7 @@ export function Landing() {
             cross-linked notebook, a board, and a timeline. Local-first and end-to-end encrypted.
           </p>
           <div className="landing-cta-row">
-            <Link className="primary-button" to="/app">
+            <Link className="primary-button" to="/signup">
               Get started <ArrowRight size={17} />
             </Link>
             <Link className="secondary-button" to="/app">
@@ -125,7 +125,7 @@ export function Landing() {
       <section className="landing-final">
         <h2>Start with one goal.</h2>
         <p>Add the first step today — Throughline keeps the rest calm.</p>
-        <Link className="primary-button" to="/app">
+        <Link className="primary-button" to="/signup">
           Get started <ArrowRight size={17} />
         </Link>
       </section>

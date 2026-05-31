@@ -7,6 +7,10 @@ const budgets = {
 };
 
 test("keeps core dashboard and Kanban interactions inside smoke budgets", async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem("tl_email", "tester@example.com");
+    localStorage.setItem("tl_dek", btoa(String.fromCharCode.apply(null, Array.from(new Uint8Array(32)))));
+  });
   const dashboardStart = Date.now();
   await page.goto("/app");
   await expect(page.getByRole("heading", { name: /Good (morning|afternoon|evening)/ })).toBeVisible();
