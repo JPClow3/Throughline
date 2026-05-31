@@ -8,7 +8,7 @@ const budgets = {
 
 test("keeps core dashboard and Kanban interactions inside smoke budgets", async ({ page }) => {
   const dashboardStart = Date.now();
-  await page.goto("/");
+  await page.goto("/app");
   await expect(page.getByRole("heading", { name: /Good (morning|afternoon|evening)/ })).toBeVisible();
   const dashboardReadyMs = Date.now() - dashboardStart;
 

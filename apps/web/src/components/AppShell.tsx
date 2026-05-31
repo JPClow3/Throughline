@@ -44,7 +44,7 @@ export function AppShell({
   return (
     <div className="app-shell">
       <aside className="sidebar glass-panel">
-        <a className="brand-mark" href="/" aria-label="Throughline home" title="Throughline">
+        <a className="brand-mark" href="/app" aria-label="Throughline home" title="Throughline">
           <ThroughlineMark />
         </a>
         <nav aria-label="Primary">

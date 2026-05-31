@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 test("handles repeated task capture and board rendering", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/app");
   await expect(page.getByRole("heading", { name: /Good (morning|afternoon|evening)/ })).toBeVisible();
 
   for (let index = 1; index <= 20; index += 1) {

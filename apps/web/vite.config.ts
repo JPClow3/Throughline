@@ -21,7 +21,7 @@ export default defineConfig({
         background_color: "#eef0f4",
         display: "standalone",
         orientation: "portrait-primary",
-        start_url: "/",
+        start_url: "/app",
         scope: "/",
         categories: ["productivity"],
         icons: [
@@ -36,7 +36,7 @@ export default defineConfig({
           {
             name: "Kanban",
             short_name: "Kanban",
-            url: "/?view=kanban",
+            url: "/app?view=kanban",
             icons: [{ src: "/pwa-icon.svg", sizes: "any", type: "image/svg+xml" }]
           }
         ]

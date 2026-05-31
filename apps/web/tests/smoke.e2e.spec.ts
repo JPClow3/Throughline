@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 test("renders today and board", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/app");
   await expect(page.getByRole("heading", { name: /Good (morning|afternoon|evening)/ })).toBeVisible();
   await page.getByLabel("Board").click();
   await expect(page.getByRole("heading", { name: "Backlog" })).toBeVisible();
@@ -9,7 +9,7 @@ test("renders today and board", async ({ page }) => {
 
 test("captures, moves, and completes a task", async ({ page }) => {
   const title = `UX flow task ${Date.now()}`;
-  await page.goto("/");
+  await page.goto("/app");
   await page.getByRole("button", { name: "New task" }).click();
   await page.getByLabel("Title").fill(title);
   await page.getByLabel("Due").fill("2026-12-04T14:30");

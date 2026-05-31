@@ -14,15 +14,16 @@
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@fontsource-variable/geist": "^5.2.9",
-    "@throughline/domain": "0.1.0",
     "@phosphor-icons/react": "^2.1.10",
     "@tailwindcss/vite": "^4.1.17",
+    "@throughline/domain": "0.1.0",
     "dexie": "^4.4.3",
     "dexie-react-hooks": "^4.4.0",
     "motion": "^12.40.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "react-markdown": "^10.1.0",
+    "react-router-dom": "^7.16.0",
     "vite-plugin-pwa": "^1.3.0"
   }
 }
