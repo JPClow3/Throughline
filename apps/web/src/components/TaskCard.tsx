@@ -2,7 +2,7 @@ import { Course, Task, TaskStatus, kanbanColumns } from "@throughline/domain";
 import { Check, Clock as Clock3, Diamond as Gem, ListChecks, Note as StickyNote, Target } from "@phosphor-icons/react";
 import { motion } from "motion/react";
 import type { CSSProperties } from "react";
-import { capitalizeFirst } from "../lib/format";
+import { APP_LOCALE, capitalizeFirst } from "../lib/format";
 
 type TaskCardProps = {
   task: Task;
@@ -172,7 +172,7 @@ function describeDue(due: Date, done: boolean): { text: string; tone: DueTone } 
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const startOfDue = new Date(due.getFullYear(), due.getMonth(), due.getDate());
   const dayDiff = Math.round((startOfDue.getTime() - startOfToday.getTime()) / 86_400_000);
-  const time = due.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+  const time = due.toLocaleTimeString(APP_LOCALE, { hour: "2-digit", minute: "2-digit" });
 
   if (done) {
     return { text: "Done", tone: "done" };
@@ -191,12 +191,12 @@ function describeDue(due: Date, done: boolean): { text: string; tone: DueTone } 
   }
 
   if (dayDiff < 7) {
-    return { text: capitalizeFirst(due.toLocaleDateString(undefined, { weekday: "long" })), tone: "normal" };
+    return { text: capitalizeFirst(due.toLocaleDateString(APP_LOCALE, { weekday: "long" })), tone: "normal" };
   }
 
   const sameYear = due.getFullYear() === now.getFullYear();
   return {
-    text: due.toLocaleDateString(undefined, {
+    text: due.toLocaleDateString(APP_LOCALE, {
       month: "short",
       day: "numeric",
       ...(sameYear ? {} : { year: "numeric" })

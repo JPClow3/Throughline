@@ -2884,8 +2884,16 @@ html {
 }
 
 .auth-switch a {
-  color: var(--focus);
+  color: var(--ink);
   font-weight: var(--fw-medium);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-color: var(--border-strong);
+  transition: text-decoration-color 0.15s ease;
+}
+
+.auth-switch a:hover {
+  text-decoration-color: var(--ink);
 }
 
 .auth-loading {

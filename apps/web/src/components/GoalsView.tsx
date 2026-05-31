@@ -2,6 +2,7 @@ import { Course, Goal, GoalStatus, Note, Task, TaskStatus, deriveGoalProgress } 
 import { Plus, Target } from "@phosphor-icons/react";
 import { type CSSProperties } from "react";
 import type { NoteInput, TaskInput } from "../data/repositories";
+import { APP_LOCALE } from "../lib/format";
 import { EmptyState } from "./EmptyState";
 import { GoalDetail } from "./GoalDetail";
 import { GoalRing } from "./GoalRing";
@@ -113,7 +114,7 @@ export function GoalsView({
                   </span>
                   {goal.targetDate ? (
                     <span>
-                      Target {new Date(goal.targetDate).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                      Target {new Date(goal.targetDate).toLocaleDateString(APP_LOCALE, { month: "short", day: "numeric" })}
                     </span>
                   ) : null}
                 </div>

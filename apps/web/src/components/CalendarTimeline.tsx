@@ -1,7 +1,7 @@
 import { Course, Task, kanbanColumns } from "@throughline/domain";
 import { CalendarBlank } from "@phosphor-icons/react";
 import { useState, type CSSProperties } from "react";
-import { capitalizeFirst } from "../lib/format";
+import { APP_LOCALE, capitalizeFirst } from "../lib/format";
 import { EmptyState } from "./EmptyState";
 
 function localDayKey(date: Date) {
@@ -10,7 +10,7 @@ function localDayKey(date: Date) {
 }
 
 function formatTime(date: Date) {
-  return date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  return date.toLocaleTimeString(APP_LOCALE, { hour: "numeric", minute: "2-digit" });
 }
 
 export function CalendarTimeline({ tasks, courses }: { tasks: Task[]; courses: Course[] }) {
@@ -75,7 +75,7 @@ export function CalendarTimeline({ tasks, courses }: { tasks: Task[]; courses: C
               className={`day-chip${active ? " active" : ""}`}
               onClick={() => setSelectedKey(key)}
             >
-              <span className="day-chip-weekday">{capitalizeFirst(date.toLocaleDateString(undefined, { weekday: "short" }))}</span>
+              <span className="day-chip-weekday">{capitalizeFirst(date.toLocaleDateString(APP_LOCALE, { weekday: "short" }))}</span>
               <span className="day-chip-date">{date.getDate()}</span>
             </button>
           );
@@ -83,7 +83,7 @@ export function CalendarTimeline({ tasks, courses }: { tasks: Task[]; courses: C
       </div>
 
       <h2 className="agenda-day-title">
-        {capitalizeFirst(selectedDate.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }))}
+        {capitalizeFirst(selectedDate.toLocaleDateString(APP_LOCALE, { weekday: "long", month: "long", day: "numeric" }))}
       </h2>
 
       {dayTasks.length ? (

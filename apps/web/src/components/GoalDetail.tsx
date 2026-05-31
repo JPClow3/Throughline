@@ -25,6 +25,7 @@ import {
 } from "@phosphor-icons/react";
 import { FormEvent, useState, type CSSProperties } from "react";
 import type { NoteInput, TaskInput } from "../data/repositories";
+import { APP_LOCALE } from "../lib/format";
 import { GoalRing } from "./GoalRing";
 import { TaskCard } from "./TaskCard";
 
@@ -125,7 +126,7 @@ export function GoalDetail({
                 <Target size={15} /> {progress.completed} of {progress.total} done
               </span>
               {targetDate ? (
-                <span>Target {targetDate.toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span>
+                <span>Target {targetDate.toLocaleDateString(APP_LOCALE, { month: "short", day: "numeric" })}</span>
               ) : null}
               {statusLabel ? <span className={`goal-status-pill is-${goal.status}`}>{statusLabel}</span> : null}
             </div>

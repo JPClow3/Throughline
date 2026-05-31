@@ -30,6 +30,7 @@ import {
 } from "../data/repositories";
 import { AppearanceSettings, ThemePreference } from "../data/types";
 import { downloadIcs } from "../lib/downloadIcs";
+import { APP_LOCALE } from "../lib/format";
 import {
   notificationSupport,
   redactedRemindersForTasks,
@@ -304,7 +305,7 @@ export function SettingsPanel({
         <p>{reminders.length} reminder payloads keep task text local.</p>
         {syncState?.endpointHash ? <p>Endpoint hash: {syncState.endpointHash.slice(0, 12)}...</p> : null}
         {syncState?.lastReminderSyncAt ? (
-          <p>Last sync: {new Date(syncState.lastReminderSyncAt).toLocaleString()}</p>
+          <p>Last sync: {new Date(syncState.lastReminderSyncAt).toLocaleString(APP_LOCALE)}</p>
         ) : null}
         {syncState?.lastReminderSyncError ? <p>Last error: {syncState.lastReminderSyncError}</p> : null}
         <div className="button-row">

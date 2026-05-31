@@ -1,7 +1,7 @@
 import { Course, Note, Task, UserProgress } from "@throughline/domain";
 import { CalendarBlank, Flame, ListChecks, Plus, Trophy } from "@phosphor-icons/react";
 import type { CSSProperties } from "react";
-import { capitalizeFirst } from "../lib/format";
+import { APP_LOCALE, capitalizeFirst } from "../lib/format";
 import { countNotesByTask } from "../lib/noteCounts";
 import { EmptyState } from "./EmptyState";
 import { GoalRing } from "./GoalRing";
@@ -54,7 +54,7 @@ export function Dashboard({
     .slice(0, 4);
 
   const greeting = greetingForHour(new Date().getHours());
-  const dateLabel = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+  const dateLabel = new Date().toLocaleDateString(APP_LOCALE, { weekday: "long", month: "long", day: "numeric" });
 
   const projectProgress: ProjectProgress[] = courses
     .map((course) => {
