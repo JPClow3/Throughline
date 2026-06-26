@@ -29,7 +29,7 @@ export function ForgotPassword() {
       if (!resetPassword) {
          throw new Error("Reset password not implemented.");
       }
-      await resetPassword(email, recoveryKey, newPassword);
+      await resetPassword(email, recoveryKey.trim().toLowerCase(), newPassword);
       navigate("/app");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not reset password.");
