@@ -37,14 +37,28 @@ export default defineConfig({
       manifest: {
         name: "Throughline",
         short_name: "Throughline",
-        description: "A calm, local-first planner where goals hold the work — with notes, a board, and a timeline.",
+        id: "/app",
+        description: "A calm, local-first student planner for quests, notes, boards, timelines, and progress.",
+        lang: "en",
+        dir: "ltr",
         theme_color: "#eef0f4",
         background_color: "#eef0f4",
         display: "standalone",
-        orientation: "portrait-primary",
+        display_override: ["window-controls-overlay", "standalone", "minimal-ui", "browser"],
+        orientation: "any",
         start_url: "/app",
         scope: "/",
-        categories: ["productivity"],
+        categories: ["productivity", "education"],
+        launch_handler: {
+          client_mode: "focus-existing"
+        },
+        related_applications: [
+          {
+            platform: "windows",
+            url: "https://apps.microsoft.com/detail/9PDNH55ZKNZ7",
+            id: "9PDNH55ZKNZ7"
+          }
+        ],
         icons: [
           {
             src: "/pwa-icon.svg",
@@ -79,9 +93,31 @@ export default defineConfig({
         ],
         shortcuts: [
           {
+            name: "Today",
+            short_name: "Today",
+            description: "Open the daily dashboard.",
+            url: "/app?view=today",
+            icons: [{ src: "/pwa-icon.svg", sizes: "any", type: "image/svg+xml" }]
+          },
+          {
             name: "Kanban",
-            short_name: "Kanban",
+            short_name: "Board",
+            description: "Jump straight to the board.",
             url: "/app?view=kanban",
+            icons: [{ src: "/pwa-icon.svg", sizes: "any", type: "image/svg+xml" }]
+          },
+          {
+            name: "Timeline",
+            short_name: "Timeline",
+            description: "Open the day timeline.",
+            url: "/app?view=timeline",
+            icons: [{ src: "/pwa-icon.svg", sizes: "any", type: "image/svg+xml" }]
+          },
+          {
+            name: "Notes",
+            short_name: "Notes",
+            description: "Open the notebook.",
+            url: "/app?view=notes",
             icons: [{ src: "/pwa-icon.svg", sizes: "any", type: "image/svg+xml" }]
           }
         ]

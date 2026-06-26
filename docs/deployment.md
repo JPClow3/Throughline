@@ -40,7 +40,7 @@ The web app uses `vite-plugin-pwa`.
 ## 3. Release & Store Readiness
 
 ### PWA Checklist
-- Manifest has valid properties (`Throughline`, standalone, icons, etc).
+- Manifest has valid properties (`Throughline`, stable `id`, standalone / display overrides, icons, shortcuts, etc).
 - Offline shell works down to 320px breakpoints.
 - IndexedDB survives reload.
 - Notification states clear when API missing.
@@ -52,8 +52,8 @@ The web app uses `vite-plugin-pwa`.
 3. Confirm privacy copy.
 4. Generate Store Screenshots (1366x768 or 2560x1440).
 5. Use [PWABuilder](https://www.pwabuilder.com/) with production URL.
-6. Verify manifest has 192x192 and 512x512 icons.
-7. Package and verify Windows store bundle.
+6. Verify manifest has a stable app id, 192x192 and 512x512 icons, and the Windows Store related application entry.
+7. Keep the launch flow focused on the existing client and package the Windows store bundle.
 
 ### Release Blockers
 - Unredacted task data reaching push API.

@@ -1,5 +1,7 @@
 import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import { DatabaseSync } from "node:sqlite";
+import { mkdirSync } from "node:fs";
+import { dirname } from "node:path";
 
 export type UserRow = {
   id: string;
@@ -41,6 +43,11 @@ export type UserStore = ReturnType<typeof createUserStore>;
  * The DB also holds the sync `records` table (added by the sync module).
  */
 export function createUserStore(dbPath: string) {
+  try {
+    mkdirSync(dirname(dbPath), { recursive: true });
+  } catch {
+    // Ignore, let sqlite throw if it still fails
+  }
   const db = new DatabaseSync(dbPath);
   db.exec("PRAGMA journal_mode = WAL;");
   db.exec(`

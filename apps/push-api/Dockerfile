@@ -22,7 +22,8 @@ COPY apps/push-api ./apps/push-api
 ENV NODE_ENV=production \
     HOST=0.0.0.0 \
     PORT=8787 \
-    PUSH_STORE_PATH=/data/push-store.json
+    PUSH_STORE_PATH=/data/push-store.json \
+    DB_PATH=/data/throughline.db
 
 # Persistent store location (mount a volume here in compose).
 RUN mkdir -p /data
