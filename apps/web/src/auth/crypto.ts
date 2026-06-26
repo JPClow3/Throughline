@@ -102,3 +102,17 @@ export async function decryptJson<T>(ciphertext: string, iv: string, dekKey: Cry
   const bytes = await aesDecrypt(dekKey, iv, ciphertext);
   return JSON.parse(decoder.decode(bytes)) as T;
 }
+
+export function generateRecoveryKey(): string {
+  const buf = new Uint8Array(16);
+  crypto.getRandomValues(buf);
+  return Array.from(buf)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("")
+    .match(/.{1,4}/g)!
+    .join("-");
+}
+
+export async function deriveRecoveryKeys(recoveryKey: string, saltB64: string): Promise<DerivedKeys> {
+  return deriveKeys(recoveryKey, saltB64);
+}

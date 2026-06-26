@@ -17,6 +17,7 @@
     "@phosphor-icons/react": "^2.1.10",
     "@tailwindcss/vite": "^4.1.17",
     "@throughline/domain": "0.1.0",
+    "cmdk": "^1.1.1",
     "dexie": "^4.4.3",
     "dexie-react-hooks": "^4.4.0",
     "motion": "^12.40.0",

@@ -26,6 +26,7 @@ import {
 import { FormEvent, useState, type CSSProperties } from "react";
 import type { NoteInput, TaskInput } from "../data/repositories";
 import { APP_LOCALE } from "../lib/format";
+import { EmptyState } from "./EmptyState";
 import { GoalRing } from "./GoalRing";
 import { TaskCard } from "./TaskCard";
 
@@ -41,6 +42,8 @@ type GoalDetailProps = {
   onCompleteTask: (task: Task) => void;
   onStatusChange: (taskId: string, status: TaskStatus) => void;
   onEditTask: (task: Task) => void;
+  onUpdateTask?: (task: Task) => void;
+  onStartFocus?: (task: Task) => void;
   onEditGoal: (goal: Goal) => void;
   onReorderTask: (task: Task) => Promise<void>;
   onSetGoalStatus: (goalId: string, status: GoalStatus) => Promise<void>;
@@ -59,6 +62,8 @@ export function GoalDetail({
   onCompleteTask,
   onStatusChange,
   onEditTask,
+  onUpdateTask,
+  onStartFocus,
   onEditGoal,
   onReorderTask,
   onSetGoalStatus,
@@ -201,11 +206,18 @@ export function GoalDetail({
                   onComplete={onCompleteTask}
                   onStatusChange={onStatusChange}
                   onEdit={onEditTask}
+                  onUpdateTask={onUpdateTask}
+                  onStartFocus={onStartFocus}
                 />
               </div>
             ))
           ) : (
-            <div className="empty-state">No steps yet. Break this goal into a few small tasks.</div>
+            <EmptyState
+              variant="inline"
+              icon={<CheckCircle2 size={24} />}
+              title="No steps yet"
+              body="Break this goal into a few small tasks."
+            />
           )}
         </div>
       </div>
@@ -234,7 +246,12 @@ export function GoalDetail({
               </div>
             ))
           ) : (
-            <div className="empty-state">No notes linked yet. Add one to capture context for this goal.</div>
+            <EmptyState
+              variant="inline"
+              icon={<FileText size={24} />}
+              title="No notes linked yet"
+              body="Add one to capture context for this goal."
+            />
           )}
         </div>
       </div>

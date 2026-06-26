@@ -50,7 +50,9 @@ export function createUserStore(dbPath: string) {
       salt TEXT NOT NULL,
       auth_hash TEXT NOT NULL,
       wrapped_dek TEXT NOT NULL,
-      created_at TEXT NOT NULL
+      created_at TEXT NOT NULL,
+      recovery_hash TEXT,
+      recovery_wrapped_dek TEXT
     );
     CREATE TABLE IF NOT EXISTS sessions (
       token TEXT PRIMARY KEY,
@@ -60,13 +62,16 @@ export function createUserStore(dbPath: string) {
     );
     CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
   `);
+  
+  try { db.exec("ALTER TABLE users ADD COLUMN recovery_hash TEXT"); } catch { /* ignore */ }
+  try { db.exec("ALTER TABLE users ADD COLUMN recovery_wrapped_dek TEXT"); } catch { /* ignore */ }
 
   const normalizeEmail = (email: string) => email.trim().toLowerCase();
 
   return {
     db,
 
-    createUser(input: { email: string; salt: string; authKey: string; wrappedDek: string }): UserRow | null {
+    createUser(input: { email: string; salt: string; authKey: string; wrappedDek: string; recoveryAuthKey: string; recoveryWrappedDek: string }): UserRow | null {
       const email = normalizeEmail(input.email);
       const existing = db.prepare("SELECT id FROM users WHERE email = ?").get(email);
       if (existing) {
@@ -80,9 +85,12 @@ export function createUserStore(dbPath: string) {
         wrappedDek: input.wrappedDek,
         createdAt: new Date().toISOString()
       };
+      
+      const recoveryHash = hashAuthKey(input.recoveryAuthKey);
+      
       db.prepare(
-        "INSERT INTO users (id, email, salt, auth_hash, wrapped_dek, created_at) VALUES (?, ?, ?, ?, ?, ?)"
-      ).run(row.id, row.email, row.salt, row.authHash, row.wrappedDek, row.createdAt);
+        "INSERT INTO users (id, email, salt, auth_hash, wrapped_dek, created_at, recovery_hash, recovery_wrapped_dek) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+      ).run(row.id, row.email, row.salt, row.authHash, row.wrappedDek, row.createdAt, recoveryHash, input.recoveryWrappedDek);
       return row;
     },
 
@@ -94,13 +102,21 @@ export function createUserStore(dbPath: string) {
     },
 
     verifyLogin(email: string, authKey: string): { userId: string; salt: string; wrappedDek: string } | null {
-      const row = db.prepare("SELECT id, salt, auth_hash, wrapped_dek FROM users WHERE email = ?").get(
+      const row = db.prepare("SELECT id, salt, auth_hash, wrapped_dek, recovery_hash, recovery_wrapped_dek FROM users WHERE email = ?").get(
         normalizeEmail(email)
-      ) as { id: string; salt: string; auth_hash: string; wrapped_dek: string } | undefined;
-      if (!row || !verifyAuthKey(authKey, row.auth_hash)) {
-        return null;
+      ) as { id: string; salt: string; auth_hash: string; wrapped_dek: string; recovery_hash?: string; recovery_wrapped_dek?: string } | undefined;
+      
+      if (!row) return null;
+      
+      if (verifyAuthKey(authKey, row.auth_hash)) {
+        return { userId: row.id, salt: row.salt, wrappedDek: row.wrapped_dek };
       }
-      return { userId: row.id, salt: row.salt, wrappedDek: row.wrapped_dek };
+      
+      if (row.recovery_hash && row.recovery_wrapped_dek && verifyAuthKey(authKey, row.recovery_hash)) {
+        return { userId: row.id, salt: row.salt, wrappedDek: row.recovery_wrapped_dek };
+      }
+
+      return null;
     },
 
     createSession(userId: string): string {

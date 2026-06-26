@@ -1,5 +1,6 @@
 import { Course, Task } from "@throughline/domain";
 import { useLiveQuery } from "dexie-react-hooks";
+import { Notice } from "./Notice";
 import {
   ArrowCounterClockwise,
   ArrowsClockwise,
@@ -28,7 +29,9 @@ import {
   resetSampleData,
   saveReminderSyncState
 } from "../data/repositories";
+import { DownloadSimple } from "@phosphor-icons/react";
 import { AppearanceSettings, ThemePreference } from "../data/types";
+import { usePwaInstall } from "../hooks/usePwaInstall";
 import { downloadIcs } from "../lib/downloadIcs";
 import { APP_LOCALE } from "../lib/format";
 import {
@@ -161,6 +164,8 @@ export function SettingsPanel({
     { value: "system", label: "System", icon: <Monitor size={15} aria-hidden /> }
   ];
 
+  const { isInstallable, isInstalled, promptToInstall } = usePwaInstall();
+
   return (
     <div>
       <header className="view-head">
@@ -251,7 +256,19 @@ export function SettingsPanel({
             <dt>Local data</dt>
             <dd>IndexedDB</dd>
           </div>
+          <div>
+            <dt>Install status</dt>
+            <dd>{isInstalled ? "installed" : isInstallable ? "installable" : "not installable"}</dd>
+          </div>
         </dl>
+        {isInstallable && (
+          <div className="button-row" style={{ marginTop: "1rem" }}>
+            <button className="primary-button" type="button" onClick={promptToInstall}>
+              <DownloadSimple size={16} /> Install App
+            </button>
+          </div>
+        )}
+        <p>Throughline is designed to work fully offline once the shell is cached.</p>
       </div>
 
       <div className="glass-panel settings-card">
@@ -307,7 +324,7 @@ export function SettingsPanel({
         {syncState?.lastReminderSyncAt ? (
           <p>Last sync: {new Date(syncState.lastReminderSyncAt).toLocaleString(APP_LOCALE)}</p>
         ) : null}
-        {syncState?.lastReminderSyncError ? <p>Last error: {syncState.lastReminderSyncError}</p> : null}
+        {syncState?.lastReminderSyncError ? <Notice variant="error" className="mt-2">{syncState.lastReminderSyncError}</Notice> : null}
         <div className="button-row">
           <button className="primary-button" type="button" onClick={subscribe}>
             <RadioTower size={17} />

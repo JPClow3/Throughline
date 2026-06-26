@@ -1,21 +1,28 @@
 import { Course, Goal, Priority, RpgAttribute, Subtask, priorities, rpgAttributes } from "@throughline/domain";
 import { CaretDown as ChevronDown, Plus } from "@phosphor-icons/react";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import type { TaskInput } from "../data/repositories";
+
+function toLocalInput(date?: Date) {
+  if (!date) return "";
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
 
 type TaskComposerProps = {
   courses: Course[];
   goals?: Goal[];
   showGameLayer?: boolean;
+  initialDate?: Date;
   onAddTask: (input: TaskInput) => Promise<void>;
 };
 
-export function TaskComposer({ courses, goals = [], showGameLayer = false, onAddTask }: TaskComposerProps) {
+export function TaskComposer({ courses, goals = [], showGameLayer = false, initialDate, onAddTask }: TaskComposerProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [courseId, setCourseId] = useState("");
   const [goalId, setGoalId] = useState("");
-  const [dueAt, setDueAt] = useState("");
+  const [dueAt, setDueAt] = useState(() => toLocalInput(initialDate));
   const [reminderAt, setReminderAt] = useState("");
   const [priority, setPriority] = useState<Priority>("medium");
   const [energy, setEnergy] = useState(2);
@@ -23,7 +30,15 @@ export function TaskComposer({ courses, goals = [], showGameLayer = false, onAdd
   const [attribute, setAttribute] = useState<RpgAttribute>("focus");
   const [tags, setTags] = useState("");
   const [subtasks, setSubtasks] = useState("");
+  const [recurrence, setRecurrence] = useState<"daily" | "weekly" | "monthly" | "yearly" | "">("");
   const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    if (initialDate) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setDueAt(toLocalInput(initialDate));
+    }
+  }, [initialDate]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -43,7 +58,8 @@ export function TaskComposer({ courses, goals = [], showGameLayer = false, onAdd
       difficulty,
       attributes: [attribute],
       tags: parseTags(tags),
-      subtasks: parseSubtasks(subtasks)
+      subtasks: parseSubtasks(subtasks),
+      recurrence: recurrence || undefined
     });
 
     setTitle("");
@@ -55,6 +71,7 @@ export function TaskComposer({ courses, goals = [], showGameLayer = false, onAdd
     setTags("");
     setSubtasks("");
     setPriority("medium");
+    setRecurrence("");
   }
 
   return (
@@ -131,6 +148,16 @@ export function TaskComposer({ courses, goals = [], showGameLayer = false, onAdd
               <input type="datetime-local" value={reminderAt} onChange={(event) => setReminderAt(event.target.value)} />
             </label>
           </div>
+          <label>
+            <span>Recurrence</span>
+            <select value={recurrence} onChange={(event) => setRecurrence(event.target.value as "daily" | "weekly" | "monthly" | "yearly" | "")}>
+              <option value="">None</option>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+              <option value="yearly">Yearly</option>
+            </select>
+          </label>
           <label>
             <span>Tags</span>
             <input value={tags} onChange={(event) => setTags(event.target.value)} placeholder="reading, errand" />

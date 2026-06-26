@@ -5,11 +5,12 @@ type EmptyStateProps = {
   title: string;
   body?: string;
   action?: ReactNode;
+  variant?: "card" | "inline";
 };
 
-export function EmptyState({ icon, title, body, action }: EmptyStateProps) {
+export function EmptyState({ icon, title, body, action, variant = "card" }: EmptyStateProps) {
   return (
-    <div className="empty-state-rich">
+    <div className={`empty-state-${variant}`}>
       <div className="empty-state-icon" aria-hidden="true">
         {icon}
       </div>

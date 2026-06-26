@@ -21,6 +21,15 @@ export function Sheet({ open, title, onClose, children }: SheetProps) {
       return;
     }
     const previouslyFocused = document.activeElement as HTMLElement | null;
+    
+    if (panelRef.current) {
+      const focusables = Array.from(panelRef.current.querySelectorAll<HTMLElement>(FOCUSABLE));
+      if (focusables.length > 0) {
+        // Use a small timeout to let Framer Motion render the element before focusing
+        setTimeout(() => focusables[0].focus(), 10);
+      }
+    }
+
     return () => previouslyFocused?.focus?.();
   }, [open]);
 
@@ -78,9 +87,9 @@ export function Sheet({ open, title, onClose, children }: SheetProps) {
         aria-modal="true"
         aria-label={title}
         onClick={(event) => event.stopPropagation()}
-        initial={{ opacity: 0, y: -14, scale: 0.98 }}
+        initial={{ opacity: 0, y: 30, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ type: "spring", stiffness: 340, damping: 30 }}
+        transition={{ type: "spring", stiffness: 400, damping: 20, mass: 0.8 }}
       >
         <header className="sheet-head">
           <h2>{title}</h2>

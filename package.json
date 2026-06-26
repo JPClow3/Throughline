@@ -27,7 +27,11 @@
     "test:perf": "playwright test --project=performance",
     "test:stress": "playwright test --project=stress",
     "test:all": "npm run lint && npm run typecheck && npm run test:coverage && npm run build && npm run test:e2e && npm run test:perf && npm run test:stress",
-    "preview": "npm run preview -w apps/web"
+    "preview": "npm run preview -w apps/web",
+    "docker:build": "docker compose build",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f"
   },
   "devDependencies": {
     "@playwright/test": "^1.60.0",

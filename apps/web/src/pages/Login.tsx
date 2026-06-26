@@ -2,6 +2,7 @@ import { FormEvent, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import { AuthShell } from "./AuthShell";
+import { Notice } from "../components/Notice";
 
 export function Login() {
   const { login, status } = useAuth();
@@ -43,7 +44,7 @@ export function Login() {
           />
         </label>
         <label>
-          <span>Password</span>
+          <span>Password or Recovery Key</span>
           <input
             type="password"
             autoComplete="current-password"
@@ -52,7 +53,9 @@ export function Login() {
             onChange={(e) => setPassword(e.target.value)}
           />
         </label>
-        {error ? <p className="auth-error">{error}</p> : null}
+        {error ? (
+          <Notice variant="error" className="mb-4">{error}</Notice>
+        ) : null}
         <button className="primary-button" type="submit" disabled={busy}>
           {busy ? "Signing in…" : "Sign in"}
         </button>

@@ -188,7 +188,14 @@ describe("push API", () => {
 });
 
 describe("auth", () => {
-  const account = { email: "user@example.com", salt: "salt-blob", authKey: "auth-blob", wrappedDek: "wrapped-blob" };
+  const account = { 
+    email: "user@example.com", 
+    salt: "salt-blob", 
+    authKey: "auth-blob", 
+    wrappedDek: "wrapped-blob",
+    recoveryAuthKey: "rec-auth-blob",
+    recoveryWrappedDek: "rec-wrapped-blob"
+  };
 
   function cookieFrom(response: { cookies: Array<{ name: string; value: string }> }) {
     return response.cookies.find((c) => c.name === "tl_session")?.value;
@@ -223,7 +230,7 @@ describe("auth", () => {
     const signup = await app.inject({
       method: "POST",
       url: "/auth/signup",
-      payload: { email: "sync@example.com", salt: "s", authKey: "a", wrappedDek: "w" }
+      payload: { email: "sync@example.com", salt: "s", authKey: "a", wrappedDek: "w", recoveryAuthKey: "ra", recoveryWrappedDek: "rw" }
     });
     const token = signup.cookies.find((c) => c.name === "tl_session")?.value as string;
     const cookies = { tl_session: token };

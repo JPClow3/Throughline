@@ -56,6 +56,7 @@ export const TaskSchema = z.object({
   tags: z.array(z.string().min(1).max(32)).default([]),
   subtasks: z.array(SubtaskSchema).default([]),
   visualSeed: z.number().int().min(0).max(9999).default(0),
+  recurrence: z.enum(["daily", "weekly", "monthly", "yearly"]).optional(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
   completedAt: z.string().datetime().optional()

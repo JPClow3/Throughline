@@ -11,8 +11,9 @@ export function Signup() {
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [recoveryKey, setRecoveryKey] = useState("");
 
-  if (status === "authed") {
+  if (status === "authed" && !recoveryKey) {
     return <Navigate to="/app" replace />;
   }
 
@@ -29,13 +30,32 @@ export function Signup() {
     setBusy(true);
     setError("");
     try {
-      await signup(email, password);
-      navigate("/app");
+      const key = await signup(email, password);
+      setRecoveryKey(key);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create the account.");
     } finally {
       setBusy(false);
     }
+  }
+
+  if (recoveryKey) {
+    return (
+      <AuthShell title="Save your Recovery Key" subtitle="This is the only way to recover your account if you forget your password.">
+        <div className="glass-panel" style={{ padding: "2rem", borderRadius: "var(--radius-card)", textAlign: "center", marginBottom: "2rem" }}>
+          <p style={{ fontWeight: "var(--fw-bold)", fontSize: "1.2rem", letterSpacing: "2px", userSelect: "all", fontFamily: "monospace", color: "var(--primary)" }}>
+            {recoveryKey}
+          </p>
+        </div>
+        <p className="auth-note" style={{ marginBottom: "2rem" }}>
+          Please save this key in a secure location, like a password manager. 
+          We cannot recover it for you.
+        </p>
+        <button className="primary-button" onClick={() => navigate("/app")}>
+          I have saved my key
+        </button>
+      </AuthShell>
+    );
   }
 
   return (

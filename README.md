@@ -74,12 +74,19 @@ Set for `apps/push-api`: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT
 `VITE_VAPID_PUBLIC_KEY`. See [docs/notifications.md](docs/notifications.md) for the
 privacy contract and API details.
 
-## Deploy
+## Deploy (Docker-First)
 
-Throughline ships as a Docker Compose stack (static web + push API + an ofelia cron that
+Throughline ships as a **Docker-first** application using a Docker Compose stack (static web + push API + an ofelia cron that
 triggers reminder dispatch), designed for Dokploy on an EC2 host with Traefik TLS. Copy
 `.env.example` to `.env`, fill in `APP_HOST` and the VAPID keys, and follow
 [docs/deployment.md](docs/deployment.md).
+
+For local testing or deploying via CLI, you can use the built-in docker scripts:
+
+```powershell
+npm run docker:build
+npm run docker:up
+```
 
 ## Key decisions
 

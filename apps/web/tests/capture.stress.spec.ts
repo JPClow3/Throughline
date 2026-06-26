@@ -9,9 +9,9 @@ test("handles repeated task capture and board rendering", async ({ page }) => {
   await expect(page.getByRole("heading", { name: /Good (morning|afternoon|evening)/ })).toBeVisible();
 
   for (let index = 1; index <= 20; index += 1) {
-    await page.getByRole("button", { name: "New task" }).click();
+    await page.getByRole("button", { name: /New task/i }).click();
     await page.getByLabel("Title").fill(`Stress task ${index}`);
-    await page.getByRole("button", { name: "Add task" }).click();
+    await page.getByRole("button", { name: "Add task", exact: true }).click();
     await expect(page.getByLabel("Title")).toHaveCount(0);
   }
 

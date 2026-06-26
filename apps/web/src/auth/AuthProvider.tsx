@@ -7,7 +7,9 @@ import {
   importDek,
   randomSalt,
   unwrapDek,
-  wrapDek
+  wrapDek,
+  deriveRecoveryKeys,
+  generateRecoveryKey
 } from "./crypto";
 
 const API_BASE = (import.meta.env.VITE_PUSH_API_URL ?? "/api").replace(/\/$/, "");
@@ -21,7 +23,7 @@ type AuthContextValue = {
   email: string | null;
   /** In-memory AES-GCM key for record encryption (null until authed). */
   dekKey: CryptoKey | null;
-  signup: (email: string, password: string) => Promise<void>;
+  signup: (email: string, password: string) => Promise<string>;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 };
@@ -95,13 +97,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStatus("authed");
   }
 
-  const signup = useCallback(async (rawEmail: string, password: string) => {
+  const signup = useCallback(async (rawEmail: string, password: string): Promise<string> => {
     const userEmail = rawEmail.trim().toLowerCase();
     const salt = randomSalt();
     const { kek, authKey } = await deriveKeys(password, salt);
     const dek = generateDek();
     const wrappedDek = await wrapDek(dek, kek);
-    const res = await api("/auth/signup", { email: userEmail, salt, authKey, wrappedDek });
+    
+    // Generate recovery key
+    const recoveryKey = generateRecoveryKey();
+    const { kek: recoveryKek, authKey: recoveryAuthKey } = await deriveRecoveryKeys(recoveryKey, salt);
+    const recoveryWrappedDek = await wrapDek(dek, recoveryKek);
+
+    const res = await api("/auth/signup", { email: userEmail, salt, authKey, wrappedDek, recoveryAuthKey, recoveryWrappedDek });
     if (res.status === 409) {
       throw new AuthError("An account with that email already exists.");
     }
@@ -109,6 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new AuthError("Could not create the account. Please try again.");
     }
     await persistSession(userEmail, dek);
+    return recoveryKey;
   }, []);
 
   const login = useCallback(async (rawEmail: string, password: string) => {

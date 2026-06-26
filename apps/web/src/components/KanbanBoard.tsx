@@ -1,21 +1,26 @@
-import { Course, Note, Task, TaskStatus, kanbanColumns, taskStatuses } from "@throughline/domain";
-import { DndContext, closestCorners, useDroppable } from "@dnd-kit/core";
-import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { Course, Goal, Note, Task, TaskStatus, kanbanColumns, taskStatuses } from "@throughline/domain";
+import { DndContext, KeyboardSensor, PointerSensor, closestCorners, useDroppable, useSensor, useSensors } from "@dnd-kit/core";
+import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { DotsSixVertical as GripVertical, MagnifyingGlass as Search } from "@phosphor-icons/react";
-import { useMemo, useState, type ReactNode } from "react";
+import { DotsSixVertical as GripVertical } from "@phosphor-icons/react";
+import { useMemo, type ReactNode } from "react";
+import { FilterBar } from "./FilterBar";
+import { useFilters } from "../hooks/useFilters";
 import { countNotesByTask } from "../lib/noteCounts";
 import { TaskCard } from "./TaskCard";
 
 type KanbanBoardProps = {
   tasks: Task[];
   courses: Course[];
+  goals?: Goal[];
   notes?: Note[];
   showGameLayer?: boolean;
   onComplete: (task: Task) => void;
   onStatusChange: (taskId: string, status: TaskStatus) => void;
   onEdit: (task: Task) => void;
+  onUpdateTask?: (task: Task) => void;
   onOpenNotes?: () => void;
+  onStartFocus?: (task: Task) => void;
 };
 
 type DragEndEvent = {
@@ -26,28 +31,27 @@ type DragEndEvent = {
 export function KanbanBoard({
   tasks,
   courses,
+  goals = [],
   notes = [],
   showGameLayer = false,
   onComplete,
   onStatusChange,
   onEdit,
-  onOpenNotes
+  onUpdateTask,
+  onOpenNotes,
+  onStartFocus
 }: KanbanBoardProps) {
   const courseMap = new Map(courses.map((course) => [course.id, course]));
   const noteCounts = countNotesByTask(notes);
-  const [projectFilter, setProjectFilter] = useState("");
-  const [search, setSearch] = useState("");
+  const { filters, setFilter, applyFilters } = useFilters();
+  const filteredTasks = useMemo(() => applyFilters(tasks, false, true), [tasks, applyFilters]);
 
-  const filteredTasks = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    return tasks.filter((task) => {
-      const matchesProject =
-        !projectFilter ||
-        (projectFilter === "__none" ? !task.courseId : task.courseId === projectFilter);
-      const matchesSearch = !query || task.title.toLowerCase().includes(query);
-      return matchesProject && matchesSearch;
-    });
-  }, [tasks, projectFilter, search]);
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates
+    })
+  );
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
@@ -71,33 +75,9 @@ export function KanbanBoard({
           <span className="eyebrow">Workflow</span>
           <h1>Board</h1>
         </div>
-        <div className="view-toolbar">
-          <label className="toolbar-search">
-            <Search size={15} />
-            <input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search tasks"
-              aria-label="Search tasks"
-            />
-          </label>
-          <select
-            className="toolbar-filter"
-            value={projectFilter}
-            onChange={(event) => setProjectFilter(event.target.value)}
-            aria-label="Filter by project"
-          >
-            <option value="">All projects</option>
-            {courses.map((course) => (
-              <option key={course.id} value={course.id}>
-                {course.name}
-              </option>
-            ))}
-            <option value="__none">No project</option>
-          </select>
-        </div>
+        <FilterBar courses={courses} goals={goals} filters={filters} setFilter={setFilter} showDateFilter={true} showStatusFilter={false} />
       </header>
-      <DndContext collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
+      <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
         <section className="kanban-board" aria-label="Kanban board">
         {taskStatuses.map((status) => {
           const columnTasks = filteredTasks.filter((task) => task.status === status);
@@ -114,7 +94,9 @@ export function KanbanBoard({
                     onComplete={onComplete}
                     onStatusChange={onStatusChange}
                     onEdit={onEdit}
+                    onUpdateTask={onUpdateTask}
                     onOpenNotes={onOpenNotes}
+                    onStartFocus={onStartFocus}
                   />
                 ))}
               </SortableContext>
@@ -149,7 +131,9 @@ function SortableQuest({
   onComplete,
   onStatusChange,
   onEdit,
-  onOpenNotes
+  onUpdateTask,
+  onOpenNotes,
+  onStartFocus
 }: {
   task: Task;
   course?: Course;
@@ -158,7 +142,9 @@ function SortableQuest({
   onComplete: (task: Task) => void;
   onStatusChange: (taskId: string, status: TaskStatus) => void;
   onEdit: (task: Task) => void;
+  onUpdateTask?: (task: Task) => void;
   onOpenNotes?: () => void;
+  onStartFocus?: (task: Task) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: task.id,
@@ -170,6 +156,42 @@ function SortableQuest({
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={isDragging ? "sortable-quest dragging" : "sortable-quest"}
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" && e.target === e.currentTarget) {
+          e.preventDefault();
+          onEdit(task);
+          return;
+        }
+        if (e.ctrlKey) {
+          if (e.key === "ArrowLeft") {
+            const currentIndex = taskStatuses.indexOf(task.status);
+            if (currentIndex > 0) {
+              e.preventDefault();
+              onStatusChange(task.id, taskStatuses[currentIndex - 1]);
+            }
+          } else if (e.key === "ArrowRight") {
+            const currentIndex = taskStatuses.indexOf(task.status);
+            if (currentIndex < taskStatuses.length - 1) {
+              e.preventDefault();
+              onStatusChange(task.id, taskStatuses[currentIndex + 1]);
+            }
+          }
+        } else {
+          if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+            e.preventDefault();
+            const parent = e.currentTarget.parentElement;
+            if (!parent) return;
+            const siblings = Array.from(parent.querySelectorAll('.sortable-quest'));
+            const index = siblings.indexOf(e.currentTarget);
+            if (e.key === "ArrowDown" && index < siblings.length - 1) {
+              (siblings[index + 1] as HTMLElement).focus();
+            } else if (e.key === "ArrowUp" && index > 0) {
+              (siblings[index - 1] as HTMLElement).focus();
+            }
+          }
+        }
+      }}
     >
       <button
         className="drag-handle"
@@ -190,7 +212,9 @@ function SortableQuest({
         onComplete={onComplete}
         onStatusChange={onStatusChange}
         onEdit={onEdit}
+        onUpdateTask={onUpdateTask}
         onOpenNotes={onOpenNotes}
+        onStartFocus={onStartFocus}
       />
     </div>
   );

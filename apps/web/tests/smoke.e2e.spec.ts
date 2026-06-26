@@ -19,10 +19,10 @@ test("renders today and board", async ({ page }) => {
 test("captures, moves, and completes a task", async ({ page }) => {
   const title = `UX flow task ${Date.now()}`;
   await page.goto("/app");
-  await page.getByRole("button", { name: "New task" }).click();
+  await page.getByRole("button", { name: /New task/i }).click();
   await page.getByLabel("Title").fill(title);
   await page.getByLabel("Due").fill("2026-12-04T14:30");
-  await page.getByRole("button", { name: "Add task" }).click();
+  await page.getByRole("button", { name: "Add task", exact: true }).click();
   // The quick-add sheet closes after capture.
   await expect(page.getByLabel("Title")).toHaveCount(0);
 

@@ -1,6 +1,8 @@
-import { Course, Task, kanbanColumns } from "@throughline/domain";
-import { CalendarBlank } from "@phosphor-icons/react";
-import { useState, type CSSProperties } from "react";
+import { Course, Goal, Task, kanbanColumns } from "@throughline/domain";
+import { CalendarBlank, Plus, Play } from "@phosphor-icons/react";
+import { useState, useMemo, type CSSProperties } from "react";
+import { FilterBar } from "./FilterBar";
+import { useFilters } from "../hooks/useFilters";
 import { APP_LOCALE, capitalizeFirst } from "../lib/format";
 import { EmptyState } from "./EmptyState";
 
@@ -13,12 +15,12 @@ function formatTime(date: Date) {
   return date.toLocaleTimeString(APP_LOCALE, { hour: "numeric", minute: "2-digit" });
 }
 
-export function CalendarTimeline({ tasks, courses }: { tasks: Task[]; courses: Course[] }) {
+export function CalendarTimeline({ tasks, courses, goals = [], onNewTask, onStartFocus }: { tasks: Task[]; courses: Course[]; goals?: Goal[]; onNewTask?: (date?: Date) => void; onStartFocus?: (task: Task) => void }) {
   const courseMap = new Map(courses.map((course) => [course.id, course]));
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const [selectedKey, setSelectedKey] = useState(() => localDayKey(today));
-  const [projectFilter, setProjectFilter] = useState("");
+  const { filters, setFilter, applyFilters } = useFilters();
 
   const days = Array.from({ length: 10 }, (_, index) => {
     const date = new Date(today);
@@ -26,12 +28,11 @@ export function CalendarTimeline({ tasks, courses }: { tasks: Task[]; courses: C
     return date;
   });
 
-  const dayTasks = tasks
-    .filter((task) => task.dueAt && localDayKey(new Date(task.dueAt)) === selectedKey)
-    .filter((task) =>
-      !projectFilter ? true : projectFilter === "__none" ? !task.courseId : task.courseId === projectFilter
-    )
-    .sort((a, b) => new Date(a.dueAt as string).getTime() - new Date(b.dueAt as string).getTime());
+  const dayTasks = useMemo(() => {
+    return applyFilters(tasks, true, false)
+      .filter((task) => task.dueAt && localDayKey(new Date(task.dueAt)) === selectedKey)
+      .sort((a, b) => new Date(a.dueAt as string).getTime() - new Date(b.dueAt as string).getTime());
+  }, [tasks, applyFilters, selectedKey]);
 
   const selectedDate = new Date(`${selectedKey}T12:00:00`);
 
@@ -42,24 +43,7 @@ export function CalendarTimeline({ tasks, courses }: { tasks: Task[]; courses: C
           <span className="eyebrow">Agenda</span>
           <h1>Timeline</h1>
         </div>
-        {courses.length ? (
-          <div className="view-toolbar">
-            <select
-              className="toolbar-filter"
-              value={projectFilter}
-              onChange={(event) => setProjectFilter(event.target.value)}
-              aria-label="Filter by project"
-            >
-              <option value="">All projects</option>
-              {courses.map((course) => (
-                <option key={course.id} value={course.id}>
-                  {course.name}
-                </option>
-              ))}
-              <option value="__none">No project</option>
-            </select>
-          </div>
-        ) : null}
+        <FilterBar courses={courses} goals={goals} filters={filters} setFilter={setFilter} showDateFilter={false} showStatusFilter={true} />
       </header>
 
       <div className="day-strip" role="tablist" aria-label="Select a day">
@@ -82,9 +66,18 @@ export function CalendarTimeline({ tasks, courses }: { tasks: Task[]; courses: C
         })}
       </div>
 
-      <h2 className="agenda-day-title">
-        {capitalizeFirst(selectedDate.toLocaleDateString(APP_LOCALE, { weekday: "long", month: "long", day: "numeric" }))}
-      </h2>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="font-headline-md text-headline-md text-on-surface">
+          {capitalizeFirst(selectedDate.toLocaleDateString(APP_LOCALE, { weekday: "long", month: "long", day: "numeric" }))}
+        </h2>
+        <button 
+          onClick={() => onNewTask?.(selectedDate)}
+          className="bg-primary text-on-primary font-label-md text-label-md px-4 py-2 rounded-lg hover:scale-[1.015] active:scale-[0.98] transition-all flex items-center gap-2"
+        >
+          <Plus size={16} weight="bold" />
+          New Task for Today
+        </button>
+      </div>
 
       {dayTasks.length ? (
         <div className="agenda">
@@ -104,8 +97,23 @@ export function CalendarTimeline({ tasks, courses }: { tasks: Task[]; courses: C
                     {task.estimatedMinutes ? ` – ${formatTime(end)}` : ""}
                     {course ? ` · ${course.name}` : ""}
                   </span>
-                  <h3>{task.title}</h3>
-                  <span className="agenda-status">{kanbanColumns[task.status]}</span>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                    <div>
+                      <h3>{task.title}</h3>
+                      <span className="agenda-status">{kanbanColumns[task.status]}</span>
+                    </div>
+                    {onStartFocus && task.status !== "done" ? (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onStartFocus(task); }}
+                        className="meta-chip meta-chip-button hover:bg-surface-container-highest transition-colors cursor-pointer"
+                        style={{ border: "1px solid var(--border)", background: "var(--surface)" }}
+                        aria-label={`Start focus mode for ${task.title}`}
+                      >
+                        <Play size={14} />
+                        Focus
+                      </button>
+                    ) : null}
+                  </div>
                 </div>
               </div>
             );

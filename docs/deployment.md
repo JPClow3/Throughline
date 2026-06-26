@@ -1,6 +1,6 @@
-# Deployment (Docker + Dokploy on EC2)
+# Deployment (Docker First & Dokploy on EC2)
 
-This guide deploys the app as a Docker Compose stack managed by
+Throughline is designed as a **Docker-first deployment app**. This guide deploys the app as a Docker Compose stack managed by
 [Dokploy](https://dokploy.com) (a self-hosted PaaS that uses Traefik for ingress
 and Let's Encrypt TLS) on an AWS EC2 instance.
 

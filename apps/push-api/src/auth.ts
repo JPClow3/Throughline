@@ -12,7 +12,9 @@ const SignupSchema = z.object({
   email: z.string().email().max(254),
   salt: blob,
   authKey: blob,
-  wrappedDek: blob
+  wrappedDek: blob,
+  recoveryAuthKey: blob,
+  recoveryWrappedDek: blob
 });
 const LoginSchema = z.object({ email: z.string().email().max(254), authKey: blob });
 const SaltSchema = z.object({ email: z.string().email().max(254) });

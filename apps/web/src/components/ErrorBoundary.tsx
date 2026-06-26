@@ -27,14 +27,14 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   render() {
     if (this.state.error) {
       return (
-        <div className="crash-screen" role="alert">
-          <div className="crash-card glass-panel">
-            <span className="empty-state-icon">
-              <Warning size={26} />
+        <div className="crash-screen view-layout" role="alert">
+          <div className="crash-card glass-panel" style={{ textAlign: "center", padding: "var(--space-10) var(--space-6)", borderRadius: "var(--radius-card)", maxWidth: "400px" }}>
+            <span className="empty-state-icon" style={{ margin: "0 auto var(--space-4)" }}>
+              <Warning size={32} color="var(--danger)" />
             </span>
-            <h1>Something went sideways</h1>
-            <p>An unexpected error interrupted the view. Your data is saved locally and is safe.</p>
-            <button className="primary-button" type="button" onClick={() => window.location.reload()}>
+            <h1 style={{ fontSize: "var(--text-section)", marginBottom: "var(--space-2)" }}>Something went sideways</h1>
+            <p style={{ color: "var(--ink-muted)", marginBottom: "var(--space-6)" }}>An unexpected error interrupted the view. Your data is saved locally and is safe.</p>
+            <button className="primary-button" type="button" onClick={() => window.location.reload()} style={{ margin: "0 auto" }}>
               Reload Throughline
             </button>
           </div>

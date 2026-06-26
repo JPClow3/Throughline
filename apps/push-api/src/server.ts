@@ -4,7 +4,7 @@ import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
 import Fastify from "fastify";
 import webpush from "web-push";
-import { registerAuthRoutes } from "./auth";
+import { registerAuthRoutes, SESSION_COOKIE } from "./auth";
 import { registerSyncRoutes } from "./sync";
 import { hasVapidConfig, PushApiConfig, readPushApiConfig } from "./config";
 import {
@@ -39,12 +39,19 @@ export async function createServer(options: CreateServerOptions = {}) {
     );
   }
 
-  const app = Fastify({ logger: true });
+  const app = Fastify({ 
+    logger: true,
+    trustProxy: config.trustProxy ?? true
+  });
 
   // Register plugins before routes so their global hooks apply to every route.
   await app.register(rateLimit, {
     max: config.rateLimitMax ?? 120,
-    timeWindow: "1 minute"
+    timeWindow: "1 minute",
+    keyGenerator: (request) => {
+      const session = request.cookies?.[SESSION_COOKIE];
+      return session ?? request.ip;
+    }
   });
 
   await app.register(cors, {

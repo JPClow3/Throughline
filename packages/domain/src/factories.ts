@@ -31,6 +31,7 @@ type TaskDraft = {
   attributes?: RpgAttribute[];
   tags?: string[];
   subtasks?: Subtask[];
+  recurrence?: "daily" | "weekly" | "monthly" | "yearly";
 };
 
 type GoalDraft = {
@@ -101,6 +102,7 @@ export function createTask(input: TaskDraft & { id?: string; createdAt?: string 
     attributes: input.attributes ?? ["focus"],
     tags: input.tags ?? [],
     subtasks: input.subtasks ?? [],
+    recurrence: input.recurrence,
     visualSeed: Math.floor(Math.random() * 9999),
     createdAt: input.createdAt ?? now,
     updatedAt: now

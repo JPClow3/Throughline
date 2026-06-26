@@ -1,5 +1,6 @@
-import { Goal, Task, deriveUserProgress } from "@throughline/domain";
+import { Goal, Task } from "@throughline/domain";
 import { IconContext } from "@phosphor-icons/react";
+import { X, DownloadSimple } from "@phosphor-icons/react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { MotionConfig, motion } from "motion/react";
 import React from "react";
@@ -10,12 +11,15 @@ import { Sheet } from "./components/Sheet";
 import { ViewSkeleton } from "./components/Skeleton";
 import { TaskComposer } from "./components/TaskComposer";
 import { TaskEditor } from "./components/TaskEditor";
+import { FocusOverlay } from "./components/FocusOverlay";
+import { CommandPalette } from "./components/CommandPalette";
 import { useAuth } from "./auth/AuthProvider";
 import { getAppearanceSettings, saveAppearanceSettings } from "./data/repositories";
 import { useGoals } from "./hooks/useGoals";
 import { useNotes } from "./hooks/useNotes";
 import { useTasks } from "./hooks/useTasks";
 import { useTheme } from "./hooks/useTheme";
+import { usePwaInstall } from "./hooks/usePwaInstall";
 import { useSync } from "./sync/useSync";
 
 const KanbanBoard = React.lazy(() => import("./components/KanbanBoard").then((module) => ({ default: module.KanbanBoard })));
@@ -27,6 +31,9 @@ const NotesView = React.lazy(() => import("./components/NotesView").then((module
 const ProjectsView = React.lazy(() =>
   import("./components/ProjectsView").then((module) => ({ default: module.ProjectsView }))
 );
+const InsightsView = React.lazy(() =>
+  import("./pages/InsightsView").then((module) => ({ default: module.InsightsView }))
+);
 const SettingsPanel = React.lazy(() =>
   import("./components/SettingsPanel").then((module) => ({ default: module.SettingsPanel }))
 );
@@ -34,21 +41,23 @@ const SettingsPanel = React.lazy(() =>
 function initialView(): AppView {
   const params = new URLSearchParams(window.location.search);
   const view = params.get("view");
-  const views: AppView[] = ["goals", "kanban", "timeline", "notes", "courses", "settings"];
+  const views: AppView[] = ["goals", "kanban", "timeline", "notes", "courses", "insights", "settings"];
   return views.includes(view as AppView) ? (view as AppView) : "dashboard";
 }
 
 export function App() {
   const [view, setView] = useStateWithUrl(initialView);
   const [composerOpen, setComposerOpen] = React.useState(false);
+  const [commandPaletteOpen, setCommandPaletteOpen] = React.useState(false);
+  const [composerDate, setComposerDate] = React.useState<Date | undefined>(undefined);
   const [goalOpen, setGoalOpen] = React.useState(false);
   const [editingTask, setEditingTask] = React.useState<Task | null>(null);
   const [editingGoal, setEditingGoal] = React.useState<Goal | null>(null);
   const [selectedGoalId, setSelectedGoalId] = React.useState<string | null>(null);
+  const [focusTask, setFocusTask] = React.useState<Task | null>(null);
   const {
     tasks = [],
     courses = [],
-    progress,
     loading,
     addTask,
     updateTask,
@@ -65,7 +74,15 @@ export function App() {
   const appearanceSettings = useLiveQuery(() => getAppearanceSettings(), []);
   useTheme(appearanceSettings?.theme);
   const showGameLayer = appearanceSettings?.showGameLayer ?? false;
-  const derivedProgress = progress ?? deriveUserProgress(tasks);
+  
+  const { isInstallable, promptToInstall } = usePwaInstall();
+  const [bannerDismissed, setBannerDismissed] = React.useState(() => {
+    try {
+      return typeof localStorage !== 'undefined' && localStorage.getItem("pwa_banner_dismissed") === "true";
+    } catch {
+      return false;
+    }
+  });
 
   const openGoal = (goalId: string) => {
     setSelectedGoalId(goalId);
@@ -78,10 +95,52 @@ export function App() {
     }
   };
 
+  const toggleTheme = () => {
+    const current = appearanceSettings?.theme;
+    const next = current === "dark" ? "light" : current === "system" ? "dark" : "dark";
+    void saveAppearanceSettings({ theme: next });
+  };
+
   return (
     <MotionConfig reducedMotion="user">
       <IconContext.Provider value={{ weight: "regular" }}>
-        <AppShell view={view} onViewChange={setView}>
+        <div className="ambient-mesh"></div>
+        
+        {isInstallable && !bannerDismissed && (
+          <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] bg-surface-2 border border-border rounded-xl shadow-lg px-4 py-3 flex items-center gap-4 max-w-[90vw] md:max-w-md">
+            <div className="bg-primary/10 p-2 rounded-lg text-primary">
+              <DownloadSimple size={20} />
+            </div>
+            <div className="flex-1">
+              <p className="text-body-md font-medium text-ink">Install Throughline</p>
+              <p className="text-label-sm text-ink-muted">For offline access and a native feel</p>
+            </div>
+            <button 
+              onClick={promptToInstall}
+              className="bg-primary text-white px-3 py-1.5 rounded-lg text-label-md font-medium hover:bg-primary/90"
+            >
+              Install
+            </button>
+            <button 
+              onClick={() => {
+                setBannerDismissed(true);
+                try {
+                  if (typeof localStorage !== 'undefined') {
+                    localStorage.setItem("pwa_banner_dismissed", "true");
+                  }
+                } catch {
+                  // ignore
+                }
+              }}
+              className="text-ink-muted hover:text-ink p-1"
+              aria-label="Dismiss"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        )}
+
+        <AppShell view={view} onViewChange={setView} onNewTask={(date) => { setComposerDate(date); setComposerOpen(true); }}>
           <motion.div
             key={view}
             initial={{ opacity: 0, y: 8 }}
@@ -96,14 +155,11 @@ export function App() {
                 {view === "dashboard" ? (
                   <Dashboard
                     tasks={tasks}
-                    courses={courses}
-                    notes={notes}
-                    progress={derivedProgress}
-                    showGameLayer={showGameLayer}
                     onComplete={completeTask}
-                    onNewTask={() => setComposerOpen(true)}
+                    onUpdateTask={updateTask}
+                    onNewTask={(date) => { setComposerDate(date); setComposerOpen(true); }}
                     onEdit={setEditingTask}
-                    onOpenNotes={() => setView("notes")}
+                    onStartFocus={setFocusTask}
                   />
                 ) : null}
                 {view === "goals" ? (
@@ -125,6 +181,7 @@ export function App() {
                       onCompleteTask={completeTask}
                       onStatusChange={updateTaskStatus}
                       onEditTask={setEditingTask}
+                      onUpdateTask={updateTask}
                       onReorderTask={updateTask}
                     />
                   </React.Suspense>
@@ -134,18 +191,25 @@ export function App() {
                     <KanbanBoard
                       tasks={tasks}
                       courses={courses}
+                      goals={goals}
                       notes={notes}
                       showGameLayer={showGameLayer}
                       onComplete={completeTask}
                       onStatusChange={updateTaskStatus}
                       onEdit={setEditingTask}
+                      onUpdateTask={updateTask}
                       onOpenNotes={() => setView("notes")}
                     />
                   </React.Suspense>
                 ) : null}
                 {view === "timeline" ? (
                   <React.Suspense fallback={<ViewSkeleton />}>
-                    <CalendarTimeline tasks={tasks} courses={courses} />
+                    <CalendarTimeline 
+                      tasks={tasks} 
+                      courses={courses} 
+                      goals={goals} 
+                      onNewTask={(date) => { setComposerDate(date); setComposerOpen(true); }}
+                    />
                   </React.Suspense>
                 ) : null}
                 {view === "notes" ? (
@@ -173,6 +237,11 @@ export function App() {
                     />
                   </React.Suspense>
                 ) : null}
+                {view === "insights" ? (
+                  <React.Suspense fallback={<ViewSkeleton />}>
+                    <InsightsView />
+                  </React.Suspense>
+                ) : null}
                 {view === "settings" ? (
                   <React.Suspense fallback={<ViewSkeleton />}>
                     <SettingsPanel
@@ -191,14 +260,31 @@ export function App() {
           </motion.div>
         </AppShell>
 
-        <Sheet open={composerOpen} title="New task" onClose={() => setComposerOpen(false)}>
+        <CommandPalette 
+          open={commandPaletteOpen} 
+          setOpen={setCommandPaletteOpen}
+          onNavigate={setView}
+          onNewTask={() => setComposerOpen(true)}
+          onToggleTheme={toggleTheme}
+        />
+
+        <Sheet 
+          open={composerOpen} 
+          title="New task" 
+          onClose={() => {
+            setComposerOpen(false);
+            setComposerDate(undefined);
+          }}
+        >
           <TaskComposer
             courses={courses}
             goals={goals}
             showGameLayer={showGameLayer}
+            initialDate={composerDate}
             onAddTask={async (input) => {
               await addTask(input);
               setComposerOpen(false);
+              setComposerDate(undefined);
             }}
           />
         </Sheet>
@@ -250,6 +336,8 @@ export function App() {
             />
           ) : null}
         </Sheet>
+        
+        <FocusOverlay task={focusTask} onClose={() => setFocusTask(null)} />
       </IconContext.Provider>
     </MotionConfig>
   );

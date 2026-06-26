@@ -44,6 +44,7 @@ export type TaskInput = {
   attributes: RpgAttribute[];
   tags?: string[];
   subtasks?: Subtask[];
+  recurrence?: "daily" | "weekly" | "monthly" | "yearly";
 };
 
 export type GoalInput = {
@@ -106,6 +107,7 @@ export async function addTask(input: TaskInput) {
     tags: input.tags ?? [],
     subtasks: input.subtasks ?? [],
     status: "backlog",
+    recurrence: input.recurrence,
     estimatedMinutes: input.energy * 25
   });
 
@@ -116,11 +118,55 @@ export async function addTask(input: TaskInput) {
 
 export async function updateTaskStatus(taskId: string, status: TaskStatus) {
   const completedAt = status === "done" ? now() : undefined;
-  await db.tasks.update(taskId, {
-    status,
-    updatedAt: now(),
-    completedAt
+  
+  await db.transaction("rw", db.tasks, async () => {
+    const task = await db.tasks.get(taskId);
+    if (!task) return;
+
+    await db.tasks.update(taskId, {
+      status,
+      updatedAt: now(),
+      completedAt
+    });
+
+    if (status === "done" && task.recurrence) {
+      const subtasks = task.subtasks.map(st => ({ ...st, completed: false }));
+      let nextDueAt: string | undefined = undefined;
+      let nextReminderAt: string | undefined = undefined;
+
+      if (task.dueAt) {
+        const date = new Date(task.dueAt);
+        if (task.recurrence === "daily") {
+          date.setDate(date.getDate() + 1);
+        } else if (task.recurrence === "weekly") {
+          date.setDate(date.getDate() + 7);
+        } else if (task.recurrence === "monthly") {
+          date.setMonth(date.getMonth() + 1);
+        } else if (task.recurrence === "yearly") {
+          date.setFullYear(date.getFullYear() + 1);
+        }
+        nextDueAt = date.toISOString();
+
+        if (task.reminderAt) {
+          const dueTime = new Date(task.dueAt).getTime();
+          const reminderTime = new Date(task.reminderAt).getTime();
+          const diff = dueTime - reminderTime;
+          nextReminderAt = new Date(new Date(nextDueAt).getTime() - diff).toISOString();
+        }
+      }
+
+      const newTask = createTask({
+        ...task,
+        subtasks,
+        status: "backlog",
+        dueAt: nextDueAt,
+        reminderAt: nextReminderAt
+      });
+
+      await db.tasks.put(newTask);
+    }
   });
+
   await refreshProgress();
 }
 
@@ -284,6 +330,7 @@ export async function saveReminderSyncState(patch: Partial<Omit<ReminderSyncStat
 export async function getAppearanceSettings(): Promise<AppearanceSettings> {
   const defaults: AppearanceSettings = {
     id: appearanceSettingsId,
+    // DEPRECATED: Kept for Dexie schema backward compatibility. No longer used in UI.
     lowPower3d: false,
     theme: "system",
     showGameLayer: false,

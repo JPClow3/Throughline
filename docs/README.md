@@ -19,6 +19,8 @@ This folder is the project memory. If you come back later, read this file first,
 - [Feature Specs](feature-specs.md): Today, goals, notes, task composer, Kanban, timeline, projects, ICS, and notifications.
 - [Offline PWA](offline-pwa.md): Service worker, installability, and offline behavior.
 - [Notifications](notifications.md): Local notification flow, push API endpoints, VAPID setup, and privacy rules.
+- [Deployment](deployment.md): Docker-first deployment architecture, composition, and Dokploy setup.
+- [Design](design.md): LiquidGlass design system rules and tokens.
 - [Development Workflow](development-workflow.md): Setup, commands, quality gates, generated files, and troubleshooting.
 - [Testing Strategy](testing-strategy.md): Unit, E2E, performance, stress, and quality gate expectations.
 - [Coverage Tracking](coverage-tracking.md): Coverage reports, thresholds, and ratchet rules.

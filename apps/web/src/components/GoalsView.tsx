@@ -24,6 +24,7 @@ type GoalsViewProps = {
   onCompleteTask: (task: Task) => void;
   onStatusChange: (taskId: string, status: TaskStatus) => void;
   onEditTask: (task: Task) => void;
+  onUpdateTask?: (task: Task) => void;
   onReorderTask: (task: Task) => Promise<void>;
 };
 
@@ -44,6 +45,7 @@ export function GoalsView({
   onCompleteTask,
   onStatusChange,
   onEditTask,
+  onUpdateTask,
   onReorderTask
 }: GoalsViewProps) {
   const selected = selectedId ? goals.find((goal) => goal.id === selectedId) : undefined;
@@ -62,6 +64,7 @@ export function GoalsView({
         onCompleteTask={onCompleteTask}
         onStatusChange={onStatusChange}
         onEditTask={onEditTask}
+        onUpdateTask={onUpdateTask}
         onEditGoal={onEditGoal}
         onReorderTask={onReorderTask}
         onSetGoalStatus={onSetGoalStatus}

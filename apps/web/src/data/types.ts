@@ -21,6 +21,7 @@ export type ThemePreference = "light" | "dark" | "system";
 
 export type AppearanceSettings = {
   id: typeof appearanceSettingsId;
+  // DEPRECATED: Kept for Dexie schema backward compatibility. No longer used in UI.
   lowPower3d: boolean;
   theme: ThemePreference;
   showGameLayer: boolean;

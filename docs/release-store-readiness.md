@@ -16,9 +16,10 @@
 2. Validate PWA installability in Edge.
 3. Run Lighthouse/PWA checks.
 4. Confirm privacy text says task content stays local in v1.
-5. Package with PWABuilder.
-6. Use generated Windows assets from the PWA icon.
-7. Verify the packaged app opens Today, Board, Settings, and survives an offline reload.
+5. Go to [PWABuilder](https://www.pwabuilder.com/) and enter the production URL.
+6. Verify the manifest contains the `192x192` and `512x512` PNG icons (now included in `vite.config.ts`).
+7. Package the app as a Windows store bundle.
+8. Verify the packaged app opens Today, Board, Settings, and survives an offline reload.
 
 ## Release blockers
 

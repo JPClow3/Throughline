@@ -1,7 +1,8 @@
 import { Goal, Note, Task } from "@throughline/domain";
-import { LinkSimple as Link2, PushPin as Pin, Trash as Trash2, X } from "@phosphor-icons/react";
+import { Eye, LinkSimple as Link2, PushPin as Pin, Trash as Trash2, X } from "@phosphor-icons/react";
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
+import { EmptyState } from "./EmptyState";
 
 type LinkKind = "task" | "goal";
 
@@ -105,7 +106,11 @@ export function NoteEditor({ note, tasks, goals, onSave, onDelete, onToggleLink,
           {body.trim() ? (
             <ReactMarkdown>{body}</ReactMarkdown>
           ) : (
-            <p className="note-preview-empty">Nothing to preview yet.</p>
+            <EmptyState
+              variant="inline"
+              icon={<Eye size={24} />}
+              title="Nothing to preview yet"
+            />
           )}
         </div>
       )}
@@ -117,7 +122,11 @@ export function NoteEditor({ note, tasks, goals, onSave, onDelete, onToggleLink,
         </div>
         <div className="note-link-chips">
           {linkedTasks.length === 0 && linkedGoals.length === 0 ? (
-            <span className="note-links-empty">Nothing linked yet.</span>
+            <EmptyState
+              variant="inline"
+              icon={<Link2 size={24} />}
+              title="Nothing linked yet"
+            />
           ) : null}
           {linkedGoals.map((goal) => (
             <span key={goal.id} className="note-link-chip note-link-goal">

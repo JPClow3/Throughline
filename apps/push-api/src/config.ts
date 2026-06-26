@@ -17,6 +17,8 @@ export type PushApiConfig = {
   sessionSecret?: string;
   /** Whether session cookies require HTTPS (default true; set false only for local plain-http). */
   cookieSecure?: boolean;
+  /** Whether the server is behind a proxy like Traefik (default true). */
+  trustProxy?: boolean;
 };
 
 export function readPushApiConfig(env: NodeJS.ProcessEnv = process.env): PushApiConfig {
@@ -32,7 +34,8 @@ export function readPushApiConfig(env: NodeJS.ProcessEnv = process.env): PushApi
     rateLimitMax: Number(env.RATE_LIMIT_MAX ?? 120),
     dbPath: env.DB_PATH ?? "data/throughline.db",
     sessionSecret: env.SESSION_SECRET || undefined,
-    cookieSecure: env.COOKIE_SECURE !== "false"
+    cookieSecure: env.COOKIE_SECURE !== "false",
+    trustProxy: env.TRUST_PROXY !== "false"
   };
 }
 

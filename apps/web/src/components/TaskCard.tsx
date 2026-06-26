@@ -1,7 +1,7 @@
 import { Course, Task, TaskStatus, kanbanColumns } from "@throughline/domain";
-import { Check, Clock as Clock3, Diamond as Gem, ListChecks, Note as StickyNote, Target } from "@phosphor-icons/react";
-import { motion } from "motion/react";
-import type { CSSProperties } from "react";
+import { Check, Clock as Clock3, Diamond as Gem, ListChecks, Note as StickyNote, Target, Plus, CaretDown, CaretUp, Play } from "@phosphor-icons/react";
+import { motion, AnimatePresence } from "motion/react";
+import { useState, type CSSProperties } from "react";
 import { APP_LOCALE, capitalizeFirst } from "../lib/format";
 
 type TaskCardProps = {
@@ -17,8 +17,10 @@ type TaskCardProps = {
   onComplete?: (task: Task) => void;
   onStatusChange?: (taskId: string, status: TaskStatus) => void;
   onEdit?: (task: Task) => void;
+  onUpdateTask?: (task: Task) => void;
   /** Open the Notes view (used by the linked-notes count chip). */
   onOpenNotes?: () => void;
+  onStartFocus?: (task: Task) => void;
 };
 
 type DueTone = "done" | "overdue" | "soon" | "normal";
@@ -33,13 +35,36 @@ export function TaskCard({
   onComplete,
   onStatusChange,
   onEdit,
-  onOpenNotes
+  onUpdateTask,
+  onOpenNotes,
+  onStartFocus
 }: TaskCardProps) {
   const done = task.status === "done";
   const due = task.dueAt ? new Date(task.dueAt) : undefined;
   const dueInfo = due ? describeDue(due, done) : undefined;
   const totalSubtasks = task.subtasks.length;
   const completedSubtasks = task.subtasks.filter((subtask) => subtask.completed).length;
+
+  const [expanded, setExpanded] = useState(false);
+  const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
+
+  function toggleSubtask(index: number) {
+    if (!onUpdateTask) return;
+    const nextSubtasks = [...task.subtasks];
+    nextSubtasks[index] = { ...nextSubtasks[index], completed: !nextSubtasks[index].completed };
+    onUpdateTask({ ...task, subtasks: nextSubtasks });
+  }
+
+  function handleAddSubtask(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter" && newSubtaskTitle.trim() && onUpdateTask) {
+      e.preventDefault();
+      onUpdateTask({
+        ...task,
+        subtasks: [...task.subtasks, { id: crypto.randomUUID(), title: newSubtaskTitle.trim(), completed: false }]
+      });
+      setNewSubtaskTitle("");
+    }
+  }
 
   return (
     <motion.article
@@ -77,7 +102,13 @@ export function TaskCard({
             onComplete?.(task);
           }}
         >
-          <Check size={16} />
+          <motion.div
+            initial={false}
+            animate={done ? { scale: [1, 1.4, 1], rotate: [0, 15, 0] } : { scale: 1, rotate: 0 }}
+            transition={{ type: "spring", stiffness: 400, damping: 12 }}
+          >
+            <Check size={16} />
+          </motion.div>
         </button>
       </div>
 
@@ -95,12 +126,43 @@ export function TaskCard({
 
       {totalSubtasks ? (
         <div
-          className="subtask-progress"
+          className={`subtask-progress cursor-pointer hover:opacity-80 transition-opacity ${expanded ? 'mb-2' : ''}`}
+          onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
           aria-label={`${completedSubtasks} of ${totalSubtasks} steps complete`}
         >
           <div style={{ width: `${Math.round((completedSubtasks / totalSubtasks) * 100)}%` }} />
         </div>
       ) : null}
+
+      <AnimatePresence>
+        {expanded && onUpdateTask && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="flex flex-col gap-2 mt-2 mb-4 overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {task.subtasks.map((st, idx) => (
+              <label key={st.id} className="flex items-center gap-3 text-sm text-on-surface-variant hover:text-on-surface cursor-pointer p-1 -mx-1 rounded hover:bg-white/40 transition-colors">
+                <input type="checkbox" checked={st.completed} onChange={() => toggleSubtask(idx)} className="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary focus:ring-offset-0 bg-transparent" />
+                <span className={st.completed ? "line-through opacity-60" : ""}>{st.title}</span>
+              </label>
+            ))}
+            <div className="flex items-center gap-3 mt-1 text-sm p-1 -mx-1">
+              <Plus size={16} className="text-outline flex-shrink-0 ml-0.5" />
+              <input 
+                type="text" 
+                value={newSubtaskTitle}
+                onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                onKeyDown={handleAddSubtask}
+                placeholder="Add step (press Enter)..." 
+                className="bg-transparent border-none focus:ring-0 p-0 text-on-surface placeholder-outline-variant w-full"
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="task-card-meta">
         {dueInfo ? (
@@ -115,11 +177,16 @@ export function TaskCard({
             {goalLabel}
           </span>
         ) : null}
-        {totalSubtasks ? (
-          <span className="meta-chip">
+        {totalSubtasks || onUpdateTask ? (
+          <button 
+            type="button"
+            className="meta-chip hover:bg-surface-container-highest cursor-pointer transition-colors"
+            onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
+          >
             <ListChecks size={14} />
-            {completedSubtasks}/{totalSubtasks}
-          </span>
+            {totalSubtasks > 0 ? `${completedSubtasks}/${totalSubtasks}` : "Add steps"}
+            {expanded ? <CaretUp size={12} className="ml-1 opacity-50"/> : <CaretDown size={12} className="ml-1 opacity-50"/>}
+          </button>
         ) : null}
         {noteCount ? (
           onOpenNotes ? (
@@ -138,6 +205,17 @@ export function TaskCard({
               {noteCount}
             </span>
           )
+        ) : null}
+        {onStartFocus && !done ? (
+          <button
+            type="button"
+            className="meta-chip meta-chip-button hover:bg-surface-container-highest cursor-pointer transition-colors"
+            onClick={(e) => { e.stopPropagation(); onStartFocus(task); }}
+            aria-label={`Start focus mode for ${task.title}`}
+          >
+            <Play size={14} />
+            Focus
+          </button>
         ) : null}
         {showGameLayer ? (
           <span className="meta-chip meta-xp">
