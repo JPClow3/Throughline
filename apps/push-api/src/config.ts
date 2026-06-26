@@ -23,7 +23,7 @@ export type PushApiConfig = {
 
 export function readPushApiConfig(env: NodeJS.ProcessEnv = process.env): PushApiConfig {
   return {
-    host: env.HOST ?? "127.0.0.1",
+    host: env.HOST ?? "0.0.0.0",
     port: Number(env.PORT ?? 8787),
     storePath: env.PUSH_STORE_PATH ?? "data/push-store.json",
     vapidPublicKey: env.VAPID_PUBLIC_KEY,
