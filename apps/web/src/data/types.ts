@@ -25,6 +25,7 @@ export type AppearanceSettings = {
   lowPower3d: boolean;
   theme: ThemePreference;
   showGameLayer: boolean;
+  hasCompletedOnboarding?: boolean;
   updatedAt: string;
 };
 

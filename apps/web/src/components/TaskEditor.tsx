@@ -1,7 +1,7 @@
 import { Course, Goal, Priority, Task, TaskStatus, kanbanColumns, priorities, taskStatuses } from "@throughline/domain";
 import { Plus, Trash as Trash2, DotsSixVertical as GripVertical } from "@phosphor-icons/react";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
-import type { DragEndEvent } from "@dnd-kit/core";
+
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { FormEvent, useState } from "react";
@@ -33,7 +33,7 @@ export function TaskEditor({ task, courses, goals = [], onSave, onDelete }: Task
   const [description, setDescription] = useState(task.description);
   const [tags, setTags] = useState(task.tags.join(", "));
   const [subtasks, setSubtasks] = useState([...task.subtasks]);
-  const [recurrence, setRecurrence] = useState<"daily" | "weekly" | "monthly" | "yearly" | "">(task.recurrence ?? "");
+  const [recurrence, setRecurrence] = useState<"daily" | "weekly" | "biweekly" | "monthly" | "custom" | "">(task.recurrence?.pattern ?? "");
 
   function addSubtask() {
     setSubtasks([...subtasks, { id: crypto.randomUUID(), title: "", completed: false }]);
@@ -54,7 +54,8 @@ export function TaskEditor({ task, courses, goals = [], onSave, onDelete }: Task
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  function handleDragEnd(event: DragEndEvent) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function handleDragEnd(event: any) {
     const { active, over } = event;
     if (over && active.id !== over.id) {
       setSubtasks((items) => {
@@ -85,7 +86,7 @@ export function TaskEditor({ task, courses, goals = [], onSave, onDelete }: Task
         .map((tag) => tag.trim())
         .filter(Boolean),
       subtasks: subtasks.map(st => ({ ...st, title: st.title.trim() })).filter(st => st.title),
-      recurrence: recurrence || undefined,
+      recurrence: recurrence ? { pattern: recurrence as "daily" | "weekly" | "biweekly" | "monthly" | "custom" } : undefined,
       completedAt: status === "done" ? task.completedAt ?? new Date().toISOString() : undefined
     });
   }
@@ -176,12 +177,12 @@ export function TaskEditor({ task, courses, goals = [], onSave, onDelete }: Task
       <div className="composer-grid">
         <label>
           <span>Recurrence</span>
-          <select value={recurrence} onChange={(event) => setRecurrence(event.target.value as any)}>
+          <select value={recurrence} onChange={(event) => setRecurrence(event.target.value as "daily" | "weekly" | "biweekly" | "monthly" | "custom" | "")}>
             <option value="">None</option>
             <option value="daily">Daily</option>
             <option value="weekly">Weekly</option>
+            <option value="biweekly">Biweekly</option>
             <option value="monthly">Monthly</option>
-            <option value="yearly">Yearly</option>
           </select>
         </label>
         <label>

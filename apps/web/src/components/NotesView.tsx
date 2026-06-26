@@ -1,9 +1,10 @@
-import { Goal, Note, Task, noteDisplayTitle, noteExcerpt, searchNotes } from "@throughline/domain";
+import { Goal, Note, Task, noteDisplayTitle, noteExcerpt } from "@throughline/domain";
 import { Note as FileText, PushPin as Pin, Plus, MagnifyingGlass as Search } from "@phosphor-icons/react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import type { NoteInput } from "../data/repositories";
 import { EmptyState } from "./EmptyState";
 import { NoteEditor } from "./NoteEditor";
+import { useNotesSearch } from "../hooks/useNotesSearch";
 
 type NotesViewProps = {
   notes: Note[];
@@ -16,6 +17,23 @@ type NotesViewProps = {
   onOpenTask?: (taskId: string) => void;
   onOpenGoal?: (goalId: string) => void;
 };
+
+function HighlightedText({ text, terms }: { text: string; terms: string[] }) {
+  if (!terms.length || !text) return <>{text}</>;
+  
+  // Escape terms for regex and join with OR
+  const escapedTerms = terms.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const regex = new RegExp(`(${escapedTerms.join('|')})`, 'gi');
+  const parts = text.split(regex);
+  
+  return (
+    <>
+      {parts.map((part, i) =>
+        regex.test(part) ? <mark key={i}>{part}</mark> : part
+      )}
+    </>
+  );
+}
 
 export function NotesView({
   notes,
@@ -31,9 +49,19 @@ export function NotesView({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
 
-  const sorted = [...searchNotes(query, notes)].sort(
-    (a, b) => Number(b.pinned) - Number(a.pinned) || new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-  );
+  const { filteredNotes, searchResults } = useNotesSearch(notes, query);
+
+  const sorted = useMemo(() => {
+    // If there is a query, we keep the order of `filteredNotes` because MiniSearch sorts by relevance.
+    // If no query, we sort by pinned then updated date.
+    if (query.trim()) {
+      return filteredNotes;
+    }
+    return [...filteredNotes].sort(
+      (a, b) => Number(b.pinned) - Number(a.pinned) || new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+    );
+  }, [filteredNotes, query]);
+
   const selected = selectedId ? notes.find((note) => note.id === selectedId) ?? null : null;
 
   async function createNote() {
@@ -74,6 +102,9 @@ export function NotesView({
           {sorted.length ? (
             sorted.map((note) => {
               const linkCount = note.taskIds.length + note.goalIds.length;
+              const result = searchResults?.find(r => r.id === note.id);
+              const matchedTerms = result ? Object.keys(result.match) : [];
+              
               return (
                 <button
                   key={note.id}
@@ -82,10 +113,14 @@ export function NotesView({
                   onClick={() => setSelectedId(note.id)}
                 >
                   <div className="note-list-card-head">
-                    <strong>{noteDisplayTitle(note)}</strong>
+                    <strong>
+                      <HighlightedText text={noteDisplayTitle(note)} terms={matchedTerms} />
+                    </strong>
                     {note.pinned ? <Pin size={13} /> : null}
                   </div>
-                  <p>{noteExcerpt(note.body, 90) || "Empty note"}</p>
+                  <p>
+                    <HighlightedText text={noteExcerpt(note.body, 90) || "Empty note"} terms={matchedTerms} />
+                  </p>
                   {linkCount ? <span className="note-list-links">{linkCount} linked</span> : null}
                 </button>
               );

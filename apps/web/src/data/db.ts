@@ -82,6 +82,28 @@ class LiquidGlassDb extends Dexie {
             if (!course.updatedAt) course.updatedAt = now;
           });
       });
+    
+    this.version(6)
+      .stores({
+        tasks: "id,status,courseId,goalId,dueAt,priority,updatedAt",
+        courses: "id,name,code,updatedAt",
+        progress: "id",
+        settings: "id,updatedAt",
+        goals: "id,status,projectId,targetDate,updatedAt",
+        notes: "id,pinned,projectId,updatedAt,*taskIds,*goalIds",
+        tombstones: "key,entity,deletedAt"
+      })
+      .upgrade(async (tx) => {
+        // Migrate recurrence from string to object
+        await tx
+          .table("tasks")
+          .toCollection()
+          .modify((task: Partial<Task> & { recurrence?: string | { pattern: string } }) => {
+            if (typeof task.recurrence === "string") {
+              task.recurrence = { pattern: task.recurrence as any };
+            }
+          });
+      });
   }
 }
 

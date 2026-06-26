@@ -236,6 +236,12 @@ export function SettingsPanel({
           </span>
         </label>
         <p>Light is calm by default. The game layer adds XP, streaks, and RPG progress for those who want it.</p>
+        <div className="button-row" style={{ marginTop: "1rem" }}>
+          <button className="secondary-button" type="button" onClick={() => void onAppearanceChange({ hasCompletedOnboarding: false })}>
+            <ArrowCounterClockwise size={16} />
+            Restart onboarding
+          </button>
+        </div>
       </div>
 
       <div className="glass-panel settings-card">

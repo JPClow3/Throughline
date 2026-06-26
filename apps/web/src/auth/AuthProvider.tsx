@@ -25,6 +25,7 @@ type AuthContextValue = {
   dekKey: CryptoKey | null;
   signup: (email: string, password: string) => Promise<string>;
   login: (email: string, password: string) => Promise<void>;
+  resetPassword: (email: string, recoveryKey: string, newPassword: string) => Promise<void>;
   logout: () => Promise<void>;
 };
 
@@ -143,6 +144,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await persistSession(userEmail, dek);
   }, []);
 
+  const resetPassword = useCallback(async (rawEmail: string, recoveryKey: string, newPassword: string) => {
+    const userEmail = rawEmail.trim().toLowerCase();
+    const saltRes = await api("/auth/salt", { email: userEmail });
+    if (!saltRes.ok) {
+      throw new AuthError("No account found for that email.");
+    }
+    const { salt } = (await saltRes.json()) as { salt: string };
+    
+    const { kek: recoveryKek, authKey: recoveryAuthKey } = await deriveRecoveryKeys(recoveryKey, salt);
+    const loginRes = await api("/auth/login", { email: userEmail, authKey: recoveryAuthKey });
+    if (loginRes.status === 401) {
+      throw new AuthError("Invalid recovery key.");
+    }
+    if (!loginRes.ok) {
+      throw new AuthError("Could not sign in with recovery key.");
+    }
+    const { wrappedDek } = (await loginRes.json()) as { wrappedDek: string };
+    
+    let dek: Uint8Array;
+    try {
+      dek = await unwrapDek(wrappedDek, recoveryKek);
+    } catch {
+      throw new AuthError("Failed to decrypt data with that recovery key.");
+    }
+    
+    const { kek: newKek, authKey: newAuthKey } = await deriveKeys(newPassword, salt);
+    const newWrappedDek = await wrapDek(dek, newKek);
+    
+    const updateRes = await api("/auth/update-password", { authKey: newAuthKey, wrappedDek: newWrappedDek });
+    if (!updateRes.ok) {
+      throw new AuthError("Could not update password.");
+    }
+    
+    await persistSession(userEmail, dek);
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       await api("/auth/logout", {});
@@ -156,8 +193,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ status, email, dekKey, signup, login, logout }),
-    [status, email, dekKey, signup, login, logout]
+    () => ({ status, email, dekKey, signup, login, resetPassword, logout }),
+    [status, email, dekKey, signup, login, resetPassword, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -16,10 +16,23 @@
 2. Validate PWA installability in Edge.
 3. Run Lighthouse/PWA checks.
 4. Confirm privacy text says task content stays local in v1.
-5. Go to [PWABuilder](https://www.pwabuilder.com/) and enter the production URL.
-6. Verify the manifest contains the `192x192` and `512x512` PNG icons (now included in `vite.config.ts`).
-7. Package the app as a Windows store bundle.
-8. Verify the packaged app opens Today, Board, Settings, and survives an offline reload.
+5. Generate Store Screenshots at 1366x768 or 2560x1440. PWABuilder requires at least one screenshot of these dimensions for Windows Store.
+6. Go to [PWABuilder](https://www.pwabuilder.com/) and enter the production URL.
+7. Verify the manifest contains the `192x192` and `512x512` PNG icons (now included in `vite.config.ts`).
+8. Package the app as a Windows store bundle.
+9. Verify the packaged app opens Today, Board, Settings, and survives an offline reload.
+
+## Microsoft Store Listing Copy
+
+**Title**: Throughline
+**Short Description**: A calm, private, and beautiful planner for students.
+**Full Description**:
+Throughline is a local-first student planner built with a LiquidGlass design language that is easy on the eyes. Organize your courses into projects, track your deadlines with Kanban boards and timelines, and maintain focus on your daily goals.
+
+Features:
+- **Privacy-First**: Your tasks are end-to-end encrypted or stay entirely local.
+- **Calm Planning**: Beautiful, distraction-free environment.
+- **Gamification**: Optional streaks and XP system to keep you motivated.
 
 ## Release blockers
 

@@ -150,6 +150,15 @@ export function createUserStore(dbPath: string) {
       return { userId: row.user_id, email: row.email };
     },
 
+    updatePassword(userId: string, authKey: string, wrappedDek: string) {
+      const authHash = hashAuthKey(authKey);
+      db.prepare("UPDATE users SET auth_hash = ?, wrapped_dek = ? WHERE id = ?").run(
+        authHash,
+        wrappedDek,
+        userId
+      );
+    },
+
     deleteSession(token: string) {
       db.prepare("DELETE FROM sessions WHERE token = ?").run(token);
     }

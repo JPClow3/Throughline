@@ -11,6 +11,9 @@ describe("redacted reminders", () => {
     expect(reminder?.title).toBe("Quest reminder");
     expect(JSON.stringify(reminder)).not.toContain(task.title);
     expect(JSON.stringify(reminder)).not.toContain(task.description);
+    if (task.tags.length > 0) {
+      expect(JSON.stringify(reminder)).not.toContain(task.tags[0]);
+    }
   });
 
   it("uses reminderAt before dueAt for notification dispatch", () => {

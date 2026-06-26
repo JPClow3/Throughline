@@ -1,17 +1,19 @@
 import {
   Course,
   Goal,
+  GoalSchema,
   GoalStatus,
   Note,
+  NoteSchema,
   Priority,
+  RecurrencePattern,
   RpgAttribute,
   Subtask,
   Task,
+  TaskSchema,
   TaskStatus,
   CourseSchema,
-  GoalSchema,
-  NoteSchema,
-  TaskSchema,
+  calculateNextRecurrence,
   calculateTaskXp,
   createGoal,
   createNote,
@@ -44,7 +46,7 @@ export type TaskInput = {
   attributes: RpgAttribute[];
   tags?: string[];
   subtasks?: Subtask[];
-  recurrence?: "daily" | "weekly" | "monthly" | "yearly";
+  recurrence?: RecurrencePattern;
 };
 
 export type GoalInput = {
@@ -135,19 +137,9 @@ export async function updateTaskStatus(taskId: string, status: TaskStatus) {
       let nextReminderAt: string | undefined = undefined;
 
       if (task.dueAt) {
-        const date = new Date(task.dueAt);
-        if (task.recurrence === "daily") {
-          date.setDate(date.getDate() + 1);
-        } else if (task.recurrence === "weekly") {
-          date.setDate(date.getDate() + 7);
-        } else if (task.recurrence === "monthly") {
-          date.setMonth(date.getMonth() + 1);
-        } else if (task.recurrence === "yearly") {
-          date.setFullYear(date.getFullYear() + 1);
-        }
-        nextDueAt = date.toISOString();
+        nextDueAt = calculateNextRecurrence(task.dueAt, task.recurrence) || undefined;
 
-        if (task.reminderAt) {
+        if (task.reminderAt && nextDueAt) {
           const dueTime = new Date(task.dueAt).getTime();
           const reminderTime = new Date(task.reminderAt).getTime();
           const diff = dueTime - reminderTime;
@@ -334,6 +326,7 @@ export async function getAppearanceSettings(): Promise<AppearanceSettings> {
     lowPower3d: false,
     theme: "system",
     showGameLayer: false,
+    hasCompletedOnboarding: false,
     updatedAt: now()
   };
 

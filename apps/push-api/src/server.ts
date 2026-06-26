@@ -39,8 +39,22 @@ export async function createServer(options: CreateServerOptions = {}) {
     );
   }
 
+  let dispatchMetrics = { sent: 0, failed: 0 };
+
   const app = Fastify({ 
-    logger: true,
+    logger: {
+      serializers: {
+        req: (request) => ({
+          method: request.method,
+          url: request.url,
+          hostname: request.hostname,
+          remoteAddress: request.ip,
+        }),
+        res: (reply) => ({
+          statusCode: reply.statusCode,
+        })
+      }
+    },
     trustProxy: config.trustProxy ?? true
   });
 
@@ -49,6 +63,9 @@ export async function createServer(options: CreateServerOptions = {}) {
     max: config.rateLimitMax ?? 120,
     timeWindow: "1 minute",
     keyGenerator: (request) => {
+      const endpointHash = (request.params as { endpointHash?: string })?.endpointHash;
+      if (endpointHash) return endpointHash;
+
       const session = request.cookies?.[SESSION_COOKIE];
       return session ?? request.ip;
     }
@@ -75,6 +92,11 @@ export async function createServer(options: CreateServerOptions = {}) {
   app.get("/health", async () => ({
     ok: true,
     vapidConfigured,
+    dispatchSuccessRate:
+      dispatchMetrics.sent + dispatchMetrics.failed > 0
+        ? dispatchMetrics.sent / (dispatchMetrics.sent + dispatchMetrics.failed)
+        : 1,
+    metrics: dispatchMetrics,
     ...(await store.counts())
   }));
 
@@ -129,20 +151,26 @@ export async function createServer(options: CreateServerOptions = {}) {
         continue;
       }
 
-      await sendNotification(
-        subscription.subscription,
-        JSON.stringify({
-          title: reminder.title,
-          body: reminder.body,
-          data: {
-            reminderId: reminder.reminderId,
-            taskId: reminder.taskId,
-            urgency: reminder.urgency
-          }
-        })
-      );
-      await store.markDispatched(reminder.endpointHash, reminder.reminderId);
-      sent += 1;
+      try {
+        await sendNotification(
+          subscription.subscription,
+          JSON.stringify({
+            title: reminder.title,
+            body: reminder.body,
+            data: {
+              reminderId: reminder.reminderId,
+              taskId: reminder.taskId,
+              urgency: reminder.urgency
+            }
+          })
+        );
+        await store.markDispatched(reminder.endpointHash, reminder.reminderId);
+        sent += 1;
+        dispatchMetrics.sent += 1;
+      } catch (err) {
+        dispatchMetrics.failed += 1;
+        app.log.error(err, "Failed to send notification");
+      }
     }
 
     return { sent };

@@ -30,7 +30,7 @@ export function TaskComposer({ courses, goals = [], showGameLayer = false, initi
   const [attribute, setAttribute] = useState<RpgAttribute>("focus");
   const [tags, setTags] = useState("");
   const [subtasks, setSubtasks] = useState("");
-  const [recurrence, setRecurrence] = useState<"daily" | "weekly" | "monthly" | "yearly" | "">("");
+  const [recurrence, setRecurrence] = useState<"daily" | "weekly" | "biweekly" | "monthly" | "custom" | "">("");
   const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
@@ -59,7 +59,7 @@ export function TaskComposer({ courses, goals = [], showGameLayer = false, initi
       attributes: [attribute],
       tags: parseTags(tags),
       subtasks: parseSubtasks(subtasks),
-      recurrence: recurrence || undefined
+      recurrence: recurrence ? { pattern: recurrence } : undefined
     });
 
     setTitle("");
@@ -150,12 +150,12 @@ export function TaskComposer({ courses, goals = [], showGameLayer = false, initi
           </div>
           <label>
             <span>Recurrence</span>
-            <select value={recurrence} onChange={(event) => setRecurrence(event.target.value as "daily" | "weekly" | "monthly" | "yearly" | "")}>
+            <select value={recurrence} onChange={(event) => setRecurrence(event.target.value as "daily" | "weekly" | "biweekly" | "monthly" | "custom" | "")}>
               <option value="">None</option>
               <option value="daily">Daily</option>
               <option value="weekly">Weekly</option>
+              <option value="biweekly">Biweekly</option>
               <option value="monthly">Monthly</option>
-              <option value="yearly">Yearly</option>
             </select>
           </label>
           <label>

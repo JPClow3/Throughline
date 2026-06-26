@@ -93,4 +93,16 @@ export function registerAuthRoutes(app: FastifyInstance, userStore: UserStore, c
     }
     return { email: user.email };
   });
+
+  const UpdatePasswordSchema = z.object({ authKey: blob, wrappedDek: blob });
+
+  app.post("/auth/update-password", authRateLimit, async (request, reply) => {
+    const user = userFromRequest(request, userStore);
+    if (!user) {
+      return reply.code(401).send({ error: "unauthenticated" });
+    }
+    const { authKey, wrappedDek } = UpdatePasswordSchema.parse(request.body);
+    userStore.updatePassword(user.userId, authKey, wrappedDek);
+    return reply.code(204).send();
+  });
 }

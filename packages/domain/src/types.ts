@@ -37,6 +37,14 @@ export const CourseSchema = z.object({
   updatedAt: z.string().datetime().default(() => new Date().toISOString())
 });
 
+export const RecurrencePatternSchema = z.object({
+  pattern: z.enum(["daily", "weekly", "biweekly", "monthly", "custom"]),
+  interval: z.number().int().min(1).optional(),
+  daysOfWeek: z.array(z.number().int().min(0).max(6)).optional(),
+  endDate: z.string().datetime().optional()
+});
+export type RecurrencePattern = z.infer<typeof RecurrencePatternSchema>;
+
 export const TaskSchema = z.object({
   id: z.string().min(1),
   title: z.string().min(1).max(140),
@@ -56,7 +64,7 @@ export const TaskSchema = z.object({
   tags: z.array(z.string().min(1).max(32)).default([]),
   subtasks: z.array(SubtaskSchema).default([]),
   visualSeed: z.number().int().min(0).max(9999).default(0),
-  recurrence: z.enum(["daily", "weekly", "monthly", "yearly"]).optional(),
+  recurrence: RecurrencePatternSchema.optional(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
   completedAt: z.string().datetime().optional()

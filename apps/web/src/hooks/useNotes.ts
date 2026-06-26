@@ -1,6 +1,6 @@
 import { Note } from "@throughline/domain";
 import { useLiveQuery } from "dexie-react-hooks";
-import { useCallback } from "react";
+import { useCallback, useOptimistic, startTransition } from "react";
 import {
   NoteInput,
   addNote as addNoteRecord,
@@ -10,20 +10,73 @@ import {
   updateNote as updateNoteRecord
 } from "../data/repositories";
 
-export function useNotes() {
-  const notes = useLiveQuery(() => listNotes(), [], []);
+type NoteOptimisticAction =
+  | { type: 'update'; payload: Partial<Note> & { id: string } }
+  | { type: 'delete'; payload: string }
+  | { type: 'toggleLink'; payload: { id: string; kind: "task" | "goal"; refId: string; linked: boolean } };
 
-  const addNote = useCallback((input?: NoteInput) => addNoteRecord(input), []);
-  const updateNote = useCallback((note: Note) => updateNoteRecord(note), []);
-  const removeNote = useCallback((noteId: string) => deleteNoteRecord(noteId), []);
+export function useNotes() {
+  const baseNotes = useLiveQuery(() => listNotes(), [], []);
+
+  const [optimisticNotes, dispatchOptimisticNote] = useOptimistic(
+    baseNotes ?? [],
+    (state, action: NoteOptimisticAction) => {
+      switch (action.type) {
+        case 'update':
+          return state.map((n) => (n.id === action.payload.id ? { ...n, ...action.payload } : n));
+        case 'delete':
+          return state.filter((n) => n.id !== action.payload);
+        case 'toggleLink':
+          return state.map((n) => {
+            if (n.id !== action.payload.id) return n;
+            const current = new Set(action.payload.kind === "task" ? n.taskIds : n.goalIds);
+            if (action.payload.linked) {
+              current.add(action.payload.refId);
+            } else {
+              current.delete(action.payload.refId);
+            }
+            return action.payload.kind === "task"
+              ? { ...n, taskIds: [...current] }
+              : { ...n, goalIds: [...current] };
+          });
+        default:
+          return state;
+      }
+    }
+  );
+
+  const addNote = useCallback(async (input?: NoteInput) => {
+    const note = await addNoteRecord(input);
+    return note;
+  }, []);
+
+  const updateNote = useCallback(async (note: Note) => {
+    startTransition(async () => {
+      dispatchOptimisticNote({ type: 'update', payload: note });
+      await updateNoteRecord(note);
+    });
+    return note;
+  }, [dispatchOptimisticNote]);
+
+  const removeNote = useCallback(async (noteId: string) => {
+    startTransition(async () => {
+      dispatchOptimisticNote({ type: 'delete', payload: noteId });
+      await deleteNoteRecord(noteId);
+    });
+  }, [dispatchOptimisticNote]);
+
   const toggleNoteLink = useCallback(
-    (noteId: string, kind: "task" | "goal", refId: string, linked: boolean) =>
-      toggleNoteLinkRecord(noteId, kind, refId, linked),
-    []
+    async (noteId: string, kind: "task" | "goal", refId: string, linked: boolean) => {
+      startTransition(async () => {
+        dispatchOptimisticNote({ type: 'toggleLink', payload: { id: noteId, kind, refId, linked } });
+        await toggleNoteLinkRecord(noteId, kind, refId, linked);
+      });
+    },
+    [dispatchOptimisticNote]
   );
 
   return {
-    notes: notes ?? [],
+    notes: optimisticNotes,
     addNote,
     updateNote,
     removeNote,

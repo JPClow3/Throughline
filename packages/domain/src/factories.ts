@@ -11,7 +11,8 @@ import {
   Subtask,
   Task,
   TaskSchema,
-  TaskStatus
+  TaskStatus,
+  RecurrencePattern
 } from "./types";
 import { calculateTaskXp } from "./gamification";
 
@@ -31,7 +32,7 @@ type TaskDraft = {
   attributes?: RpgAttribute[];
   tags?: string[];
   subtasks?: Subtask[];
-  recurrence?: "daily" | "weekly" | "monthly" | "yearly";
+  recurrence?: RecurrencePattern;
 };
 
 type GoalDraft = {

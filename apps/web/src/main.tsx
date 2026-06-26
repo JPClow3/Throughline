@@ -11,12 +11,14 @@ import { Landing } from "./pages/Landing";
 import { Login } from "./pages/Login";
 import { Signup } from "./pages/Signup";
 import { PrivacyPolicy } from "./pages/PrivacyPolicy";
+import { ForgotPassword } from "./pages/ForgotPassword";
 import "./styles.css";
 
 const router = createBrowserRouter([
   { path: "/", element: <Landing /> },
   { path: "/login", element: <Login /> },
   { path: "/signup", element: <Signup /> },
+  { path: "/forgot-password", element: <ForgotPassword /> },
   { path: "/privacy", element: <PrivacyPolicy /> },
   {
     path: "/app/*",

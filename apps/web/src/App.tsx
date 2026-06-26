@@ -12,6 +12,7 @@ import { ViewSkeleton } from "./components/Skeleton";
 import { TaskComposer } from "./components/TaskComposer";
 import { TaskEditor } from "./components/TaskEditor";
 import { FocusOverlay } from "./components/FocusOverlay";
+import { OnboardingOverlay } from "./components/OnboardingOverlay";
 import { CommandPalette } from "./components/CommandPalette";
 import { useAuth } from "./auth/AuthProvider";
 import { getAppearanceSettings, saveAppearanceSettings } from "./data/repositories";
@@ -74,6 +75,7 @@ export function App() {
   const appearanceSettings = useLiveQuery(() => getAppearanceSettings(), []);
   useTheme(appearanceSettings?.theme);
   const showGameLayer = appearanceSettings?.showGameLayer ?? false;
+  const showOnboarding = appearanceSettings ? !appearanceSettings.hasCompletedOnboarding : false;
   
   const { isInstallable, promptToInstall } = usePwaInstall();
   const [bannerDismissed, setBannerDismissed] = React.useState(() => {
@@ -338,6 +340,10 @@ export function App() {
         </Sheet>
         
         <FocusOverlay task={focusTask} onClose={() => setFocusTask(null)} />
+        
+        {showOnboarding ? (
+          <OnboardingOverlay onComplete={() => saveAppearanceSettings({ hasCompletedOnboarding: true })} />
+        ) : null}
       </IconContext.Provider>
     </MotionConfig>
   );

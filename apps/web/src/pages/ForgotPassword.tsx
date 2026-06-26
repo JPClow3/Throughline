@@ -4,11 +4,12 @@ import { useAuth } from "../auth/AuthProvider";
 import { AuthShell } from "./AuthShell";
 import { Notice } from "../components/Notice";
 
-export function Login() {
-  const { login, status } = useAuth();
+export function ForgotPassword() {
+  const { resetPassword, status } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [recoveryKey, setRecoveryKey] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -18,20 +19,27 @@ export function Login() {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (newPassword.length < 8) {
+      setError("Use at least 8 characters for your new password.");
+      return;
+    }
     setBusy(true);
     setError("");
     try {
-      await login(email, password);
+      if (!resetPassword) {
+         throw new Error("Reset password not implemented.");
+      }
+      await resetPassword(email, recoveryKey, newPassword);
       navigate("/app");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not sign in.");
+      setError(err instanceof Error ? err.message : "Could not reset password.");
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <AuthShell title="Welcome back" subtitle="Sign in to sync your plan across devices.">
+    <AuthShell title="Recover Account" subtitle="Use your 32-character recovery key to set a new password.">
       <form className="auth-form" onSubmit={submit}>
         <label>
           <span>Email</span>
@@ -44,30 +52,36 @@ export function Login() {
           />
         </label>
         <label>
-          <span>Password or Recovery Key</span>
+          <span>Recovery Key</span>
+          <input
+            type="text"
+            required
+            placeholder="abcd-ef01-2345-..."
+            value={recoveryKey}
+            onChange={(e) => setRecoveryKey(e.target.value)}
+            style={{ fontFamily: "monospace" }}
+          />
+        </label>
+        <label>
+          <span>New Password</span>
           <input
             type="password"
-            autoComplete="current-password"
+            autoComplete="new-password"
             required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
           />
         </label>
         {error ? (
           <Notice variant="error" className="mb-4">{error}</Notice>
         ) : null}
         <button className="primary-button" type="submit" disabled={busy}>
-          {busy ? "Signing in…" : "Sign in"}
+          {busy ? "Recovering…" : "Reset Password"}
         </button>
       </form>
-      <div className="auth-switch" style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-        <p>
-          New here? <Link to="/signup">Create an account</Link>
-        </p>
-        <p style={{ fontSize: "0.85em" }}>
-          <Link to="/forgot-password" style={{ color: "var(--ink-muted)" }}>Forgot your password?</Link>
-        </p>
-      </div>
+      <p className="auth-switch">
+        Remembered it? <Link to="/login">Sign in</Link>
+      </p>
     </AuthShell>
   );
 }

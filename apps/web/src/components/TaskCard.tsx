@@ -1,5 +1,5 @@
 import { Course, Task, TaskStatus, kanbanColumns } from "@throughline/domain";
-import { Check, Clock as Clock3, Diamond as Gem, ListChecks, Note as StickyNote, Target, Plus, CaretDown, CaretUp, Play } from "@phosphor-icons/react";
+import { Check, Clock as Clock3, Diamond as Gem, ListChecks, Note as StickyNote, Target, Plus, CaretDown, CaretUp, Play, ArrowsClockwise } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "motion/react";
 import { useState, type CSSProperties } from "react";
 import { APP_LOCALE, capitalizeFirst } from "../lib/format";
@@ -175,6 +175,11 @@ export function TaskCard({
           <span className="meta-chip">
             <Target size={14} />
             {goalLabel}
+          </span>
+        ) : null}
+        {task.recurrence ? (
+          <span className="meta-chip" title={`Repeats ${task.recurrence.pattern}`}>
+            <ArrowsClockwise size={14} />
           </span>
         ) : null}
         {totalSubtasks || onUpdateTask ? (

@@ -1,6 +1,6 @@
 import { Goal, GoalStatus } from "@throughline/domain";
 import { useLiveQuery } from "dexie-react-hooks";
-import { useCallback } from "react";
+import { useCallback, useOptimistic, startTransition } from "react";
 import {
   GoalInput,
   addGoal as addGoalRecord,
@@ -10,16 +10,54 @@ import {
   updateGoal as updateGoalRecord
 } from "../data/repositories";
 
-export function useGoals() {
-  const goals = useLiveQuery(() => listGoals(), [], []);
+type GoalOptimisticAction =
+  | { type: 'update'; payload: Partial<Goal> & { id: string } }
+  | { type: 'delete'; payload: string };
 
-  const addGoal = useCallback((input: GoalInput) => addGoalRecord(input), []);
-  const updateGoal = useCallback((goal: Goal) => updateGoalRecord(goal), []);
-  const setGoalStatus = useCallback((goalId: string, status: GoalStatus) => setGoalStatusRecord(goalId, status), []);
-  const removeGoal = useCallback((goalId: string) => deleteGoalRecord(goalId), []);
+export function useGoals() {
+  const baseGoals = useLiveQuery(() => listGoals(), [], []);
+
+  const [optimisticGoals, dispatchOptimisticGoal] = useOptimistic(
+    baseGoals ?? [],
+    (state, action: GoalOptimisticAction) => {
+      switch (action.type) {
+        case 'update':
+          return state.map((g) => (g.id === action.payload.id ? { ...g, ...action.payload } : g));
+        case 'delete':
+          return state.filter((g) => g.id !== action.payload);
+        default:
+          return state;
+      }
+    }
+  );
+
+  const addGoal = useCallback(async (input: GoalInput) => {
+    await addGoalRecord(input);
+  }, []);
+
+  const updateGoal = useCallback(async (goal: Goal) => {
+    startTransition(async () => {
+      dispatchOptimisticGoal({ type: 'update', payload: goal });
+      await updateGoalRecord(goal);
+    });
+  }, [dispatchOptimisticGoal]);
+
+  const setGoalStatus = useCallback(async (goalId: string, status: GoalStatus) => {
+    startTransition(async () => {
+      dispatchOptimisticGoal({ type: 'update', payload: { id: goalId, status } });
+      await setGoalStatusRecord(goalId, status);
+    });
+  }, [dispatchOptimisticGoal]);
+
+  const removeGoal = useCallback(async (goalId: string) => {
+    startTransition(async () => {
+      dispatchOptimisticGoal({ type: 'delete', payload: goalId });
+      await deleteGoalRecord(goalId);
+    });
+  }, [dispatchOptimisticGoal]);
 
   return {
-    goals: goals ?? [],
+    goals: optimisticGoals,
     addGoal,
     updateGoal,
     setGoalStatus,

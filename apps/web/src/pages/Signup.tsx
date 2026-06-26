@@ -12,6 +12,8 @@ export function Signup() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [recoveryKey, setRecoveryKey] = useState("");
+  const [confirmedSaved, setConfirmedSaved] = useState(false);
+  const [partialKey, setPartialKey] = useState("");
 
   if (status === "authed" && !recoveryKey) {
     return <Navigate to="/app" replace />;
@@ -40,6 +42,9 @@ export function Signup() {
   }
 
   if (recoveryKey) {
+    const expectedPartial = recoveryKey.slice(-4);
+    const canProceed = confirmedSaved && partialKey.toLowerCase() === expectedPartial.toLowerCase();
+
     return (
       <AuthShell title="Save your Recovery Key" subtitle="This is the only way to recover your account if you forget your password.">
         <div className="glass-panel" style={{ padding: "2rem", borderRadius: "var(--radius-card)", textAlign: "center", marginBottom: "2rem" }}>
@@ -51,8 +56,32 @@ export function Signup() {
           Please save this key in a secure location, like a password manager. 
           We cannot recover it for you.
         </p>
-        <button className="primary-button" onClick={() => navigate("/app")}>
-          I have saved my key
+
+        <div style={{ marginBottom: "2rem", display: "flex", flexDirection: "column", gap: "1rem", textAlign: "left" }}>
+          <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.9rem" }}>
+            <input 
+              type="checkbox" 
+              checked={confirmedSaved} 
+              onChange={(e) => setConfirmedSaved(e.target.checked)} 
+              style={{ width: "1rem", height: "1rem" }}
+            />
+            I have saved this recovery key securely
+          </label>
+          <label style={{ display: "flex", flexDirection: "column", gap: "0.25rem", fontSize: "0.9rem" }}>
+            <span>To confirm, please enter the last 4 characters of your key:</span>
+            <input
+              type="text"
+              value={partialKey}
+              onChange={(e) => setPartialKey(e.target.value)}
+              placeholder={expectedPartial}
+              maxLength={4}
+              style={{ fontFamily: "monospace", textTransform: "lowercase", width: "6rem", textAlign: "center" }}
+            />
+          </label>
+        </div>
+
+        <button className="primary-button" disabled={!canProceed} onClick={() => navigate("/app")}>
+          Continue to Planner
         </button>
       </AuthShell>
     );
