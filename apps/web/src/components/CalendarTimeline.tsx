@@ -15,6 +15,7 @@ import {
   useDraggable,
   closestCorners
 } from "@dnd-kit/core";
+import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core/dist/types/events";
 
 function localDayKey(date: Date) {
   const pad = (value: number) => String(value).padStart(2, "0");
@@ -166,12 +167,12 @@ export function CalendarTimeline({
 
   const selectedDate = new Date(`${selectedKey}T12:00:00`);
 
-  const handleDragStart = (event: any) => {
+  const handleDragStart = (event: DragStartEvent) => {
     const task = event.active.data.current?.task as Task;
     if (task) setActiveTask(task);
   };
 
-  const handleDragEnd = (event: any) => {
+  const handleDragEnd = (event: DragEndEvent) => {
     setActiveTask(null);
     const { active, over, delta } = event;
     const task = active.data.current?.task as Task;

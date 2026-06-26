@@ -6,6 +6,7 @@ import {
   sampleGoals,
   sampleNotes,
   sampleTasks,
+  type RecurrencePattern,
   Task,
   TaskSchema,
   UserProgress,
@@ -100,7 +101,7 @@ class LiquidGlassDb extends Dexie {
           .toCollection()
           .modify((task: Partial<Task> & { recurrence?: string | { pattern: string } }) => {
             if (typeof task.recurrence === "string") {
-              task.recurrence = { pattern: task.recurrence as any };
+              task.recurrence = { pattern: task.recurrence as RecurrencePattern["pattern"] };
             }
           });
       });

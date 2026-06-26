@@ -1,4 +1,9 @@
 import { test, expect } from "@playwright/test";
+import type { RedactedReminder } from "@throughline/domain";
+
+type ReminderSyncPayload = {
+  reminders?: RedactedReminder[];
+};
 
 test.describe("Notification Flow", () => {
   test("grant notification permission, subscribe, and verify payload is redacted", async ({ page }) => {
@@ -9,10 +14,13 @@ test.describe("Notification Flow", () => {
     await page.evaluate(() => {
       // Stub window.Notification
       if (!window.Notification) {
-        (window as any).Notification = {
-          requestPermission: async () => 'granted',
-          permission: 'default'
-        };
+        Object.defineProperty(window, "Notification", {
+          configurable: true,
+          value: {
+            requestPermission: async () => 'granted',
+            permission: 'default'
+          }
+        });
       }
     });
 
@@ -36,13 +44,13 @@ test.describe("Notification Flow", () => {
       }
     });
 
-    let syncRequestData: any = null;
+    const syncRequests: ReminderSyncPayload[] = [];
 
     // Intercept the reminder sync call to verify payload
     await page.route("**/subscriptions/*/reminders", async (route) => {
       const request = route.request();
       if (request.method() === "PUT") {
-        syncRequestData = request.postDataJSON();
+        syncRequests.push(request.postDataJSON() as ReminderSyncPayload);
       }
       await route.fulfill({ status: 200, json: { success: true } });
     });
@@ -62,9 +70,10 @@ test.describe("Notification Flow", () => {
     await page.waitForResponse(response => response.url().includes('/reminders') && response.status() === 200, { timeout: 10000 }).catch(() => {});
 
     // Ensure the sync request was actually fired
-    expect(syncRequestData).not.toBeNull();
+    const syncRequestData = syncRequests.at(-1);
+    expect(syncRequestData).toBeDefined();
     
-    if (syncRequestData && syncRequestData.reminders) {
+    if (syncRequestData?.reminders) {
       for (const reminder of syncRequestData.reminders) {
         expect(reminder).toHaveProperty("taskId");
         expect(reminder).toHaveProperty("notifyAt");

@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { KanbanBoard } from "../components/KanbanBoard";
-import { Task, Course, TaskStatus } from "@throughline/domain";
+import { CourseSchema, TaskSchema } from "@throughline/domain";
 
 describe("KanbanBoard", () => {
   it("renders columns and tasks", () => {
@@ -10,41 +10,49 @@ describe("KanbanBoard", () => {
       setItem: vi.fn(),
       removeItem: vi.fn()
     });
-    const mockTasks: Task[] = [
-      {
+    const timestamp = new Date().toISOString();
+    const mockTasks = [
+      TaskSchema.parse({
         id: "1",
         title: "Test Todo",
-        status: "ready" as TaskStatus,
+        status: "ready",
         courseId: "course-1",
         tags: [],
         subtasks: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      },
-      {
+        createdAt: timestamp,
+        updatedAt: timestamp
+      }),
+      TaskSchema.parse({
         id: "2",
         title: "Test In Progress",
-        status: "doing" as TaskStatus,
+        status: "doing",
         courseId: "course-1",
         tags: [],
         subtasks: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      },
-      {
+        createdAt: timestamp,
+        updatedAt: timestamp
+      }),
+      TaskSchema.parse({
         id: "3",
         title: "Test Done",
-        status: "done" as TaskStatus,
+        status: "done",
         courseId: "course-1",
         tags: [],
         subtasks: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }
+        createdAt: timestamp,
+        updatedAt: timestamp
+      })
     ];
 
-    const mockCourses: Course[] = [
-      { id: "course-1", title: "Test Course", color: "blue", archived: false }
+    const mockCourses = [
+      CourseSchema.parse({
+        id: "course-1",
+        name: "Test Course",
+        color: "blue",
+        icon: "📚",
+        createdAt: timestamp,
+        updatedAt: timestamp
+      })
     ];
 
     render(
@@ -60,9 +68,9 @@ describe("KanbanBoard", () => {
     );
 
     // Columns
-    expect(screen.getByText("Ready")).toBeInTheDocument();
-    expect(screen.getByText("Doing")).toBeInTheDocument();
-    expect(screen.getByText("Done")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Ready" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Doing" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Done" })).toBeInTheDocument();
 
     // Tasks
     expect(screen.getByText("Test Todo")).toBeInTheDocument();

@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { InsightsView } from "../pages/InsightsView";
-import { Task, Course, TaskStatus } from "@throughline/domain";
+import { CourseSchema, TaskSchema } from "@throughline/domain";
 import * as useTasksHook from "../hooks/useTasks";
 
 // Mock the useTasks hook
@@ -11,33 +11,44 @@ vi.mock("../hooks/useTasks", () => ({
 
 describe("InsightsView", () => {
   it("renders statistics correctly", () => {
-    const mockTasks: Task[] = [
-      {
+    const timestamp = new Date().toISOString();
+    const mockTasks = [
+      TaskSchema.parse({
         id: "1",
         title: "Test Done 1",
-        status: "done" as TaskStatus,
+        status: "done",
         courseId: "course-1",
         tags: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        completedAt: new Date().toISOString() // completed today
-      }
+        createdAt: timestamp,
+        updatedAt: timestamp,
+        completedAt: timestamp
+      })
     ];
 
-    const mockCourses: Course[] = [
-      { id: "course-1", title: "Test Course", color: "blue", archived: false }
+    const mockCourses = [
+      CourseSchema.parse({
+        id: "course-1",
+        name: "Test Course",
+        color: "blue",
+        icon: "📚",
+        createdAt: timestamp,
+        updatedAt: timestamp
+      })
     ];
 
     vi.mocked(useTasksHook.useTasks).mockReturnValue({
       tasks: mockTasks,
       courses: mockCourses,
-      projects: mockCourses,
+      progress: undefined,
       addTask: vi.fn(),
       updateTask: vi.fn(),
       updateTaskStatus: vi.fn(),
       deleteTask: vi.fn(),
-      isLoading: false
-    } as any);
+      completeTask: vi.fn(),
+      upsertCourse: vi.fn(),
+      deleteCourse: vi.fn(),
+      loading: false
+    });
 
     render(
       <div>
