@@ -15,7 +15,6 @@ import {
   useDraggable,
   closestCorners
 } from "@dnd-kit/core";
-import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
 
 function localDayKey(date: Date) {
   const pad = (value: number) => String(value).padStart(2, "0");

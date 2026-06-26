@@ -11,13 +11,11 @@ devices **end-to-end encrypted** — the server only ever stores ciphertext it c
 
 ## Start here
 
-- Product and build overview: [docs/README.md](docs/README.md)
-- Requirements and scope: [docs/requirements.md](docs/requirements.md)
-- Architecture: [docs/architecture.md](docs/architecture.md)
-- Project map: [docs/project-map.md](docs/project-map.md)
-- Development workflow: [docs/development-workflow.md](docs/development-workflow.md)
-- Deployment (Docker + Dokploy on EC2): [docs/deployment.md](docs/deployment.md)
-- Current status and roadmap: [docs/roadmap.md](docs/roadmap.md)
+- **Product & Scope:** [docs/product.md](docs/product.md)
+- **Architecture & Data Model:** [docs/architecture.md](docs/architecture.md)
+- **UI/UX Design System:** [docs/ui-ux.md](docs/ui-ux.md)
+- **Development & Testing Workflow:** [docs/development.md](docs/development.md)
+- **Deployment & Release:** [docs/deployment.md](docs/deployment.md)
 
 ## Stack
 

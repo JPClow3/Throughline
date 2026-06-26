@@ -39,7 +39,7 @@ export async function createServer(options: CreateServerOptions = {}) {
     );
   }
 
-  let dispatchMetrics = { sent: 0, failed: 0 };
+  const dispatchMetrics = { sent: 0, failed: 0 };
 
   const app = Fastify({ 
     logger: {

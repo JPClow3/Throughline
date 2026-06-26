@@ -1,6 +1,6 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { useCallback, useEffect, useOptimistic, startTransition } from "react";
-import { Task, TaskStatus, calculateNextRecurrence } from "@throughline/domain";
+import { Task, TaskStatus } from "@throughline/domain";
 import { seedIfEmpty } from "../data/db";
 import { syncRedactedRemindersFromLocalState } from "../data/reminderSync";
 import {

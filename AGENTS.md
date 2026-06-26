@@ -4,12 +4,12 @@ Use this file first, then `docs/README.md`. The docs in `docs/` are the source o
 
 ## Required Reading By Task
 
-- Any task: `docs/README.md`, `docs/project-map.md`, `docs/development-workflow.md`.
-- UI task: `docs/ui-constitution.md`, `docs/ux-constitution.md`, `docs/feature-specs.md`.
+- Any task: `docs/README.md`, `docs/product.md`, `docs/development.md`.
+- UI task: `docs/ui-ux.md`, `docs/product.md`.
 - 3D task: `docs/3d-visual-constitution.md`.
-- Data/storage task: `docs/data-model.md`, `docs/architecture.md`.
+- Data/storage task: `docs/architecture.md`.
 - Notification task: `docs/notifications.md`.
-- Release task: `docs/release-store-readiness.md`, `docs/testing-strategy.md`.
+- Release task: `docs/deployment.md`, `docs/development.md`.
 
 ## Product Rules
 

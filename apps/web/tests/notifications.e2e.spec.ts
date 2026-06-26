@@ -26,7 +26,7 @@ test.describe("Notification Flow", () => {
               pushManager: {
                 subscribe: async () => ({
                   endpoint: "https://fcm.googleapis.com/fcm/send/fake-endpoint",
-                  getKey: (name: string) => new ArrayBuffer(0),
+                  getKey: () => new ArrayBuffer(0),
                   toJSON: () => ({ endpoint: "https://fcm.googleapis.com/fcm/send/fake-endpoint" })
                 })
               }
