@@ -42,15 +42,15 @@ export function TaskCard({
   const done = task.status === "done";
   const due = task.dueAt ? new Date(task.dueAt) : undefined;
   const dueInfo = due ? describeDue(due, done) : undefined;
-  const totalSubtasks = task.subtasks.length;
-  const completedSubtasks = task.subtasks.filter((subtask) => subtask.completed).length;
+  const totalSubtasks = task.subtasks?.length ?? 0;
+  const completedSubtasks = task.subtasks?.filter((subtask) => subtask.completed).length ?? 0;
 
   const [expanded, setExpanded] = useState(false);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
 
   function toggleSubtask(index: number) {
     if (!onUpdateTask) return;
-    const nextSubtasks = [...task.subtasks];
+    const nextSubtasks = [...(task.subtasks || [])];
     nextSubtasks[index] = { ...nextSubtasks[index], completed: !nextSubtasks[index].completed };
     onUpdateTask({ ...task, subtasks: nextSubtasks });
   }
@@ -58,10 +58,8 @@ export function TaskCard({
   function handleAddSubtask(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter" && newSubtaskTitle.trim() && onUpdateTask) {
       e.preventDefault();
-      onUpdateTask({
-        ...task,
-        subtasks: [...task.subtasks, { id: crypto.randomUUID(), title: newSubtaskTitle.trim(), completed: false }]
-      });
+      const newSubtask = { id: crypto.randomUUID(), title: newSubtaskTitle.trim(), completed: false };
+      onUpdateTask({ ...task, subtasks: [...(task.subtasks || []), newSubtask] });
       setNewSubtaskTitle("");
     }
   }
@@ -143,7 +141,7 @@ export function TaskCard({
             className="flex flex-col gap-2 mt-2 mb-4 overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            {task.subtasks.map((st, idx) => (
+            {(task.subtasks || []).map((st, idx) => (
               <label key={st.id} className="flex items-center gap-3 text-sm text-on-surface-variant hover:text-on-surface cursor-pointer p-1 -mx-1 rounded hover:bg-white/40 transition-colors">
                 <input type="checkbox" checked={st.completed} onChange={() => toggleSubtask(idx)} className="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary focus:ring-offset-0 bg-transparent" />
                 <span className={st.completed ? "line-through opacity-60" : ""}>{st.title}</span>

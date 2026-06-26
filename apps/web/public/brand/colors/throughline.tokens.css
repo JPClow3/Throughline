@@ -1,0 +1,79 @@
+:root {
+  color-scheme: light;
+
+  --tl-bg: #F7F8FB;
+  --tl-bg-alt: #EEF3FA;
+  --tl-surface: #FFFFFF;
+  --tl-surface-glass: rgba(255,255,255,0.62);
+  --tl-surface-glass-strong: rgba(255,255,255,0.78);
+  --tl-surface-tint: #F3F6FF;
+
+  --tl-border-glass: rgba(255,255,255,0.74);
+  --tl-border-subtle: #DDE5F2;
+
+  --tl-text: #142033;
+  --tl-text-secondary: #667389;
+  --tl-text-muted: #94A0B4;
+
+  --tl-accent-blue: #7EA7FF;
+  --tl-accent-violet: #B9A7FF;
+  --tl-accent-aqua: #8FE7DD;
+  --tl-accent-pink: #F5B8FF;
+
+  --tl-progress: #76DCCA;
+  --tl-warning: #F3B95F;
+  --tl-danger: #FF8A9A;
+  --tl-focus-ring: #7EA7FF;
+
+  --tl-gradient-hero: linear-gradient(135deg, #F7F8FB 0%, #EAF0FF 42%, #F3ECFF 72%, #E7FFFA 100%);
+  --tl-gradient-thread: linear-gradient(135deg, #7EA7FF 0%, #B9A7FF 52%, #8FE7DD 100%);
+
+  --tl-glass-card: rgba(255,255,255,0.62);
+  --tl-glass-card-strong: rgba(255,255,255,0.78);
+  --tl-glass-border: rgba(255,255,255,0.74);
+  --tl-shadow-soft: 0 20px 60px rgba(23,32,51,0.12);
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --tl-bg: #0C1220;
+  --tl-bg-alt: #111827;
+  --tl-surface: #172033;
+  --tl-surface-glass: rgba(24,34,54,0.58);
+  --tl-surface-glass-strong: rgba(31,43,67,0.76);
+  --tl-surface-tint: #1B2540;
+
+  --tl-border-glass: rgba(255,255,255,0.13);
+  --tl-border-subtle: #2A3650;
+
+  --tl-text: #F6F8FC;
+  --tl-text-secondary: #BAC5D8;
+  --tl-text-muted: #7F8DA5;
+
+  --tl-accent-blue: #94B8FF;
+  --tl-accent-violet: #C8B8FF;
+  --tl-accent-aqua: #8FE7DD;
+  --tl-accent-pink: #F2B8FF;
+
+  --tl-progress: #8BEAD9;
+  --tl-warning: #FFD38A;
+  --tl-danger: #FF9BA8;
+  --tl-focus-ring: #94B8FF;
+
+  --tl-gradient-hero: linear-gradient(135deg, #0C1220 0%, #111B33 44%, #202548 72%, #123747 100%);
+  --tl-gradient-thread: linear-gradient(135deg, #94B8FF 0%, #C8B8FF 52%, #8FE7DD 100%);
+
+  --tl-glass-card: rgba(24,34,54,0.58);
+  --tl-glass-card-strong: rgba(31,43,67,0.76);
+  --tl-glass-border: rgba(255,255,255,0.13);
+  --tl-shadow-soft: 0 24px 80px rgba(0,0,0,0.34);
+}
+
+.tl-glass-card {
+  background: var(--tl-glass-card);
+  border: 1px solid var(--tl-glass-border);
+  box-shadow: var(--tl-shadow-soft), inset 0 1px 0 rgba(255,255,255,0.42);
+  backdrop-filter: blur(24px) saturate(1.35);
+  -webkit-backdrop-filter: blur(24px) saturate(1.35);
+}

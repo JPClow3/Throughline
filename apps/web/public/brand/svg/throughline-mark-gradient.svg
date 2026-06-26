@@ -6,9 +6,8 @@
       <stop offset="1" stop-color="#8FE7DD"/>
     </linearGradient>
   </defs>
-  <rect width="1024" height="1024" rx="224" fill="#F7F8FB"/>
   <path d="M260 260 C260 330 260 350 330 352 C405 352 395 351 455 352 C515 352 500 435 565 435 C650 435 654 510 654 565 C654 640 704 654 748 724" fill="none" stroke="url(#thread)" stroke-width="74" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="260" cy="260" r="82" fill="#F7F8FB" stroke="#7EA7FF" stroke-width="50"/>
-  <circle cx="565" cy="435" r="82" fill="#F7F8FB" stroke="#B9A7FF" stroke-width="50"/>
-  <circle cx="748" cy="724" r="82" fill="#F7F8FB" stroke="#8FE7DD" stroke-width="50"/>
+  <circle cx="260" cy="260" r="82" fill="none" stroke="#7EA7FF" stroke-width="50"/>
+  <circle cx="565" cy="435" r="82" fill="none" stroke="#B9A7FF" stroke-width="50"/>
+  <circle cx="748" cy="724" r="82" fill="none" stroke="#8FE7DD" stroke-width="50"/>
 </svg>

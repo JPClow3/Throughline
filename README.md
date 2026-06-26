@@ -1,4 +1,6 @@
-# Throughline
+<div align="center">
+  <img src="apps/web/public/brand/svg/throughline-lockup-horizontal.svg" alt="Throughline" width="500" />
+</div>
 
 > A calm place to plan.
 

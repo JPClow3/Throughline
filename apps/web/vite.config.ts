@@ -24,7 +24,16 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.svg", "pwa-icon.svg", "pwa-192x192.png", "pwa-512x512.png"],
+      includeAssets: [
+        "favicon.svg",
+        "favicon.ico",
+        "pwa-icon.svg",
+        "pwa-192x192.png",
+        "pwa-512x512.png",
+        "pwa-maskable-192x192.png",
+        "pwa-maskable-512x512.png",
+        "apple-touch-icon.png"
+      ],
       manifest: {
         name: "Throughline",
         short_name: "Throughline",
@@ -41,19 +50,31 @@ export default defineConfig({
             src: "/pwa-icon.svg",
             sizes: "any",
             type: "image/svg+xml",
-            purpose: "any maskable"
+            purpose: "any"
           },
           {
             src: "/pwa-192x192.png",
             sizes: "192x192",
             type: "image/png",
-            purpose: "any maskable"
+            purpose: "any"
           },
           {
             src: "/pwa-512x512.png",
             sizes: "512x512",
             type: "image/png",
-            purpose: "any maskable"
+            purpose: "any"
+          },
+          {
+            src: "/pwa-maskable-192x192.png",
+            sizes: "192x192",
+            type: "image/png",
+            purpose: "maskable"
+          },
+          {
+            src: "/pwa-maskable-512x512.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "maskable"
           }
         ],
         shortcuts: [

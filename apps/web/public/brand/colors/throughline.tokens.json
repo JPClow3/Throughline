@@ -1,0 +1,82 @@
+{
+  "brand": {
+    "name": "Throughline",
+    "tagline": "A calm place to plan."
+  },
+  "light": {
+    "background": "#F7F8FB",
+    "backgroundAlt": "#EEF3FA",
+    "surface": "#FFFFFF",
+    "surfaceGlass": "rgba(255,255,255,0.62)",
+    "surfaceGlassStrong": "rgba(255,255,255,0.78)",
+    "surfaceTint": "#F3F6FF",
+    "borderGlass": "rgba(255,255,255,0.74)",
+    "borderSubtle": "#DDE5F2",
+    "textPrimary": "#142033",
+    "textSecondary": "#667389",
+    "textMuted": "#94A0B4",
+    "accentBlue": "#7EA7FF",
+    "accentViolet": "#B9A7FF",
+    "accentAqua": "#8FE7DD",
+    "accentPink": "#F5B8FF",
+    "progress": "#76DCCA",
+    "warning": "#F3B95F",
+    "danger": "#FF8A9A",
+    "focusRing": "#7EA7FF",
+    "shadow": "rgba(23,32,51,0.12)"
+  },
+  "dark": {
+    "background": "#0C1220",
+    "backgroundAlt": "#111827",
+    "surface": "#172033",
+    "surfaceGlass": "rgba(24,34,54,0.58)",
+    "surfaceGlassStrong": "rgba(31,43,67,0.76)",
+    "surfaceTint": "#1B2540",
+    "borderGlass": "rgba(255,255,255,0.13)",
+    "borderSubtle": "#2A3650",
+    "textPrimary": "#F6F8FC",
+    "textSecondary": "#BAC5D8",
+    "textMuted": "#7F8DA5",
+    "accentBlue": "#94B8FF",
+    "accentViolet": "#C8B8FF",
+    "accentAqua": "#8FE7DD",
+    "accentPink": "#F2B8FF",
+    "progress": "#8BEAD9",
+    "warning": "#FFD38A",
+    "danger": "#FF9BA8",
+    "focusRing": "#94B8FF",
+    "shadow": "rgba(0,0,0,0.34)"
+  },
+  "gradients": {
+    "lightAppIcon": [
+      "#F8FBFF",
+      "#EAF0FF",
+      "#C9D8FF",
+      "#CDBDFF",
+      "#97EEE2"
+    ],
+    "darkAppIcon": [
+      "#0C1220",
+      "#111B33",
+      "#152446",
+      "#25335D",
+      "#143B4F"
+    ],
+    "heroAurora": [
+      "#F7F8FB",
+      "#EAF0FF",
+      "#F3ECFF",
+      "#E7FFFA"
+    ],
+    "thread": [
+      "#7EA7FF",
+      "#B9A7FF",
+      "#8FE7DD"
+    ],
+    "darkThread": [
+      "#94B8FF",
+      "#C8B8FF",
+      "#8FE7DD"
+    ]
+  }
+}
