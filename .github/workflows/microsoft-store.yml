@@ -27,7 +27,7 @@ jobs:
             exit 1
           }
           Write-Host "Found bundle: $($msixbundle.FullName)"
-          echo "BUNDLE_PATH=$($msixbundle.FullName)" >> $env:GITHUB_ENV
+          Add-Content -Path $env:GITHUB_ENV -Value "BUNDLE_PATH=$($msixbundle.FullName)"
 
       - name: Setup msstore-cli
         uses: microsoft/setup-msstore-cli@v1
@@ -40,4 +40,4 @@ jobs:
                               --clientSecret "${{ secrets.MSSTORE_CLIENT_SECRET }}"
           
           # Publish the package
-          msstore publish --appId "9PDNH55ZKNZ7" --flightId "" --package "${{ env.BUNDLE_PATH }}"
+          msstore publish --appId "9PDNH55ZKNZ7" --package "${{ env.BUNDLE_PATH }}"

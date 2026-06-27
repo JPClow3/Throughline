@@ -13,6 +13,13 @@ test("keeps core dashboard and Kanban interactions inside smoke budgets", async 
   });
   const dashboardStart = Date.now();
   await page.goto("/app");
+  
+  // Bypass onboarding overlay
+  const skipBtn = page.getByRole("button", { name: "Skip" });
+  await skipBtn.waitFor({ state: "visible", timeout: 10000 });
+  await skipBtn.click();
+  await skipBtn.waitFor({ state: "hidden", timeout: 5000 });
+
   await expect(page.getByRole("heading", { name: /Good (morning|afternoon|evening)/ })).toBeVisible();
   const dashboardReadyMs = Date.now() - dashboardStart;
 

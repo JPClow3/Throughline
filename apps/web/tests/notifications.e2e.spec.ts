@@ -15,57 +15,57 @@ test.describe("Notification Flow", () => {
   });
 
   test("grant notification permission, subscribe, and verify payload is redacted", async ({ page }) => {
-    // Mock the Notification and ServiceWorker APIs before page load to bypass Vite PWA plugin
-    await page.addInitScript(() => {
-      // Stub window.Notification and PushManager directly
-      window.Notification = function() {} as any;
-      window.Notification.requestPermission = async () => 'granted';
-      (window.Notification as any).permission = 'default';
-      window.PushManager = function() {} as any;
+    // Intercept and abort the Vite PWA service worker script so it doesn't hang the test
+    await page.route("**/*sw.js*", async (route) => {
+      await route.abort();
+    });
+
+    await page.goto("/app?view=settings");
+
+    // We mock the notification permission API so it appears as granted when requested
+    await page.evaluate(() => {
+      // Stub window.Notification
+      if (!window.Notification) {
+        Object.defineProperty(window, "Notification", {
+          configurable: true,
+          value: {
+            requestPermission: async () => 'granted',
+            permission: 'default'
+          }
+        });
+      } else {
+        window.Notification.requestPermission = async () => "granted";
+        (window.Notification as unknown as { permission: string }).permission = "default";
+      }
+      
+      // Stub window.PushManager
+      if (!window.PushManager) {
+        Object.defineProperty(window, "PushManager", {
+          configurable: true,
+          value: {}
+        });
+      }
 
       // Mock push manager subscription
       Object.defineProperty(navigator, 'serviceWorker', {
         configurable: true,
         value: {
-          register: async () => {
-            console.log('MOCK SW: register() called');
-            return {
-              pushManager: {
-                subscribe: async () => {
-                  console.log('MOCK SW: register.pushManager.subscribe() called');
-                  return {
-                    endpoint: "https://fcm.googleapis.com/fcm/send/fake-endpoint",
-                    getKey: () => new ArrayBuffer(0),
-                    toJSON: () => ({ endpoint: "https://fcm.googleapis.com/fcm/send/fake-endpoint" })
-                  }
-                }
-              },
-              addEventListener: () => {},
-              removeEventListener: () => {}
-            };
-          },
+          register: async () => ({}),
           ready: Promise.resolve({
             pushManager: {
-              subscribe: async () => {
-                console.log('MOCK SW: ready.pushManager.subscribe() called');
-                return {
-                  endpoint: "https://fcm.googleapis.com/fcm/send/fake-endpoint",
-                  getKey: () => new ArrayBuffer(0),
-                  toJSON: () => ({ endpoint: "https://fcm.googleapis.com/fcm/send/fake-endpoint" })
-                };
-              }
+              subscribe: async () => ({
+                endpoint: "https://fcm.googleapis.com/fcm/send/fake-endpoint",
+                getKey: () => new ArrayBuffer(0),
+                toJSON: () => ({ endpoint: "https://fcm.googleapis.com/fcm/send/fake-endpoint" })
+              })
             }
-          }),
-          addEventListener: () => console.log('MOCK SW: addEventListener called'),
-          removeEventListener: () => console.log('MOCK SW: removeEventListener called')
+          })
         }
       });
     });
 
-    // Navigate to settings
-    page.on('console', msg => console.log('PAGE LOG:', msg.text()));
-    page.on('pageerror', err => console.log('PAGE ERROR:', err.message));
-    await page.goto("/app?view=settings");
+    // Wait for Hydration to complete so buttons become interactive
+    await page.waitForTimeout(500);
 
     // Bypass onboarding overlay
     const skipBtn = page.getByRole("button", { name: "Skip" });
@@ -96,15 +96,14 @@ test.describe("Notification Flow", () => {
     });
 
     // Click Subscribe to trigger the flow
-    const subscribeButton = page.getByRole("button", { name: /Subscribe/i });
-    await page.waitForTimeout(2000);
-    await page.screenshot({ path: 'test-screenshot.png', fullPage: true });
+    const vapidKeyInput = page.getByLabel(/VAPID public key/i);
+    const fakeVapidKey = Buffer.from("A".repeat(65)).toString("base64url");
+    await vapidKeyInput.fill(fakeVapidKey);
     
+    const subscribeButton = page.getByRole("button", { name: /Subscribe/i });
     if (await subscribeButton.isVisible()) {
       await subscribeButton.click();
     } else {
-      // In case we're offline or mock failed, fallback. 
-      // But we just need to ensure the sync is captured.
       const syncButton = page.getByRole("button", { name: /Sync/i }).first();
       await syncButton.click();
     }

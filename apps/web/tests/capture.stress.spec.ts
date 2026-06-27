@@ -6,6 +6,13 @@ test("handles repeated task capture and board rendering", async ({ page }) => {
     localStorage.setItem("tl_dek", btoa(String.fromCharCode.apply(null, Array.from(new Uint8Array(32)))));
   });
   await page.goto("/app");
+  
+  // Bypass onboarding overlay
+  const skipBtn = page.getByRole("button", { name: "Skip" });
+  await skipBtn.waitFor({ state: "visible", timeout: 10000 });
+  await skipBtn.click();
+  await skipBtn.waitFor({ state: "hidden", timeout: 5000 });
+
   await expect(page.getByRole("heading", { name: /Good (morning|afternoon|evening)/ })).toBeVisible();
 
   for (let index = 1; index <= 20; index += 1) {
@@ -18,6 +25,6 @@ test("handles repeated task capture and board rendering", async ({ page }) => {
   await page.getByLabel("Board").click();
   await expect(page.getByRole("heading", { name: "Backlog" })).toBeVisible();
   await expect(page.getByText("Stress task 20")).toBeVisible();
-  // 8 seeded tasks (incl. 4 goal steps) + 20 captured here.
-  await expect(page.locator("article.task-card")).toHaveCount(28);
+  // 14 seeded tasks (incl. 4 goal steps and 6 daily quests) + 20 captured here.
+  await expect(page.locator("article.task-card")).toHaveCount(34);
 });

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useMemo } from "react";
 import { Task } from "@throughline/domain";
 
 type DynamicBackgroundProps = {
@@ -6,15 +6,13 @@ type DynamicBackgroundProps = {
 };
 
 export function DynamicBackground({ tasks }: DynamicBackgroundProps) {
-  const [styles, setStyles] = useState<React.CSSProperties>({});
-
-  useEffect(() => {
+  const styles = useMemo(() => {
     // 1. Time of Day logic
     const hour = new Date().getHours();
     let color1, color2;
     
     // Check if we are in dark mode to adjust colors
-    const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+    const isDark = typeof document !== "undefined" ? document.documentElement.getAttribute("data-theme") === "dark" : false;
     
     if (hour >= 5 && hour < 12) {
       // Morning: bright and energetic
@@ -46,12 +44,12 @@ export function DynamicBackground({ tasks }: DynamicBackgroundProps) {
     const duration1 = `${60 * speedFactor}s`;
     const duration2 = `${80 * speedFactor}s`;
 
-    setStyles({
+    return {
       "--mesh-color-1": color1,
       "--mesh-color-2": color2,
       "--mesh-duration-1": duration1,
       "--mesh-duration-2": duration2,
-    } as React.CSSProperties);
+    } as React.CSSProperties;
   }, [tasks]);
 
   return <div className="ambient-mesh" style={styles} />;

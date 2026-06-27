@@ -1,6 +1,9 @@
 @import "tailwindcss";
 
 @theme {
+  --radius-liquid-1: 50px 120px 50px 120px;
+  --radius-liquid-2: 120px 50px 120px 50px;
+  --radius-liquid-3: 70px 140px 70px 140px;
   --color-on-secondary-fixed-variant: #005236;
   --color-primary-container: #6063ee;
   --color-surface-container: #eaedff;
@@ -3589,3 +3592,10 @@ html {
   background-clip: text;
 }
 
+.aurora-bg-1 {
+  animation: slowFog 60s ease-in-out infinite alternate;
+}
+
+.aurora-bg-2 {
+  animation: slowFog 80s ease-in-out infinite alternate-reverse;
+}
