@@ -1,0 +1,14 @@
+{
+  "title": "Today's Tasks",
+  "description": "Your focus for today.",
+  "tasks": [
+    {
+      "status": "☐",
+      "name": "Review notes"
+    },
+    {
+      "status": "☑",
+      "name": "Check timeline"
+    }
+  ]
+}

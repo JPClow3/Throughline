@@ -229,7 +229,7 @@ export function TaskCard({
             onClick={(e) => e.stopPropagation()}
           >
             {(task.subtasks || []).map((st, idx) => (
-              <label key={st.id} className="flex items-center gap-3 text-sm text-on-surface-variant hover:text-on-surface cursor-pointer p-1 -mx-1 rounded hover:bg-white/40 transition-colors">
+              <label key={st.id} className="flex items-center gap-3 text-sm text-on-surface-variant hover:text-on-surface cursor-pointer p-1 -mx-1 rounded hover:bg-[var(--accent-soft)] transition-colors">
                 <input type="checkbox" checked={st.completed} onChange={() => toggleSubtask(idx)} className="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary focus:ring-offset-0 bg-transparent" />
                 <span className={st.completed ? "line-through opacity-60" : ""}>{st.title}</span>
               </label>

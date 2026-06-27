@@ -30,9 +30,9 @@ Throughline is a **Docker-first deployment app** designed for Dokploy (Traefik i
 
 ## 2. Offline PWA
 
-The web app uses `vite-plugin-pwa`.
+The web app uses `vite-plugin-pwa` configured with `injectManifest`.
 
-- **Service Worker**: Precaches the app shell via Workbox and falls back to `/index.html`.
+- **Service Worker**: A custom service worker (`sw.ts`) precaches the app shell via Workbox, handles `sync` and `periodicsync` background events, registers Web Push listeners, and falls back to `/index.html`.
 - **Data**: Offline user data is stored in IndexedDB through Dexie. The service worker handles assets, while IndexedDB stores tasks, courses, and progress.
 - **Generated Files**: `apps/web/dist` and `apps/web/dev-dist` are ignored by git.
 - **Check**: App loads from preview server, survives reload offline, core views render without push API.
@@ -40,7 +40,7 @@ The web app uses `vite-plugin-pwa`.
 ## 3. Release & Store Readiness
 
 ### PWA Checklist
-- Manifest has valid properties (`Throughline`, stable `id`, standalone / display overrides, icons, shortcuts, etc).
+- Manifest has valid properties (`Throughline`, stable `id`, standalone / display overrides, icons, shortcuts, widgets, share_target, protocols, file_handlers, iarc_rating_id, etc).
 - Offline shell works down to 320px breakpoints.
 - IndexedDB survives reload.
 - Notification states clear when API missing.

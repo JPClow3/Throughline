@@ -38,8 +38,6 @@ export function Dashboard({
   const total = tasks.length;
   const done = tasks.filter((task) => task.status === "done").length;
   const pct = total ? Math.round((done / total) * 100) : 0;
-  const strokeDashoffset = 283 - (283 * pct) / 100;
-
   const now = new Date();
   const startOfWeek = new Date(now);
   startOfWeek.setDate(now.getDate() - 7); // Last 7 days
@@ -76,7 +74,7 @@ export function Dashboard({
         <section className="lg:col-span-8 glass-panel rounded-xl p-padding-glass flex flex-col gap-6">
           <div className="flex justify-between items-center">
             <h2 className="font-headline-md text-headline-md text-on-surface">Daily Progress</h2>
-            <button className="text-primary hover:bg-primary-fixed rounded-full p-2 transition-colors">
+            <button className="text-primary hover:bg-[var(--primary-fixed)] rounded-full p-2 hover:scale-[1.015] active:scale-[0.98] transition-all">
               <DotsThree size={24} weight="bold" />
             </button>
           </div>
@@ -126,8 +124,8 @@ export function Dashboard({
               dueSoon.map((task, idx) => {
                 const isUrgent = task.difficulty >= 4 || task.priority === "high" || task.priority === "critical";
                 return (
-                  <div key={task.id} onClick={() => onEdit(task)} className="group flex items-start gap-4 p-3 rounded-lg hover:bg-white/40 transition-colors border border-transparent hover:border-white/40 cursor-pointer">
-                    <button onClick={(e) => { e.stopPropagation(); onComplete(task); }} className={`mt-1 w-5 h-5 rounded-full border-2 flex-shrink-0 cursor-pointer transition-colors ${idx === 1 ? 'border-error hover:bg-error/20' : 'border-primary hover:bg-primary/20'}`}></button>
+                  <div key={task.id} onClick={() => onEdit(task)} className="group flex items-start gap-4 p-3 rounded-lg hover:bg-[var(--accent-soft)] transition-colors border border-transparent hover:border-[var(--glass-border)] cursor-pointer">
+                    <button onClick={(e) => { e.stopPropagation(); onComplete(task); }} className={`mt-1 w-5 h-5 rounded-full border-2 flex-shrink-0 hover:scale-[1.1] active:scale-[0.9] transition-all ${idx === 1 ? 'border-error hover:bg-error/20' : 'border-[var(--color-primary)] hover:bg-[var(--color-primary)]/20'}`}></button>
                     <div className="flex flex-col w-full">
                       <TaskCard 
                         task={task} 
@@ -144,7 +142,7 @@ export function Dashboard({
               })
             )}
           </div>
-          <button onClick={() => onNewTask()} className="mt-auto w-full py-3 rounded-lg border border-primary/30 text-primary font-label-md text-label-md hover:bg-primary/5 transition-colors flex items-center justify-center gap-2">
+          <button onClick={() => onNewTask()} className="mt-auto w-full py-3 rounded-lg border border-[var(--color-primary)]/30 text-primary font-label-md text-label-md hover:bg-[var(--color-primary)]/5 hover:scale-[1.015] active:scale-[0.98] transition-all flex items-center justify-center gap-2">
             <Plus size={16} />
             Quick Add Task
           </button>
@@ -161,13 +159,13 @@ export function Dashboard({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="flex flex-col bg-surface-container-low p-4 rounded-xl border border-outline-variant/30">
               <span className="font-label-md text-on-surface-variant mb-2 flex items-center gap-2"><CheckCircle size={16} /> Tasks Completed</span>
-              <span className="font-display-sm text-primary">{weeklyTasks.length}</span>
+              <span className="font-display-sm text-primary tabular-nums">{weeklyTasks.length}</span>
               <span className="font-body-sm text-on-surface-variant mt-1">in the last 7 days</span>
             </div>
             
             <div className="flex flex-col bg-surface-container-low p-4 rounded-xl border border-outline-variant/30">
               <span className="font-label-md text-on-surface-variant mb-2 flex items-center gap-2"><Lightning size={16} /> XP Gained</span>
-              <span className="font-display-sm text-secondary">{weeklyXP}</span>
+              <span className="font-display-sm text-secondary tabular-nums">{weeklyXP}</span>
               <span className="font-body-sm text-on-surface-variant mt-1">keep up the momentum</span>
             </div>
 
@@ -181,7 +179,7 @@ export function Dashboard({
                         <div className="w-2 h-2 rounded-full" style={{ backgroundColor: c.course?.color }} />
                         {c.course?.code ?? c.course?.name}
                       </span>
-                      <span className="font-label-sm text-on-surface-variant flex-shrink-0">
+                      <span className="font-label-sm text-on-surface-variant flex-shrink-0 tabular-nums">
                         {Math.round(c.minutes / 60 * 10) / 10}h
                       </span>
                     </div>

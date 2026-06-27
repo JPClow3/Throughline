@@ -6,9 +6,23 @@ type ReminderSyncPayload = {
 };
 
 test.describe("Notification Flow", () => {
+  test.beforeEach(async ({ page }) => {
+    // Seed local session marker so the guard admits us without a running backend
+    await page.addInitScript(() => {
+      localStorage.setItem("tl_email", "tester@example.com");
+      localStorage.setItem("tl_dek", btoa(String.fromCharCode.apply(null, Array.from(new Uint8Array(32)))));
+    });
+  });
+
   test("grant notification permission, subscribe, and verify payload is redacted", async ({ page }) => {
     // Navigate to settings
-    await page.goto("/settings");
+    await page.goto("/app?view=settings");
+
+    // Bypass onboarding overlay
+    const skipBtn = page.getByRole("button", { name: "Skip" });
+    await skipBtn.waitFor({ state: "visible", timeout: 10000 });
+    await skipBtn.click();
+    await skipBtn.waitFor({ state: "hidden", timeout: 5000 });
     
     // We mock the notification permission API so it appears as granted when requested
     await page.evaluate(() => {
@@ -26,25 +40,33 @@ test.describe("Notification Flow", () => {
 
     // Mock push manager subscription
     await page.evaluate(() => {
-      if (!navigator.serviceWorker) {
-        Object.defineProperty(navigator, 'serviceWorker', {
-          value: {
-            register: async () => ({}),
-            ready: Promise.resolve({
-              pushManager: {
-                subscribe: async () => ({
-                  endpoint: "https://fcm.googleapis.com/fcm/send/fake-endpoint",
-                  getKey: () => new ArrayBuffer(0),
-                  toJSON: () => ({ endpoint: "https://fcm.googleapis.com/fcm/send/fake-endpoint" })
-                })
-              }
-            })
-          }
-        });
-      }
+      Object.defineProperty(navigator, 'serviceWorker', {
+        configurable: true,
+        value: {
+          register: async () => ({}),
+          ready: Promise.resolve({
+            pushManager: {
+              subscribe: async () => ({
+                endpoint: "https://fcm.googleapis.com/fcm/send/fake-endpoint",
+                getKey: () => new ArrayBuffer(0),
+                toJSON: () => ({ endpoint: "https://fcm.googleapis.com/fcm/send/fake-endpoint" })
+              })
+            }
+          })
+        }
+      });
     });
 
     const syncRequests: ReminderSyncPayload[] = [];
+
+    // Intercept the initial subscription creation
+    await page.route("**/subscriptions", async (route) => {
+      if (route.request().method() === "POST") {
+        await route.fulfill({ status: 200, json: { endpointHash: "fake-hash" } });
+      } else {
+        await route.continue();
+      }
+    });
 
     // Intercept the reminder sync call to verify payload
     await page.route("**/subscriptions/*/reminders", async (route) => {

@@ -153,6 +153,7 @@ export function Landing() {
   return (
     <MotionConfig reducedMotion="user">
       <div className="landing">
+        <div className="landing-ambient-bg" />
         <header className="landing-nav">
           <a className="landing-brand" href="#top">
             <span className="landing-brand-mark">
@@ -181,7 +182,7 @@ export function Landing() {
           <section className="landing-hero">
             <Reveal className="landing-hero-copy">
               <span className="eyebrow">A calm place to plan</span>
-              <h1>
+              <h1 className="text-shimmer">
                 Goals that quietly
                 <br />
                 pull the work forward.
@@ -191,7 +192,7 @@ export function Landing() {
                 cross-linked notebook, a board, and a timeline. Local-first and end-to-end encrypted.
               </p>
               <div className="landing-cta-row">
-                <Link className="primary-button" to="/signup">
+                <Link className="primary-button depth-hover glow-halo" to="/signup">
                   Get started <ArrowRight size={17} />
                 </Link>
                 <Link className="secondary-button" to="/app">
@@ -217,7 +218,7 @@ export function Landing() {
             <div className="landing-steps">
               {STEPS.map((step, index) => (
                 <Reveal key={step.title} delay={index * 0.08}>
-                  <article className="landing-step glass-panel">
+                  <article className="landing-step glass-panel depth-hover">
                     <span className="landing-step-no">{index + 1}</span>
                     <span className="landing-feature-icon">{step.icon}</span>
                     <h3>{step.title}</h3>
@@ -257,7 +258,7 @@ export function Landing() {
 
           <section id="privacy" className="landing-privacy">
             <Reveal>
-              <div className="landing-privacy-card glass-panel">
+              <div className="landing-privacy-card glass-heavy depth-hover">
                 <span className="landing-feature-icon">
                   <LockKey size={22} />
                 </span>
@@ -292,7 +293,7 @@ export function Landing() {
             <div className="landing-features">
               {FEATURES.map((feature, index) => (
                 <Reveal key={feature.title} delay={index * 0.06}>
-                  <article className="landing-feature glass-panel">
+                  <article className="landing-feature glass-panel depth-hover">
                     <span className="landing-feature-icon">{feature.icon}</span>
                     <h3>{feature.title}</h3>
                     <p>{feature.body}</p>
@@ -310,7 +311,7 @@ export function Landing() {
             <div className="landing-faq-list">
               {FAQ.map((item) => (
                 <Reveal key={item.q}>
-                  <details className="landing-faq-item glass-panel">
+                  <details className="landing-faq-item glass-panel depth-hover">
                     <summary>{item.q}</summary>
                     <p>{item.a}</p>
                   </details>
@@ -323,7 +324,7 @@ export function Landing() {
             <Reveal>
               <h2>Start with one goal.</h2>
               <p>Add the first step today — Throughline keeps the rest calm.</p>
-              <Link className="primary-button" to="/signup">
+              <Link className="primary-button depth-hover glow-halo" to="/signup">
                 Get started <ArrowRight size={17} />
               </Link>
             </Reveal>

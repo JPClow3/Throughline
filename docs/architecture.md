@@ -27,7 +27,7 @@ Push data follows a separate path. The browser registers a subscription with `ap
 The push API is split into config, schemas, server routes, and a store interface. The current store is JSON-backed and serializes writes to avoid file races. A future SQLite or hosted store should implement the same store interface. Dispatch uses `notifyAt`, not `dueAt`, so reminders can fire before a task is due.
 
 ### Offline Model
-The PWA plugin generates a service worker that precaches the app shell and supports navigation fallback to `index.html`. User data lives in IndexedDB through Dexie. Core task workflows should work without the push API.
+The app utilizes a custom service worker (`sw.ts`) built via the Vite PWA plugin's `injectManifest` strategy. This worker precaches the app shell via Workbox, supports push notifications, handles background and periodic sync events, and falls back to `index.html`. User data lives in IndexedDB through Dexie. Core task workflows should work without the push API.
 
 ### Resilience
 A top-level `ErrorBoundary` catches render errors and shows a calm reload screen; local IndexedDB data is untouched. Users can export and re-import all planner content as JSON from Settings.

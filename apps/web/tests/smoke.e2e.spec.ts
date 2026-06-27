@@ -11,6 +11,13 @@ test.beforeEach(async ({ page }) => {
 
 test("renders today and board", async ({ page }) => {
   await page.goto("/app");
+  
+  // Bypass onboarding overlay
+  const skipBtn = page.getByRole("button", { name: "Skip" });
+  await skipBtn.waitFor({ state: "visible", timeout: 10000 });
+  await skipBtn.click();
+  await skipBtn.waitFor({ state: "hidden", timeout: 5000 });
+  
   await expect(page.getByRole("heading", { name: /Good (morning|afternoon|evening)/ })).toBeVisible();
   await page.getByLabel("Board").click();
   await expect(page.getByRole("heading", { name: "Backlog" })).toBeVisible();
@@ -19,6 +26,13 @@ test("renders today and board", async ({ page }) => {
 test("captures, moves, and completes a task", async ({ page }) => {
   const title = `UX flow task ${Date.now()}`;
   await page.goto("/app");
+
+  // Bypass onboarding overlay
+  const skipBtn = page.getByRole("button", { name: "Skip" });
+  await skipBtn.waitFor({ state: "visible", timeout: 10000 });
+  await skipBtn.click();
+  await skipBtn.waitFor({ state: "hidden", timeout: 5000 });
+
   await page.getByRole("button", { name: /New task/i }).click();
   await page.getByLabel("Title").fill(title);
   await page.getByLabel("Due").fill("2026-12-04T14:30");

@@ -60,49 +60,49 @@ export function CommandPalette({ open, setOpen, onNavigate, onNewTask, onToggleT
           <Command.Group heading="Navigation" className="px-2 py-3 text-label-sm font-medium text-on-surface-variant [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:pb-1.5 [&_[cmdk-group-heading]]:text-outline">
             <Command.Item 
               onSelect={() => runCommand(() => onNavigate("dashboard"))}
-              className="flex items-center gap-3 rounded-xl px-4 py-3 text-body-md text-on-surface cursor-pointer aria-selected:bg-white/40 dark:aria-selected:bg-white/10 group transition-colors"
+              className="flex items-center gap-3 rounded-xl px-4 py-3 text-body-md text-on-surface cursor-pointer aria-selected:bg-[var(--accent-soft)] group transition-colors"
             >
               <House size={18} className="text-on-surface-variant" />
               <span>Go to Today</span>
             </Command.Item>
             <Command.Item 
               onSelect={() => runCommand(() => onNavigate("goals"))}
-              className="flex items-center gap-3 rounded-xl px-4 py-3 text-body-md text-on-surface cursor-pointer aria-selected:bg-white/40 dark:aria-selected:bg-white/10 group transition-colors"
+              className="flex items-center gap-3 rounded-xl px-4 py-3 text-body-md text-on-surface cursor-pointer aria-selected:bg-[var(--accent-soft)] group transition-colors"
             >
               <Target size={18} className="text-on-surface-variant" />
               <span>Go to Goals</span>
             </Command.Item>
             <Command.Item 
               onSelect={() => runCommand(() => onNavigate("kanban"))}
-              className="flex items-center gap-3 rounded-xl px-4 py-3 text-body-md text-on-surface cursor-pointer aria-selected:bg-white/40 dark:aria-selected:bg-white/10 group transition-colors"
+              className="flex items-center gap-3 rounded-xl px-4 py-3 text-body-md text-on-surface cursor-pointer aria-selected:bg-[var(--accent-soft)] group transition-colors"
             >
               <Kanban size={18} className="text-on-surface-variant" />
               <span>Go to Board</span>
             </Command.Item>
             <Command.Item 
               onSelect={() => runCommand(() => onNavigate("timeline"))}
-              className="flex items-center gap-3 rounded-xl px-4 py-3 text-body-md text-on-surface cursor-pointer aria-selected:bg-white/40 dark:aria-selected:bg-white/10 group transition-colors"
+              className="flex items-center gap-3 rounded-xl px-4 py-3 text-body-md text-on-surface cursor-pointer aria-selected:bg-[var(--accent-soft)] group transition-colors"
             >
               <CalendarDots size={18} className="text-on-surface-variant" />
               <span>Go to Timeline</span>
             </Command.Item>
             <Command.Item 
               onSelect={() => runCommand(() => onNavigate("notes"))}
-              className="flex items-center gap-3 rounded-xl px-4 py-3 text-body-md text-on-surface cursor-pointer aria-selected:bg-white/40 dark:aria-selected:bg-white/10 group transition-colors"
+              className="flex items-center gap-3 rounded-xl px-4 py-3 text-body-md text-on-surface cursor-pointer aria-selected:bg-[var(--accent-soft)] group transition-colors"
             >
               <Note size={18} className="text-on-surface-variant" />
               <span>Go to Notes</span>
             </Command.Item>
             <Command.Item 
               onSelect={() => runCommand(() => onNavigate("courses"))}
-              className="flex items-center gap-3 rounded-xl px-4 py-3 text-body-md text-on-surface cursor-pointer aria-selected:bg-white/40 dark:aria-selected:bg-white/10 group transition-colors"
+              className="flex items-center gap-3 rounded-xl px-4 py-3 text-body-md text-on-surface cursor-pointer aria-selected:bg-[var(--accent-soft)] group transition-colors"
             >
               <FolderSimple size={18} className="text-on-surface-variant" />
               <span>Go to Projects</span>
             </Command.Item>
             <Command.Item 
               onSelect={() => runCommand(() => onNavigate("settings"))}
-              className="flex items-center gap-3 rounded-xl px-4 py-3 text-body-md text-on-surface cursor-pointer aria-selected:bg-white/40 dark:aria-selected:bg-white/10 group transition-colors"
+              className="flex items-center gap-3 rounded-xl px-4 py-3 text-body-md text-on-surface cursor-pointer aria-selected:bg-[var(--accent-soft)] group transition-colors"
             >
               <GearSix size={18} className="text-on-surface-variant" />
               <span>Settings</span>
@@ -112,7 +112,7 @@ export function CommandPalette({ open, setOpen, onNavigate, onNewTask, onToggleT
           <Command.Group heading="Preferences" className="px-2 py-3 text-label-sm font-medium text-on-surface-variant [&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:pb-1.5 [&_[cmdk-group-heading]]:text-outline">
             <Command.Item 
               onSelect={() => runCommand(onToggleTheme)}
-              className="flex items-center gap-3 rounded-xl px-4 py-3 text-body-md text-on-surface cursor-pointer aria-selected:bg-white/40 dark:aria-selected:bg-white/10 group transition-colors"
+              className="flex items-center gap-3 rounded-xl px-4 py-3 text-body-md text-on-surface cursor-pointer aria-selected:bg-[var(--accent-soft)] group transition-colors"
             >
               <Sun size={18} className="text-on-surface-variant dark:hidden" />
               <Moon size={18} className="hidden dark:block text-on-surface-variant" />

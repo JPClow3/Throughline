@@ -23,6 +23,9 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
+      strategies: "injectManifest",
+      srcDir: "src",
+      filename: "sw.ts",
       registerType: "autoUpdate",
       includeAssets: [
         "favicon.svg",
@@ -34,7 +37,7 @@ export default defineConfig({
         "pwa-maskable-512x512.png",
         "apple-touch-icon.png"
       ],
-      manifest: {
+      manifest: <any>{
         name: "Throughline",
         short_name: "Throughline",
         id: "/app",
@@ -44,20 +47,70 @@ export default defineConfig({
         theme_color: "#eef0f4",
         background_color: "#eef0f4",
         display: "standalone",
-        display_override: ["window-controls-overlay", "standalone", "minimal-ui", "browser"],
+        display_override: ["tabbed" as unknown as "standalone", "window-controls-overlay", "standalone", "minimal-ui", "browser"],
         orientation: "any",
         start_url: "/app",
         scope: "/",
         categories: ["productivity", "education"],
+        iarc_rating_id: "560677a9-2ae6-8a3a-84c0-3f535f470ce7",
         launch_handler: {
           client_mode: "focus-existing"
         },
+        prefer_related_applications: false,
         related_applications: [
           {
             platform: "windows",
             url: "https://apps.microsoft.com/detail/9PDNH55ZKNZ7",
             id: "9PDNH55ZKNZ7"
           }
+        ],
+        file_handlers: [
+          {
+            action: "/app",
+            accept: {
+              "text/plain": [".txt", ".md"],
+              "text/csv": [".csv"]
+            }
+          }
+        ],
+        protocol_handlers: [
+          {
+            protocol: "web+throughline",
+            url: "/app?action=%s"
+          }
+        ],
+        share_target: {
+          action: "/app",
+          method: "GET",
+          params: {
+            title: "title",
+            text: "text",
+            url: "url"
+          }
+        },
+        // @ts-ignore
+        widgets: [
+          {
+            name: "Throughline Today",
+            description: "Today's timeline and tasks.",
+            tag: "today",
+            template: "",
+            ms_ac_template: "widgets/today.json",
+            data: "widgets/today-data.json",
+            type: "application/json"
+          }
+        ],
+        // @ts-ignore
+        edge_side_panel: {
+          preferred_width: 400
+        },
+        // @ts-ignore
+        note_taking: {
+          new_note_url: "/app?view=notes&action=new"
+        },
+        // @ts-ignore
+        scope_extensions: [
+          { origin: "*.throughline.app" }
         ],
         icons: [
           {
@@ -122,12 +175,9 @@ export default defineConfig({
           }
         ]
       },
-      workbox: {
-        globPatterns: ["**/*.{js,css,html,svg,png,ico,woff2}"],
-        navigateFallback: "/index.html"
-      },
       devOptions: {
-        enabled: true
+        enabled: true,
+        type: "module"
       }
     })
   ]

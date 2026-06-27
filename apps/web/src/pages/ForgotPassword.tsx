@@ -75,7 +75,7 @@ export function ForgotPassword() {
         {error ? (
           <Notice variant="error" className="mb-4">{error}</Notice>
         ) : null}
-        <button className="primary-button" type="submit" disabled={busy}>
+        <button className="primary-button depth-hover glow-halo" type="submit" disabled={busy}>
           {busy ? "Recovering…" : "Reset Password"}
         </button>
       </form>

@@ -81,7 +81,7 @@ export function Signup() {
           </label>
         </div>
 
-        <button className="primary-button" disabled={!canProceed} onClick={() => navigate("/app")}>
+        <button className="primary-button depth-hover glow-halo" disabled={!canProceed} onClick={() => navigate("/app")}>
           Continue to Planner
         </button>
       </AuthShell>
@@ -149,7 +149,7 @@ export function Signup() {
         <p className="auth-note">
           Your password encrypts your data — we can't reset it or recover your notes if it's lost.
         </p>
-        <button className="primary-button" type="submit" disabled={busy}>
+        <button className="primary-button depth-hover glow-halo" type="submit" disabled={busy}>
           {busy ? "Creating…" : "Create account"}
         </button>
       </form>

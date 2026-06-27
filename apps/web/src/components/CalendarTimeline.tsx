@@ -89,7 +89,7 @@ const AgendaRowRender = React.forwardRef<HTMLDivElement, AgendaRowRenderProps & 
                   e.stopPropagation();
                   onStartFocus(task);
                 }}
-                className="meta-chip meta-chip-button hover:bg-surface-container-highest transition-colors cursor-pointer"
+                className="meta-chip meta-chip-button hover:bg-[var(--accent-soft)] hover:scale-[1.015] active:scale-[0.98] transition-all cursor-pointer"
                 style={{ border: "1px solid var(--border)", background: "var(--surface)" }}
                 aria-label={`Start focus mode for ${task.title}`}
               >
