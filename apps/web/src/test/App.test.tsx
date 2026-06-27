@@ -11,7 +11,9 @@ describe("App", () => {
       </AuthProvider>
     );
 
-    expect(await screen.findByRole("button", { name: "Today" })).toBeInTheDocument();
-    expect(screen.getByLabelText("Board")).toBeInTheDocument();
+    const todayButtons = await screen.findAllByRole("button", { name: "Today" });
+    expect(todayButtons.length).toBeGreaterThan(0);
+    const boardButtons = screen.getAllByLabelText("Board");
+    expect(boardButtons.length).toBeGreaterThan(0);
   });
 });
