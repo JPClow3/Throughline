@@ -3469,52 +3469,28 @@ html {
    Atmospheric Fluidity (Landing Polish)
    ========================================================================= */
 
-.landing-ambient-bg {
-  position: fixed;
-  inset: 0;
-  z-index: -2;
-  pointer-events: none;
-  overflow: hidden;
-  background: var(--tl-bg);
-  transition: background-color 0.5s ease;
+/* Animated Filament & Pulses for Landing Background */
+.animate-float-slow { animation: float 9s ease-in-out infinite; }
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
 }
 
-:root[data-theme="dark"] .landing-ambient-bg {
-  background: var(--tl-bg);
+.animate-pulse-bio { animation: pulseBio 8s ease-in-out infinite; }
+@keyframes pulseBio {
+  0% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.03); }
+  100% { opacity: 0.3; transform: scale(1); }
 }
 
-.landing-ambient-bg::before,
-.landing-ambient-bg::after {
-  content: "";
-  position: absolute;
-  border-radius: 50%;
-  mix-blend-mode: multiply;
-  transform-origin: center;
+.filament-path {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: drawFilament 4s ease-out forwards;
 }
-
-:root[data-theme="dark"] .landing-ambient-bg::before,
-:root[data-theme="dark"] .landing-ambient-bg::after {
-  mix-blend-mode: screen;
-}
-
-.landing-ambient-bg::before {
-  top: -20%;
-  left: -10%;
-  width: 130%;
-  height: 130%;
-  background: radial-gradient(circle, rgba(126, 167, 255, 0.35), rgba(143, 231, 221, 0.15), transparent 70%);
-  filter: blur(150px);
-  animation: slowFog 60s ease-in-out infinite alternate;
-}
-
-.landing-ambient-bg::after {
-  bottom: -30%;
-  right: -10%;
-  width: 140%;
-  height: 140%;
-  background: radial-gradient(circle, rgba(185, 167, 255, 0.3), rgba(245, 184, 255, 0.15), transparent 70%);
-  filter: blur(200px);
-  animation: slowFog 80s ease-in-out infinite alternate-reverse;
+@keyframes drawFilament {
+  to { stroke-dashoffset: 0; }
 }
 
 .glass-panel {
