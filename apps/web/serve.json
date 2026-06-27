@@ -2,7 +2,7 @@
   "public": "dist",
   "rewrites": [
     {
-      "source": "**",
+      "source": "!/assets/**",
       "destination": "/index.html"
     }
   ],

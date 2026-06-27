@@ -12,7 +12,7 @@ describe("Legal Pages", () => {
         <PrivacyPolicy />
       </MemoryRouter>
     );
-    expect(container.textContent).toContain("Política de Privacidade");
+    expect(container.textContent).toContain("Privacy Policy");
   });
 
   it("renders TermsOfService", () => {
@@ -21,6 +21,6 @@ describe("Legal Pages", () => {
         <TermsOfService />
       </MemoryRouter>
     );
-    expect(container.textContent).toContain("Termos de Serviço");
+    expect(container.textContent).toContain("Terms of Service");
   });
 });

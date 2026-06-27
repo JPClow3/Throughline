@@ -2,7 +2,6 @@ import {
   ArrowRight,
   CalendarDots,
   CloudCheck,
-  DeviceMobile,
   Kanban,
   LockKey,
   Note as NoteIcon,
@@ -208,30 +207,70 @@ export function Landing() {
             </div>
           </section>
 
-          <section id="privacy" className="landing-privacy">
+          <section id="privacy" className="landing-privacy max-w-[1100px] mx-auto w-full px-6 my-24">
             <Reveal>
-              <div className="landing-privacy-card glass-panel">
-                <span className="landing-feature-icon">
-                  <LockKey size={22} />
-                </span>
-                <h2>Private by design.</h2>
-                <p>
-                  Your goals, tasks, and notes are encrypted on your device with a key only you hold.
-                  Throughline's server stores nothing it can read.
-                </p>
-                <div className="landing-privacy-points">
-                  <span>
-                    <LockKey size={16} /> End-to-end encrypted
-                  </span>
-                  <span>
-                    <WifiSlash size={16} /> Works fully offline
-                  </span>
-                  <span>
-                    <CloudCheck size={16} /> Syncs across your devices
-                  </span>
-                  <span>
-                    <DeviceMobile size={16} /> Installs as an app
-                  </span>
+              <div className="landing-privacy-card glass-panel relative overflow-hidden rounded-[2rem] p-8 md:p-16 flex flex-col lg:flex-row items-center gap-12 lg:gap-24" style={{ background: 'var(--surface-l2-bg)' }}>
+                {/* Left Column: Text & Badges */}
+                <div className="flex-1 space-y-8 z-10">
+                  <div className="w-14 h-14 rounded-2xl bg-[var(--accent)]/10 dark:bg-[var(--accent)]/20 flex items-center justify-center text-[var(--accent)] shadow-inner">
+                    <LockKey size={28} weight="duotone" />
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <h2 className="text-4xl md:text-5xl font-medium tracking-tight text-[var(--ink)]">Private by design.</h2>
+                    <p className="text-lg md:text-xl text-[var(--ink-muted)] leading-relaxed max-w-lg">
+                      Your goals, tasks, and notes are encrypted on your device with a key only you hold.
+                      Throughline's server stores nothing it can read. True data portability via clean JSON.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap gap-3 pt-2">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--surface-l1-bg)] border border-[var(--glass-border)] text-sm font-medium text-[var(--ink)] shadow-sm">
+                      <LockKey size={16} /> E2E Encrypted
+                    </div>
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--surface-l1-bg)] border border-[var(--glass-border)] text-sm font-medium text-[var(--ink)] shadow-sm">
+                      <WifiSlash size={16} /> Fully Offline
+                    </div>
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--surface-l1-bg)] border border-[var(--glass-border)] text-sm font-medium text-[var(--ink)] shadow-sm">
+                      <CloudCheck size={16} /> Cross-device Sync
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Column: Code Snippet */}
+                <div className="flex-1 w-full z-10">
+                  <div className="glass-panel rounded-[2rem] p-6 shadow-2xl bg-white/40 dark:bg-black/20 border-[var(--glass-border)] backdrop-blur-xl relative overflow-hidden group hover:scale-[1.02] transition-transform duration-500">
+                    <div className="absolute inset-0 bg-gradient-to-br from-[var(--tl-accent-blue)]/10 to-[var(--tl-accent-violet)]/10 opacity-50"></div>
+                    {/* Window Controls */}
+                    <div className="flex gap-2 mb-6 relative z-10">
+                      <div className="w-3 h-3 rounded-full bg-[#ff5f56]"></div>
+                      <div className="w-3 h-3 rounded-full bg-[#27c93f]"></div>
+                      <div className="w-3 h-3 rounded-full bg-[#ffbd2e]"></div>
+                    </div>
+                    <pre className="text-sm md:text-base font-mono text-[var(--ink-muted)] relative z-10 overflow-x-auto">
+                      <code className="leading-loose">
+                        <span className="text-[var(--ink-faint)]">{"{"}</span>
+                        <br />
+                        {"  "}<span className="text-[var(--accent)]">"user"</span>: <span className="text-[var(--tl-progress)]">"scholar_01"</span>,
+                        <br />
+                        {"  "}<span className="text-[var(--accent)]">"workspace"</span>: <span className="text-[var(--tl-progress)]">"Thesis_Drafting"</span>,
+                        <br />
+                        {"  "}<span className="text-[var(--accent)]">"flow_state"</span>: <span className="text-[var(--tl-progress)]">"active"</span>,
+                        <br />
+                        {"  "}<span className="text-[var(--accent)]">"data_locality"</span>: <span className="text-[var(--tl-progress)]">"100%"</span>,
+                        <br />
+                        {"  "}<span className="text-[var(--accent)]">"sync"</span>: {"{"}
+                        <br />
+                        {"    "}<span className="text-[var(--accent)]">"provider"</span>: <span className="text-[var(--tl-progress)]">"e2e_encrypted"</span>,
+                        <br />
+                        {"    "}<span className="text-[var(--accent)]">"status"</span>: <span className="text-[var(--tl-progress)]">"isolated"</span>
+                        <br />
+                        {"  "}{"}"}
+                        <br />
+                        <span className="text-[var(--ink-faint)]">{"}"}</span>
+                      </code>
+                    </pre>
+                  </div>
                 </div>
               </div>
             </Reveal>
