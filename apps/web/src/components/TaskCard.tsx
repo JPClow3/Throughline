@@ -206,9 +206,9 @@ export function TaskCard({
         </button>
       </div>
 
-      <h3 className="task-card-title">
+      <h3 className={`task-card-title ${compact ? 'line-clamp-2' : ''}`}>
         {onEdit ? (
-          <button type="button" className="task-card-edit" onClick={() => onEdit(task)}>
+          <button type="button" className={`task-card-edit ${compact ? 'text-left w-full' : ''}`} onClick={() => onEdit(task)}>
             {task.title}
           </button>
         ) : (
@@ -242,9 +242,9 @@ export function TaskCard({
                 className="flex flex-col gap-2"
               >
                 {(task.subtasks || []).map((st, idx) => (
-                  <label key={st.id} className="flex items-center gap-3 text-sm text-on-surface-variant hover:text-on-surface cursor-pointer p-1 -mx-1 rounded hover:bg-[var(--accent-soft)] transition-colors">
-                    <input type="checkbox" checked={st.completed} onChange={() => toggleSubtask(idx)} className="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary focus:ring-offset-0 bg-transparent" />
-                    <span className={st.completed ? "line-through opacity-60" : ""}>{st.title}</span>
+                  <label key={st.id} className="flex items-center gap-3 text-sm text-on-surface-variant hover:text-on-surface cursor-pointer p-1 -mx-1 rounded hover:bg-[var(--accent-soft)] transition-colors min-w-0">
+                    <input type="checkbox" checked={st.completed} onChange={() => toggleSubtask(idx)} className="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary focus:ring-offset-0 bg-transparent flex-shrink-0" />
+                    <span className={`truncate flex-1 min-w-0 ${st.completed ? "line-through opacity-60" : ""}`}>{st.title}</span>
                   </label>
                 ))}
               </motion.div>

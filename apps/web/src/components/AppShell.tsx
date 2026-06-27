@@ -39,7 +39,7 @@ export function AppShell({
   return (
     <div className="flex h-screen w-full relative">
       <a href="#main-content" className="skip-link">Skip to main content</a>
-      <nav className="fixed left-6 top-6 bottom-6 w-20 rounded-xl bg-[var(--chrome-bg)] border-[var(--glass-border)] shadow-sm flex flex-col items-center py-base space-y-gutter z-50" style={{ backdropFilter: 'var(--chrome-blur)', WebkitBackdropFilter: 'var(--chrome-blur)' }}>
+      <nav className="hidden md:flex fixed left-6 top-6 bottom-6 w-20 rounded-xl bg-[var(--chrome-bg)] border-[var(--glass-border)] shadow-sm flex-col items-center py-base space-y-gutter z-50" style={{ backdropFilter: 'var(--chrome-blur)', WebkitBackdropFilter: 'var(--chrome-blur)' }}>
         <div className="w-12 h-12 mb-4 mt-2 flex flex-col items-center justify-center">
           <div className="font-display-lg text-display-lg font-light text-primary">T</div>
         </div>
@@ -82,7 +82,20 @@ export function AppShell({
         </button>
       </nav>
 
-      <main id="main-content" className="flex-1 ml-0 md:ml-[112px] h-full flex flex-col pt-6 pr-6 pb-6 overflow-y-auto">
+      <main id="main-content" className="flex-1 ml-0 md:ml-[112px] h-full flex flex-col pt-4 md:pt-6 px-4 md:pl-0 md:pr-6 pb-24 md:pb-6 overflow-y-auto">
+        {/* Mobile Top Header */}
+        <div className="flex md:hidden justify-between items-center w-full h-12 mb-6 flex-shrink-0">
+          <span className="font-headline-md text-headline-md font-bold text-primary">Throughline</span>
+          <div className="flex items-center gap-3">
+            <button className="text-on-surface-variant hover:bg-[var(--accent-soft)] rounded-full p-2 transition-all">
+              <Bell size={20} />
+            </button>
+            <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold shadow-sm border-2 border-white" style={{ background: 'var(--tl-gradient-thread)' }}>
+              A
+            </div>
+          </div>
+        </div>
+
         <nav className="hidden md:flex justify-between items-center w-full h-16 mb-8 flex-shrink-0">
           <div className="flex items-center gap-gutter">
             <span className="font-headline-md text-headline-md font-bold text-primary">Throughline</span>
@@ -115,11 +128,31 @@ export function AppShell({
         {/* Mobile FAB for New Task */}
         <button
           onClick={() => onNewTask?.()}
-          className="md:hidden fixed bottom-6 right-6 w-14 h-14 bg-primary text-on-primary rounded-full shadow-lg flex items-center justify-center hover:scale-[1.015] active:scale-[0.98] transition-all z-50"
+          className="md:hidden fixed bottom-24 right-6 w-14 h-14 bg-primary text-on-primary rounded-full shadow-lg flex items-center justify-center hover:scale-[1.015] active:scale-[0.98] transition-all z-50"
           aria-label="New task"
         >
           <Plus size={24} weight="bold" />
         </button>
+
+        {/* Mobile Bottom Navigation */}
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 h-20 bg-[var(--chrome-bg)] border-t border-[var(--glass-border)] shadow-[0_-4px_24px_rgba(0,0,0,0.04)] flex justify-around items-center px-2 pb-safe z-50" style={{ backdropFilter: 'var(--chrome-blur)', WebkitBackdropFilter: 'var(--chrome-blur)' }}>
+          {navItems.slice(0, 5).map((item) => {
+            const isActive = view === item.view;
+            return (
+              <button
+                key={item.view}
+                onClick={() => onViewChange(item.view)}
+                className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-all
+                  ${isActive 
+                    ? "text-primary bg-[var(--accent-soft)]" 
+                    : "text-on-surface-variant"}`}
+              >
+                {item.icon}
+                <span className="text-[10px] font-medium mt-1">{item.label}</span>
+              </button>
+            );
+          })}
+        </nav>
       </main>
     </div>
   );

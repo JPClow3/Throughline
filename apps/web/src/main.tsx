@@ -47,3 +47,8 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     </ErrorBoundary>
   </React.StrictMode>
 );
+
+// Register advanced PWA sync features if supported
+import { registerBackgroundSync, registerPeriodicSync } from "./lib/syncRegistration";
+registerBackgroundSync("sync-tasks");
+registerPeriodicSync("update-tasks");

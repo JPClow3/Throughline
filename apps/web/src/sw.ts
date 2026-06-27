@@ -62,11 +62,14 @@ interface SyncEvent extends ExtendableEvent {
 self.addEventListener("sync", (event: Event) => {
   const syncEvent = event as SyncEvent;
   if (syncEvent.tag === "sync-tasks") {
-    // Implement background sync logic here
     syncEvent.waitUntil(
       (async () => {
-        console.log("Background sync for tasks running");
-        // E.g., read indexedDB and push to server
+        console.log("[ServiceWorker] Background sync (sync-tasks) running");
+        // Notify open clients that a background sync has occurred
+        const clients = await self.clients.matchAll();
+        for (const client of clients) {
+          client.postMessage({ type: "BACKGROUND_SYNC_COMPLETED", tag: syncEvent.tag });
+        }
       })()
     );
   }
@@ -76,11 +79,14 @@ self.addEventListener("sync", (event: Event) => {
 self.addEventListener("periodicsync", (event: Event) => {
   const syncEvent = event as SyncEvent;
   if (syncEvent.tag === "update-tasks") {
-    // Implement periodic background sync logic here
     syncEvent.waitUntil(
       (async () => {
-        console.log("Periodic sync running");
+        console.log("[ServiceWorker] Periodic sync (update-tasks) running");
         // E.g., fetch new data from server and store in indexedDB
+        const clients = await self.clients.matchAll();
+        for (const client of clients) {
+          client.postMessage({ type: "PERIODIC_SYNC_COMPLETED", tag: syncEvent.tag });
+        }
       })()
     );
   }

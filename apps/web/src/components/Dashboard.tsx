@@ -79,9 +79,9 @@ export function Dashboard({
             </button>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center justify-center py-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 items-center justify-center py-4">
             <div className="flex flex-col items-center gap-4">
-              <div className="relative w-48 h-48 flex items-center justify-center">
+              <div className="relative w-36 h-36 lg:w-48 lg:h-48 flex items-center justify-center">
                 <svg className="absolute inset-0 w-full h-full transform -rotate-90" viewBox="0 0 100 100">
                   <circle className="text-surface-container-highest opacity-50" cx="50" cy="50" fill="none" r="42" stroke="currentColor" strokeWidth="12"></circle>
                   <circle className="text-primary drop-shadow-[0_8px_16px_rgba(70,72,212,0.4)]" cx="50" cy="50" fill="none" r="42" stroke="currentColor" strokeDasharray="264" strokeDashoffset="79" strokeLinecap="round" strokeWidth="12"></circle>
@@ -96,7 +96,7 @@ export function Dashboard({
             </div>
 
             <div className="flex flex-col items-center gap-4">
-              <div className="relative w-48 h-48 flex items-center justify-center">
+              <div className="relative w-36 h-36 lg:w-48 lg:h-48 flex items-center justify-center">
                 <svg className="absolute inset-0 w-full h-full transform -rotate-90" viewBox="0 0 100 100">
                   <circle className="text-surface-container-highest opacity-50" cx="50" cy="50" fill="none" r="42" stroke="currentColor" strokeWidth="12"></circle>
                   <circle className="text-secondary drop-shadow-[0_8px_16px_rgba(0,108,73,0.4)]" cx="50" cy="50" fill="none" r="42" stroke="currentColor" strokeDasharray="264" strokeDashoffset={264 - (264 * pct) / 100} strokeLinecap="round" strokeWidth="12"></circle>
@@ -171,13 +171,13 @@ export function Dashboard({
 
             <div className="flex flex-col bg-surface-container-low p-4 rounded-xl border border-outline-variant/30">
               <span className="font-label-md text-on-surface-variant mb-2 flex items-center gap-2"><GraduationCap size={16} /> Top Courses</span>
-              <div className="flex flex-col gap-2 mt-1">
+              <div className="flex flex-col gap-2 mt-1 min-w-0">
                 {sortedCourses.length > 0 ? (
                   sortedCourses.map((c) => (
-                    <div key={c.course?.id} className="flex justify-between items-center">
-                      <span className="font-body-sm text-on-surface truncate pr-2 flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: c.course?.color }} />
-                        {c.course?.code ?? c.course?.name}
+                    <div key={c.course?.id} className="flex justify-between items-center min-w-0 gap-2">
+                      <span className="font-body-sm text-on-surface truncate flex items-center gap-2 min-w-0 flex-1">
+                        <div className="w-2 h-2 flex-shrink-0 rounded-full" style={{ backgroundColor: c.course?.color }} />
+                        <span className="truncate">{c.course?.code ?? c.course?.name}</span>
                       </span>
                       <span className="font-label-sm text-on-surface-variant flex-shrink-0 tabular-nums">
                         {Math.round(c.minutes / 60 * 10) / 10}h
