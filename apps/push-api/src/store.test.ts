@@ -53,4 +53,30 @@ describe("JsonPushStore", () => {
     expect(hashEndpoint("https://push.example.test/a")).toBe(hashEndpoint("https://push.example.test/a"));
     expect(hashEndpoint("https://push.example.test/a")).not.toBe(hashEndpoint("https://push.example.test/b"));
   });
+
+  it("saves and updates individual reminders", async () => {
+    const sub1 = fakeSubscription("https://push.example.test/1");
+    const sub2 = fakeSubscription("https://push.example.test/2");
+    await store.upsertSubscription(sub1);
+    const hash2 = await store.upsertSubscription(sub2);
+    
+    // Save new
+    const r1 = await store.saveReminder(sub1.endpoint, fakeReminder({ reminderId: "r1" }));
+    // Update existing
+    const r1Update = await store.saveReminder(sub1.endpoint, fakeReminder({ reminderId: "r1", notifyAt: r1.notifyAt }));
+    
+    expect(r1Update.dispatchedAt).toBe(r1.dispatchedAt);
+    
+    // Replace reminders, isolating between endpoints
+    const rep = await store.replaceReminders(hash2, [fakeReminder({ reminderId: "r2" })]);
+    expect(rep).toHaveLength(1);
+    
+    const counts = await store.counts();
+    expect(counts.reminders).toBe(2);
+    
+    // Test read failure fallback
+    await import("node:fs/promises").then(m => m.writeFile(join(directory, "push-store.json"), "invalid-json"));
+    const newStore = new JsonPushStore(join(directory, "push-store.json"));
+    expect(await newStore.counts()).toEqual({ subscriptions: 0, reminders: 0 });
+  });
 });

@@ -299,4 +299,40 @@ describe("auth", () => {
 
     await app.close();
   });
+
+  it("rejects salt requests for unknown accounts", async () => {
+    const app = await createServer({ config, store, configureWebPush: false });
+    const res = await app.inject({ method: "POST", url: "/auth/salt", payload: { email: "nobody@example.com" } });
+    expect(res.statusCode).toBe(404);
+    await app.close();
+  });
+
+  it("handles google auth when not configured", async () => {
+    const app = await createServer({ config, store, configureWebPush: false });
+    const res = await app.inject({ method: "POST", url: "/auth/google", payload: { credential: "abc", dek: "def" } });
+    expect(res.statusCode).toBe(501);
+    await app.close();
+  });
+
+  it("updates password successfully", async () => {
+    const app = await createServer({ config, store, configureWebPush: false });
+    const signup = await app.inject({ method: "POST", url: "/auth/signup", payload: account });
+    const token = cookieFrom(signup);
+    
+    const update = await app.inject({ 
+      method: "POST", 
+      url: "/auth/update-password", 
+      payload: { authKey: "new-auth", wrappedDek: "new-wrapped" },
+      cookies: { tl_session: token! }
+    });
+    expect(update.statusCode).toBe(204);
+
+    const updateAnon = await app.inject({ 
+      method: "POST", 
+      url: "/auth/update-password", 
+      payload: { authKey: "new-auth", wrappedDek: "new-wrapped" }
+    });
+    expect(updateAnon.statusCode).toBe(401);
+    await app.close();
+  });
 });

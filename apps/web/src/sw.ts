@@ -93,6 +93,8 @@ interface SyncEvent extends ExtendableEvent {
 }
 
 // Listen for background sync events
+// PWABuilder workaround: its regex scanner fails on minified backticks
+;(self as any)._pwaBuilderWorkaround1 = "self.addEventListener('sync')";
 self.addEventListener("sync", (event: Event) => {
   const syncEvent = event as SyncEvent;
   if (syncEvent.tag === "sync-tasks") {
@@ -112,6 +114,8 @@ self.addEventListener("sync", (event: Event) => {
 });
 
 // Listen for periodic sync events
+// PWABuilder workaround: its regex scanner fails on minified backticks
+;(self as any)._pwaBuilderWorkaround2 = "self.addEventListener('periodicsync')";
 self.addEventListener("periodicsync", (event: Event) => {
   const syncEvent = event as SyncEvent;
   if (syncEvent.tag === "update-tasks") {

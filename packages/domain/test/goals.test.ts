@@ -36,11 +36,12 @@ describe("goals", () => {
 
   it("orders child tasks by order then creation time", () => {
     const tasks = [
-      createTask({ title: "second", goalId: "g1", order: 1 }),
+      createTask({ title: "second", goalId: "g1", order: 1, createdAt: "2023-01-01T00:00:00Z" }),
+      createTask({ title: "third", goalId: "g1", order: 1, createdAt: "2023-01-02T00:00:00Z" }),
       createTask({ title: "first", goalId: "g1", order: 0 })
     ];
 
-    expect(tasksForGoal("g1", tasks).map((task) => task.title)).toEqual(["first", "second"]);
+    expect(tasksForGoal("g1", tasks).map((task) => task.title)).toEqual(["first", "second", "third"]);
   });
 
   it("computes the next order at the end of a goal's list", () => {

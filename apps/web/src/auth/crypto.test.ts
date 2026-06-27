@@ -52,4 +52,20 @@ describe("auth crypto", () => {
     const { kek: wrongKek } = await deriveKeys("wrong-password", salt);
     await expect(unwrapDek(wrapped, wrongKek)).rejects.toBeDefined();
   });
+
+  it("converts dek to and from base64", async () => {
+    const { dekToB64, dekFromB64 } = await import("./crypto");
+    const dek = generateDek();
+    const b64 = dekToB64(dek);
+    expect(dekFromB64(b64)).toEqual(dek);
+  });
+
+  it("generates and derives recovery keys", async () => {
+    const { generateRecoveryKey, deriveRecoveryKeys } = await import("./crypto");
+    const recoveryKey = generateRecoveryKey();
+    expect(recoveryKey.length).toBeGreaterThan(0);
+    const salt = randomSalt();
+    const keys = await deriveRecoveryKeys(recoveryKey, salt);
+    expect(keys.authKey).toBeDefined();
+  });
 });

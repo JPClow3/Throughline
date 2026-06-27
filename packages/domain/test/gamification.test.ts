@@ -22,4 +22,19 @@ describe("gamification", () => {
     expect(levelFromXp(0)).toBe(1);
     expect(levelFromXp(600)).toBeGreaterThan(levelFromXp(120));
   });
+
+  it("awards badges for streaks, combinations and overall XP", () => {
+    const manyTasks = Array.from({ length: 6 }).map((_, i) => ({
+      id: `task_${i}`,
+      status: "done",
+      xp: 150,
+      attributes: ["focus"],
+      completedAt: new Date(Date.now() - i * 86400000).toISOString()
+    })) as import("../src/types").Task[];
+
+    const progress = deriveUserProgress(manyTasks);
+    expect(progress.badges).toContain("Study Combo");
+    expect(progress.badges).toContain("Three-Day Focus");
+    expect(progress.badges).toContain("Semester Hero");
+  });
 });
