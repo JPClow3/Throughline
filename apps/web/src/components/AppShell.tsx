@@ -39,8 +39,8 @@ export function AppShell({
   return (
     <div className="flex h-screen w-full relative">
       <a href="#main-content" className="skip-link">Skip to main content</a>
-      <nav className="fixed left-6 top-6 bottom-6 w-20 rounded-xl bg-white/60 dark:bg-black/60 backdrop-blur-[40px] border border-white/20 dark:border-white/10 shadow-[0px_4px_20px_rgba(0,0,0,0.05)] flex flex-col items-center py-base space-y-gutter z-50">
-        <div className="w-12 h-12 mb-4 flex flex-col items-center justify-center">
+      <nav className="fixed left-6 top-6 bottom-6 w-20 rounded-xl bg-white dark:bg-black/60 dark:backdrop-blur-[40px] border border-outline-variant/20 dark:border-white/10 shadow-sm flex flex-col items-center py-base space-y-gutter z-50">
+        <div className="w-12 h-12 mb-4 mt-2 flex flex-col items-center justify-center">
           <div className="font-display-lg text-display-lg font-light text-primary dark:text-primary-fixed-dim">T</div>
         </div>
 
@@ -83,12 +83,12 @@ export function AppShell({
       </nav>
 
       <main id="main-content" className="flex-1 ml-0 md:ml-[112px] h-full flex flex-col pt-6 pr-6 pb-6 overflow-y-auto">
-        <nav className="hidden md:flex justify-between items-center w-full h-16 bg-white/60 dark:bg-black/60 backdrop-blur-[40px] border border-white/20 dark:border-white/10 shadow-sm rounded-xl px-padding-glass mb-8 flex-shrink-0">
+        <nav className="hidden md:flex justify-between items-center w-full h-16 mb-8 flex-shrink-0">
           <div className="flex items-center gap-gutter">
             <span className="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">Throughline</span>
-            <div className="relative glass-panel rounded-full flex items-center px-4 py-2 border-white/20">
+            <div className="relative bg-white dark:bg-black/40 rounded-full flex items-center px-4 py-2 shadow-sm border border-outline-variant/20">
               <MagnifyingGlass size={18} className="text-outline mr-2" />
-              <input className="bg-transparent border-none focus:ring-0 text-body-md text-on-surface w-48 placeholder-outline-variant p-0" placeholder="Search..." type="text"/>
+              <input className="bg-transparent border-none focus:ring-0 text-body-md text-on-surface w-48 placeholder-outline-variant p-0 outline-none" placeholder="Search..." type="text"/>
             </div>
           </div>
           <div className="flex items-center gap-gutter">
@@ -105,6 +105,9 @@ export function AppShell({
               <Plus size={16} weight="bold" />
               New Task
             </button>
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary ml-2 flex items-center justify-center text-white font-bold shadow-sm border-2 border-white">
+              A
+            </div>
           </div>
         </nav>
         {children}

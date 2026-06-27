@@ -14,8 +14,8 @@ function ThroughlineMark() {
 
 export function AuthShell({ title, subtitle, children }: { title: string; subtitle: string; children: ReactNode }) {
   return (
-    <div className="auth-screen">
-      <div className="auth-card glass-panel">
+    <main className="auth-screen">
+      <div className="auth-card elevation-l3" style={{ borderRadius: "var(--radius-card)" }}>
         <Link className="auth-brand" to="/" aria-label="Throughline home">
           <span className="auth-brand-mark">
             <ThroughlineMark />
@@ -26,6 +26,6 @@ export function AuthShell({ title, subtitle, children }: { title: string; subtit
         <p className="auth-subtitle">{subtitle}</p>
         {children}
       </div>
-    </div>
+    </main>
   );
 }

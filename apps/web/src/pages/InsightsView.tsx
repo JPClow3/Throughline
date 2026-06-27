@@ -68,20 +68,20 @@ export function InsightsView() {
   return (
     <div className="view-layout">
       <header className="view-head">
-        <h2 style={{ fontSize: "var(--text-page)", fontWeight: "var(--fw-bold)" }}>Insights</h2>
+        <h2 style={{ fontSize: "var(--text-page)", fontWeight: 300 }}>Insights</h2>
         <p style={{ color: "var(--ink-muted)", marginTop: "0.5rem" }}>Your productivity trends and stats.</p>
       </header>
       <div className="view-content" style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
         
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem" }}>
-          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", padding: "1.5rem", borderRadius: "var(--radius-card)", boxShadow: "var(--shadow-sm)" }}>
+          <div className="glass-panel" style={{ padding: "1.5rem" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--ink-muted)", marginBottom: "0.5rem", fontWeight: "var(--fw-medium)" }}>
               <Target size={20} />
               <span>Total Completed</span>
             </div>
             <div style={{ fontSize: "2rem", fontWeight: "var(--fw-bold)", color: "var(--ink)" }}>{stats.completedCount}</div>
           </div>
-          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", padding: "1.5rem", borderRadius: "var(--radius-card)", boxShadow: "var(--shadow-sm)" }}>
+          <div className="glass-panel" style={{ padding: "1.5rem" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--ink-muted)", marginBottom: "0.5rem", fontWeight: "var(--fw-medium)" }}>
               <ChartLineUp size={20} />
               <span>Last 7 Days</span>
@@ -97,7 +97,7 @@ export function InsightsView() {
 
         <div>
           <h3 style={{ marginBottom: "1rem", fontSize: "var(--text-section)" }}>Activity Heatmap (Last 28 Days)</h3>
-          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", padding: "1.5rem", borderRadius: "var(--radius-card)", boxShadow: "var(--shadow-sm)", overflowX: "auto" }}>
+          <div className="glass-panel" style={{ padding: "1.5rem", overflowX: "auto" }}>
             <div style={{ display: "flex", gap: "4px" }}>
               {Object.entries(stats.heatmap).map(([date, count]) => {
                 const intensity = Math.min(count / 5, 1);

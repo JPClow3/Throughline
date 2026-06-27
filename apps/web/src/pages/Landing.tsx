@@ -84,7 +84,7 @@ function BrowserFrame({ src, alt, className }: { src: string; alt: string; class
         <span />
         <span />
       </div>
-      <img src={src} alt={alt} loading="lazy" />
+      <img src={src} alt={alt} loading="lazy" width={2480} height={1600} />
     </div>
   );
 }
@@ -100,22 +100,22 @@ const SHOWCASE = [
     eyebrow: "Board",
     title: "See the work move",
     body: "A calm Kanban board across Backlog → Done, with a project filter and quick search. Drag, or change status inline.",
-    img: "/shots/board.png",
-    alt: "Throughline board view"
+    img: "/store-assets/shots/board.png",
+    alt: "Throughline Kanban board interface showing columns for Backlog, In Progress, and Done"
   },
   {
     eyebrow: "Timeline",
     title: "Plan the day, gently",
     body: "An hourly agenda for any day in the next ten, so due work has a place to land without the pressure of a packed calendar.",
-    img: "/shots/timeline.png",
-    alt: "Throughline timeline view"
+    img: "/store-assets/shots/timeline.png",
+    alt: "Throughline timeline interface showing tasks scheduled on an hourly agenda calendar"
   },
   {
     eyebrow: "Notes",
     title: "Context, cross-linked",
     body: "One markdown notebook. Link a note to any task or goal and jump straight back to the work it belongs to.",
-    img: "/shots/notes.png",
-    alt: "Throughline notes view"
+    img: "/store-assets/shots/notes.png",
+    alt: "Throughline markdown notes interface demonstrating cross-linking back to specific tasks and goals"
   }
 ];
 
@@ -204,7 +204,7 @@ export function Landing() {
             </Reveal>
             <Reveal className="landing-hero-shot" delay={0.12}>
               <motion.div className="landing-float" animate={{ y: [0, -10, 0] }} transition={floatTransition}>
-                <BrowserFrame src="/shots/today.png" alt="Throughline Today view" />
+                <BrowserFrame src="/store-assets/shots/today.png" alt="Throughline Today view showing the daily task list and progress rolled up into goals" />
               </motion.div>
             </Reveal>
           </section>
@@ -339,7 +339,7 @@ export function Landing() {
           </div>
           <div className="landing-footer-cols">
             <div>
-              <h4>Product</h4>
+              <h2>Product</h2>
               <a href="#how">How it works</a>
               <a href="#views">The app</a>
               <Link to="/privacy">Privacidade</Link>
@@ -347,7 +347,7 @@ export function Landing() {
               <a href="#faq">FAQ</a>
             </div>
             <div>
-              <h4>Account</h4>
+              <h2>Account</h2>
               <Link to="/login">Log in</Link>
               <Link to="/signup">Get started</Link>
               <Link to="/app">Open the app</Link>

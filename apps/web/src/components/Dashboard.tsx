@@ -73,7 +73,7 @@ export function Dashboard({
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
-        <section className="lg:col-span-8 glass-panel rounded-xl p-padding-glass flex flex-col gap-6 transition-all duration-300 hover:bg-white/70">
+        <section className="lg:col-span-8 glass-panel rounded-xl p-padding-glass flex flex-col gap-6">
           <div className="flex justify-between items-center">
             <h2 className="font-headline-md text-headline-md text-on-surface">Daily Progress</h2>
             <button className="text-primary hover:bg-primary-fixed rounded-full p-2 transition-colors">
@@ -85,11 +85,11 @@ export function Dashboard({
             <div className="flex flex-col items-center gap-4">
               <div className="relative w-48 h-48 flex items-center justify-center">
                 <svg className="absolute inset-0 w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                  <circle className="text-surface-container-high" cx="50" cy="50" fill="none" r="45" stroke="currentColor" strokeWidth="8"></circle>
-                  <circle className="text-primary drop-shadow-[0_0_8px_rgba(70,72,212,0.5)]" cx="50" cy="50" fill="none" r="45" stroke="currentColor" strokeDasharray="283" strokeDashoffset="85" strokeLinecap="round" strokeWidth="8"></circle>
+                  <circle className="text-surface-container-highest opacity-50" cx="50" cy="50" fill="none" r="42" stroke="currentColor" strokeWidth="12"></circle>
+                  <circle className="text-primary drop-shadow-[0_8px_16px_rgba(70,72,212,0.4)]" cx="50" cy="50" fill="none" r="42" stroke="currentColor" strokeDasharray="264" strokeDashoffset="79" strokeLinecap="round" strokeWidth="12"></circle>
                 </svg>
                 <div className="text-center z-10 flex flex-col items-center">
-                  <Timer size={24} className="text-primary mb-1" weight="fill" />
+                  <Timer size={24} className="text-primary mb-1" weight="bold" />
                   <span className="font-headline-lg text-headline-lg text-on-surface leading-none tabular-nums">2.5h</span>
                   <span className="font-label-sm text-label-sm text-on-surface-variant mt-1">/ 4h Goal</span>
                 </div>
@@ -100,11 +100,11 @@ export function Dashboard({
             <div className="flex flex-col items-center gap-4">
               <div className="relative w-48 h-48 flex items-center justify-center">
                 <svg className="absolute inset-0 w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                  <circle className="text-surface-container-high" cx="50" cy="50" fill="none" r="45" stroke="currentColor" strokeWidth="8"></circle>
-                  <circle className="text-secondary drop-shadow-[0_0_8px_rgba(0,108,73,0.5)]" cx="50" cy="50" fill="none" r="45" stroke="currentColor" strokeDasharray="283" strokeDashoffset={strokeDashoffset} strokeLinecap="round" strokeWidth="8"></circle>
+                  <circle className="text-surface-container-highest opacity-50" cx="50" cy="50" fill="none" r="42" stroke="currentColor" strokeWidth="12"></circle>
+                  <circle className="text-secondary drop-shadow-[0_8px_16px_rgba(0,108,73,0.4)]" cx="50" cy="50" fill="none" r="42" stroke="currentColor" strokeDasharray="264" strokeDashoffset={264 - (264 * pct) / 100} strokeLinecap="round" strokeWidth="12"></circle>
                 </svg>
                 <div className="text-center z-10 flex flex-col items-center">
-                  <CheckCircle size={24} className="text-secondary mb-1" weight="fill" />
+                  <CheckCircle size={24} className="text-secondary mb-1" weight="bold" />
                   <span className="font-headline-lg text-headline-lg text-on-surface leading-none tabular-nums">{done}</span>
                   <span className="font-label-sm text-label-sm text-on-surface-variant mt-1">/ {total} Tasks</span>
                 </div>

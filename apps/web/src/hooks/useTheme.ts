@@ -19,7 +19,7 @@ function systemTheme(): ResolvedTheme {
  * it to <html data-theme>, keeps the mobile theme-color in sync, and mirrors the
  * preference to localStorage so the pre-paint script in index.html avoids a flash.
  */
-export function useTheme(preference: ThemePreference = "system"): ResolvedTheme {
+export function useTheme(preference: ThemePreference = "light"): ResolvedTheme {
   const [system, setSystem] = useState<ResolvedTheme>(systemTheme);
 
   useEffect(() => {

@@ -157,7 +157,7 @@ export function SettingsPanel({
     setDataStatus("Sample data restored");
   }
 
-  const theme = appearanceSettings?.theme ?? "system";
+  const theme = appearanceSettings?.theme ?? "light";
   const themeOptions: Array<{ value: ThemePreference; label: string; icon: ReactNode }> = [
     { value: "light", label: "Light", icon: <Sun size={15} aria-hidden /> },
     { value: "dark", label: "Dark", icon: <Moon size={15} aria-hidden /> },
