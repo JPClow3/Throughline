@@ -7,7 +7,7 @@ test("downloadIcs creates and clicks a link", () => {
     href: "",
     download: "",
     click: vi.fn(),
-  } as any;
+  } as unknown as HTMLAnchorElement;
   createElementSpy.mockReturnValue(mockAnchor);
   
   const createObjectURLSpy = vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:test");

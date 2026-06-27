@@ -37,7 +37,7 @@ export default defineConfig({
         "pwa-maskable-512x512.png",
         "apple-touch-icon.png"
       ],
-      manifest: <any>{
+      manifest: {
         name: "Throughline",
         short_name: "Throughline",
         id: "/app",
@@ -88,7 +88,7 @@ export default defineConfig({
             url: "url"
           }
         },
-        // @ts-ignore
+        // @ts-expect-error: experimental manifest property
         widgets: [
           {
             name: "Throughline Today",
@@ -100,15 +100,12 @@ export default defineConfig({
             type: "application/json"
           }
         ],
-        // @ts-ignore
         edge_side_panel: {
           preferred_width: 400
         },
-        // @ts-ignore
         note_taking: {
           new_note_url: "/app?view=notes&action=new"
         },
-        // @ts-ignore
         scope_extensions: [
           { origin: "*.throughline.app" }
         ],
