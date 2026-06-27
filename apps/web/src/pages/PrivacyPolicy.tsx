@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "@phosphor-icons/react";
+import { ThroughlineMark } from "../components/ThroughlineMark";
 
 export function PrivacyPolicy() {
   return (
@@ -8,12 +9,7 @@ export function PrivacyPolicy() {
       <header className="landing-nav">
         <Link to="/" className="landing-brand">
           <span className="landing-brand-mark">
-            <svg width={20} height={20} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M5 17 L19 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-              <circle cx="5" cy="17" r="2.4" fill="currentColor" />
-              <circle cx="12" cy="12" r="2.4" fill="currentColor" />
-              <circle cx="19" cy="7" r="3" fill="currentColor" />
-            </svg>
+            <ThroughlineMark />
           </span>
           Throughline
         </Link>

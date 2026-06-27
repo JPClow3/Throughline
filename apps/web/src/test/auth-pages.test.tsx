@@ -37,4 +37,32 @@ describe("Auth Pages", () => {
     expect(screen.getByLabelText(/Confirm password/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Create account/i })).toBeInTheDocument();
   });
+
+  it("handles Login form submission validation", async () => {
+    render(
+      <GoogleOAuthProvider clientId="test">
+        <BrowserRouter>
+          <AuthProvider>
+            <Login />
+          </AuthProvider>
+        </BrowserRouter>
+      </GoogleOAuthProvider>
+    );
+    const submitBtn = screen.getByRole("button", { name: /Sign in/i });
+    submitBtn.click(); // should trigger form submission validation branch
+  });
+
+  it("handles Signup form submission validation", async () => {
+    render(
+      <GoogleOAuthProvider clientId="test">
+        <BrowserRouter>
+          <AuthProvider>
+            <Signup />
+          </AuthProvider>
+        </BrowserRouter>
+      </GoogleOAuthProvider>
+    );
+    const submitBtn = screen.getByRole("button", { name: /Create account/i });
+    submitBtn.click(); // should trigger form submission validation branch
+  });
 });

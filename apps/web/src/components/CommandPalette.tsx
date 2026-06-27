@@ -36,6 +36,7 @@ export function CommandPalette({ open, setOpen, onNavigate, onNewTask, onToggleT
     >
       <div className="w-full max-w-[600px] overflow-hidden rounded-2xl glass-panel shadow-[0px_12px_40px_rgba(0,0,0,0.1)] border-white/20 transform-gpu animate-in fade-in zoom-in-95 duration-200">
         <Command.Input 
+          autoFocus
           placeholder="Type a command or search..." 
           className="w-full border-none bg-transparent px-5 py-4 text-headline-sm text-on-surface focus:ring-0 placeholder:text-outline-variant outline-none"
         />

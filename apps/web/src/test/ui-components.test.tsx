@@ -53,7 +53,7 @@ describe("calm planner UI components", () => {
     render(<TaskCard task={task} course={sampleCourses[1]} onStatusChange={() => {}} />);
 
     expect(screen.getByText("Finish studio critique")).toBeInTheDocument();
-    expect(screen.getByText("1/2")).toBeInTheDocument();
+    expect(screen.getByLabelText("1 of 2 steps complete")).toBeInTheDocument();
     expect(screen.getByLabelText("Move Finish studio critique")).toHaveValue("backlog");
     // The calm card keeps XP hidden unless the game layer is enabled.
     expect(screen.queryByText(`${task.xp} XP`)).not.toBeInTheDocument();

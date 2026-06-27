@@ -32,7 +32,11 @@ export function useFilters() {
   });
 
   useEffect(() => {
-    localStorage.setItem("throughline_filters", JSON.stringify(filters));
+    try {
+      localStorage.setItem("throughline_filters", JSON.stringify(filters));
+    } catch {
+      // ignore
+    }
   }, [filters]);
 
   const setFilter = <K extends keyof FilterState>(key: K, value: FilterState[K]) => {

@@ -15,6 +15,7 @@ import { FocusTimer } from "./components/FocusTimer";
 import { FocusOverlay } from "./components/FocusOverlay";
 import { OnboardingOverlay } from "./components/OnboardingOverlay";
 import { CommandPalette } from "./components/CommandPalette";
+import { DynamicBackground } from "./components/DynamicBackground";
 import { useAuth } from "./auth/AuthProvider";
 import { getAppearanceSettings, saveAppearanceSettings, syncRecurringTasks } from "./data/repositories";
 import { useGoals } from "./hooks/useGoals";
@@ -111,7 +112,7 @@ export function App() {
   return (
     <MotionConfig reducedMotion="user">
       <IconContext.Provider value={{ weight: "regular" }}>
-        <div className="ambient-mesh"></div>
+        <DynamicBackground tasks={tasks} />
         
         {isInstallable && !bannerDismissed && (
           <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] bg-surface-2 border border-border rounded-xl shadow-lg px-4 py-3 flex items-center gap-4 max-w-[90vw] md:max-w-md">

@@ -14,17 +14,7 @@ import {
 import { MotionConfig, motion } from "motion/react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
-
-function ThroughlineMark({ size = 22 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M5 17 L19 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-      <circle cx="5" cy="17" r="2.4" fill="currentColor" />
-      <circle cx="12" cy="12" r="2.4" fill="currentColor" />
-      <circle cx="19" cy="7" r="3" fill="currentColor" />
-    </svg>
-  );
-}
+import { ThroughlineMark } from "../components/ThroughlineMark";
 
 const NODES: Array<[number, number, number]> = [
   [5, 17, 2.4],

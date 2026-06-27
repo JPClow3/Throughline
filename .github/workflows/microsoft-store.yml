@@ -1,0 +1,43 @@
+name: Microsoft Store Publishing
+
+on:
+  workflow_dispatch:
+    inputs:
+      package_url:
+        description: 'URL to the generated .msixbundle zip file (from PWABuilder)'
+        required: true
+        type: string
+
+jobs:
+  publish:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download MSIX Bundle
+        run: |
+          Invoke-WebRequest -Uri "${{ github.event.inputs.package_url }}" -OutFile "package.zip"
+          Expand-Archive -Path "package.zip" -DestinationPath "./app_package"
+          # Look for the .msixbundle file inside the extracted folder
+          $msixbundle = Get-ChildItem -Path "./app_package" -Filter "*.msixbundle" -Recurse | Select-Object -First 1
+          if (-not $msixbundle) {
+            Write-Error "Could not find .msixbundle inside the downloaded package."
+            exit 1
+          }
+          Write-Host "Found bundle: $($msixbundle.FullName)"
+          echo "BUNDLE_PATH=$($msixbundle.FullName)" >> $env:GITHUB_ENV
+
+      - name: Setup msstore-cli
+        uses: microsoft/setup-msstore-cli@v1
+
+      - name: Publish to Microsoft Store
+        run: |
+          msstore reconfigure --tenantId "${{ secrets.MSSTORE_TENANT_ID }}" `
+                              --sellerId "${{ secrets.MSSTORE_SELLER_ID }}" `
+                              --clientId "${{ secrets.MSSTORE_CLIENT_ID }}" `
+                              --clientSecret "${{ secrets.MSSTORE_CLIENT_SECRET }}"
+          
+          # Publish the package
+          msstore publish --appId "9PDNH55ZKNZ7" --flightId "" --package "${{ env.BUNDLE_PATH }}"

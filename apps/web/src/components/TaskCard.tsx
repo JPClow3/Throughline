@@ -29,20 +29,25 @@ type TaskCardProps = {
 type DueTone = "done" | "overdue" | "soon" | "normal";
 
 function RewardAnimation({ showGameLayer }: { showGameLayer: boolean }) {
-  const [particles, setParticles] = useState<{x: number, y: number, scale: number, duration: number}[]>([]);
+  const [particles, setParticles] = useState<{x: number, y: number, scale: number, duration: number, color: string, rotation: number}[]>([]);
 
   useEffect(() => {
-    if (!showGameLayer) return;
+    // We generate particles anyway, but fewer if not showGameLayer
+    const count = showGameLayer ? 24 : 8;
+    const colors = ['var(--tl-accent-violet)', 'var(--tl-accent-blue)', 'var(--tl-accent-aqua)', 'var(--tl-accent-pink)'];
+    
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setParticles(
-      Array.from({ length: 12 }).map((_, i) => {
-        const angle = (i / 12) * Math.PI * 2;
-        const distance = 60 + Math.random() * 40;
+      Array.from({ length: count }).map((_, i) => {
+        const angle = (i / count) * Math.PI * 2 + (Math.random() * 0.5 - 0.25);
+        const distance = showGameLayer ? 50 + Math.random() * 60 : 30 + Math.random() * 30;
         return {
           x: Math.cos(angle) * distance,
           y: Math.sin(angle) * distance,
-          scale: Math.random() * 0.5 + 0.5,
-          duration: 0.6 + Math.random() * 0.4
+          scale: Math.random() * 0.6 + 0.4,
+          duration: 0.5 + Math.random() * 0.3,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          rotation: Math.random() * 360
         };
       })
     );
@@ -50,28 +55,31 @@ function RewardAnimation({ showGameLayer }: { showGameLayer: boolean }) {
 
   return (
     <div className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-visible z-10" aria-hidden="true">
-      <motion.div
-        initial={{ opacity: 0, scale: 2, rotate: -15 }}
-        animate={{ opacity: [0, 1, 1, 0], scale: [2, 1, 1, 1.1], rotate: [-15, -5, -5, -5] }}
-        transition={{ duration: 1.5, times: [0, 0.15, 0.8, 1], ease: "easeOut" }}
-        className="text-4xl font-black tracking-widest uppercase border-4 border-current px-4 py-2 rounded-lg mix-blend-overlay"
-        style={{ color: 'var(--tl-accent-violet)' }}
-      >
-        DONE
-      </motion.div>
-      {showGameLayer && particles.map((p, i) => (
+      {showGameLayer && (
+        <motion.div
+          initial={{ opacity: 0, scale: 2, rotate: -15 }}
+          animate={{ opacity: [0, 1, 1, 0], scale: [2, 1, 1, 1.1], rotate: [-15, -5, -5, -5] }}
+          transition={{ duration: 1.5, times: [0, 0.15, 0.8, 1], ease: "easeOut" }}
+          className="text-4xl font-black tracking-widest uppercase border-4 border-current px-4 py-2 rounded-lg mix-blend-overlay"
+          style={{ color: 'var(--tl-accent-violet)' }}
+        >
+          DONE
+        </motion.div>
+      )}
+      {particles.map((p, i) => (
         <motion.div
           key={i}
-          initial={{ x: 0, y: 0, opacity: 1, scale: 0 }}
+          initial={{ x: 0, y: 0, opacity: 1, scale: 0, rotate: 0 }}
           animate={{ 
             x: p.x, 
             y: p.y,
             opacity: 0,
-            scale: p.scale
+            scale: p.scale,
+            rotate: p.rotation
           }}
           transition={{ duration: p.duration, ease: "easeOut" }}
-          className="absolute w-3 h-3 rounded-full"
-          style={{ backgroundColor: 'var(--tl-accent-violet)' }}
+          className={`absolute w-3 h-3 ${i % 2 === 0 ? 'rounded-full' : 'rounded-sm'}`}
+          style={{ backgroundColor: p.color }}
         />
       ))}
     </div>
@@ -126,6 +134,7 @@ export function TaskCard({
       const newSubtask = { id: crypto.randomUUID(), title: newSubtaskTitle.trim(), completed: false };
       onUpdateTask({ ...task, subtasks: [...(task.subtasks || []), newSubtask] });
       setNewSubtaskTitle("");
+      setExpanded(true); // ensure list is open when adding
     }
   }
 
@@ -134,9 +143,9 @@ export function TaskCard({
       className={`task-card${compact ? " task-card-compact" : ""}${done ? " is-done" : ""}${urgentGlow ? " urgent-pulse-glow" : ""} relative`}
       layout
       initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -2 }}
-      transition={{ type: "spring", stiffness: 300, damping: 28 }}
+      animate={justCompleted ? { opacity: 1, y: [0, -6, 0], scale: [1, 1.02, 1] } : { opacity: 1, y: 0, scale: 1 }}
+      whileHover={justCompleted ? undefined : { y: -2 }}
+      transition={justCompleted ? { duration: 0.4, ease: "easeOut" } : { type: "spring", stiffness: 300, damping: 28 }}
     >
       <AnimatePresence>
         {justCompleted && (
@@ -219,35 +228,42 @@ export function TaskCard({
         </div>
       ) : null}
 
-      <AnimatePresence>
-        {expanded && onUpdateTask && (
-          <motion.div 
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="flex flex-col gap-2 mt-2 mb-4 overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {(task.subtasks || []).map((st, idx) => (
-              <label key={st.id} className="flex items-center gap-3 text-sm text-on-surface-variant hover:text-on-surface cursor-pointer p-1 -mx-1 rounded hover:bg-[var(--accent-soft)] transition-colors">
-                <input type="checkbox" checked={st.completed} onChange={() => toggleSubtask(idx)} className="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary focus:ring-offset-0 bg-transparent" />
-                <span className={st.completed ? "line-through opacity-60" : ""}>{st.title}</span>
-              </label>
-            ))}
-            <div className="flex items-center gap-3 mt-1 text-sm p-1 -mx-1">
-              <Plus size={16} className="text-outline flex-shrink-0 ml-0.5" />
-              <input 
-                type="text" 
-                value={newSubtaskTitle}
-                onChange={(e) => setNewSubtaskTitle(e.target.value)}
-                onKeyDown={handleAddSubtask}
-                placeholder="Add step (press Enter)..." 
-                className="bg-transparent border-none focus:ring-0 p-0 text-on-surface placeholder-outline-variant w-full"
-              />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {onUpdateTask && (
+        <div 
+          className="flex flex-col gap-2 mt-2 mb-3 overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <AnimatePresence>
+            {expanded && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="flex flex-col gap-2"
+              >
+                {(task.subtasks || []).map((st, idx) => (
+                  <label key={st.id} className="flex items-center gap-3 text-sm text-on-surface-variant hover:text-on-surface cursor-pointer p-1 -mx-1 rounded hover:bg-[var(--accent-soft)] transition-colors">
+                    <input type="checkbox" checked={st.completed} onChange={() => toggleSubtask(idx)} className="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary focus:ring-offset-0 bg-transparent" />
+                    <span className={st.completed ? "line-through opacity-60" : ""}>{st.title}</span>
+                  </label>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+          
+          <div className="flex items-center gap-3 mt-1 text-sm p-1 -mx-1 opacity-60 hover:opacity-100 focus-within:opacity-100 transition-opacity">
+            <Plus size={16} className="text-outline flex-shrink-0 ml-0.5" />
+            <input 
+              type="text" 
+              value={newSubtaskTitle}
+              onChange={(e) => setNewSubtaskTitle(e.target.value)}
+              onKeyDown={handleAddSubtask}
+              placeholder="Add subtask (press Enter)..." 
+              className="bg-transparent border-none focus:ring-0 p-0 text-on-surface placeholder-outline-variant w-full"
+            />
+          </div>
+        </div>
+      )}
 
       <div className="task-card-meta">
         {dueInfo ? (
@@ -267,14 +283,14 @@ export function TaskCard({
             <ArrowsClockwise size={14} />
           </span>
         ) : null}
-        {totalSubtasks || onUpdateTask ? (
+        {totalSubtasks > 0 && onUpdateTask ? (
           <button 
             type="button"
             className="meta-chip hover:bg-surface-container-highest cursor-pointer transition-colors"
             onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
           >
             <ListChecks size={14} />
-            {totalSubtasks > 0 ? `${completedSubtasks}/${totalSubtasks}` : "Add steps"}
+            {completedSubtasks}/{totalSubtasks}
             {expanded ? <CaretUp size={12} className="ml-1 opacity-50"/> : <CaretDown size={12} className="ml-1 opacity-50"/>}
           </button>
         ) : null}

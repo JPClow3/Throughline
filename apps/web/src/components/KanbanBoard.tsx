@@ -159,12 +159,14 @@ function SortableQuest({
       className={isDragging ? "sortable-quest dragging" : "sortable-quest"}
       tabIndex={0}
       onKeyDown={(e) => {
-        if (e.key === "Enter" && e.target === e.currentTarget) {
+        if (e.target !== e.currentTarget) return;
+        
+        if (e.key === "Enter") {
           e.preventDefault();
           onEdit(task);
           return;
         }
-        if (e.key === " " && e.target === e.currentTarget) {
+        if (e.key === " ") {
           e.preventDefault();
           onComplete(task);
           return;
@@ -196,6 +198,22 @@ function SortableQuest({
               (siblings[index + 1] as HTMLElement).focus();
             } else if (e.key === "ArrowUp" && index > 0) {
               (siblings[index - 1] as HTMLElement).focus();
+            }
+          } else if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+            e.preventDefault();
+            const currentColumn = e.currentTarget.closest('.kanban-column');
+            if (!currentColumn) return;
+            const columns = Array.from(document.querySelectorAll('.kanban-column'));
+            let targetColIndex = columns.indexOf(currentColumn) + (e.key === "ArrowLeft" ? -1 : 1);
+            
+            while (targetColIndex >= 0 && targetColIndex < columns.length) {
+              const targetCol = columns[targetColIndex];
+              const firstTask = targetCol.querySelector('.sortable-quest') as HTMLElement;
+              if (firstTask) {
+                firstTask.focus();
+                break;
+              }
+              targetColIndex += (e.key === "ArrowLeft" ? -1 : 1);
             }
           }
         }

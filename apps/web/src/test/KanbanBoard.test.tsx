@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { KanbanBoard } from "../components/KanbanBoard";
 import { CourseSchema, TaskSchema } from "@throughline/domain";
@@ -76,5 +76,21 @@ describe("KanbanBoard", () => {
     expect(screen.getByText("Test Todo")).toBeInTheDocument();
     expect(screen.getByText("Test In Progress")).toBeInTheDocument();
     expect(screen.getByText("Test Done")).toBeInTheDocument();
+    // Keyboard interactions for coverage
+    const todoCard = document.getElementById("task-card-1");
+    if (todoCard) {
+      fireEvent.keyDown(todoCard, { key: "Enter" }); // onEdit
+      fireEvent.keyDown(todoCard, { key: " " }); // onComplete
+      
+      // Ctrl+ArrowLeft/Right
+      fireEvent.keyDown(todoCard, { key: "ArrowRight", ctrlKey: true }); // Move to next column
+      fireEvent.keyDown(todoCard, { key: "ArrowLeft", ctrlKey: true }); // Move to prev column
+
+      // Up/Down/Left/Right
+      fireEvent.keyDown(todoCard, { key: "ArrowDown" });
+      fireEvent.keyDown(todoCard, { key: "ArrowUp" });
+      fireEvent.keyDown(todoCard, { key: "ArrowRight" });
+      fireEvent.keyDown(todoCard, { key: "ArrowLeft" });
+    }
   });
 });

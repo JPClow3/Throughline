@@ -107,6 +107,43 @@
     background-color: var(--color-background);
     background-image: var(--tl-gradient-hero);
     background-attachment: fixed;
+    overflow: hidden;
+  }
+
+  .ambient-mesh::before,
+  .ambient-mesh::after {
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+    mix-blend-mode: multiply;
+    transform-origin: center;
+    transition: background 2s ease, filter 2s ease;
+    pointer-events: none;
+  }
+
+  :root[data-theme="dark"] .ambient-mesh::before,
+  :root[data-theme="dark"] .ambient-mesh::after {
+    mix-blend-mode: screen;
+  }
+
+  .ambient-mesh::before {
+    top: -20%;
+    left: -10%;
+    width: 130%;
+    height: 130%;
+    background: var(--mesh-color-1, radial-gradient(circle, rgba(70, 72, 212, 0.4), rgba(157, 244, 200, 0.2), transparent 70%));
+    filter: blur(var(--mesh-blur, 150px));
+    animation: slowFog var(--mesh-duration-1, 60s) ease-in-out infinite alternate;
+  }
+
+  .ambient-mesh::after {
+    bottom: -30%;
+    right: -10%;
+    width: 140%;
+    height: 140%;
+    background: var(--mesh-color-2, radial-gradient(circle, rgba(157, 244, 200, 0.4), rgba(44, 42, 188, 0.3), transparent 70%));
+    filter: blur(var(--mesh-blur, 200px));
+    animation: slowFog var(--mesh-duration-2, 80s) ease-in-out infinite alternate-reverse;
   }
 
   .glass-level-1 {

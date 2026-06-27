@@ -15,7 +15,56 @@ test.describe("Notification Flow", () => {
   });
 
   test("grant notification permission, subscribe, and verify payload is redacted", async ({ page }) => {
+    // Mock the Notification and ServiceWorker APIs before page load to bypass Vite PWA plugin
+    await page.addInitScript(() => {
+      // Stub window.Notification and PushManager directly
+      window.Notification = function() {} as any;
+      window.Notification.requestPermission = async () => 'granted';
+      (window.Notification as any).permission = 'default';
+      window.PushManager = function() {} as any;
+
+      // Mock push manager subscription
+      Object.defineProperty(navigator, 'serviceWorker', {
+        configurable: true,
+        value: {
+          register: async () => {
+            console.log('MOCK SW: register() called');
+            return {
+              pushManager: {
+                subscribe: async () => {
+                  console.log('MOCK SW: register.pushManager.subscribe() called');
+                  return {
+                    endpoint: "https://fcm.googleapis.com/fcm/send/fake-endpoint",
+                    getKey: () => new ArrayBuffer(0),
+                    toJSON: () => ({ endpoint: "https://fcm.googleapis.com/fcm/send/fake-endpoint" })
+                  }
+                }
+              },
+              addEventListener: () => {},
+              removeEventListener: () => {}
+            };
+          },
+          ready: Promise.resolve({
+            pushManager: {
+              subscribe: async () => {
+                console.log('MOCK SW: ready.pushManager.subscribe() called');
+                return {
+                  endpoint: "https://fcm.googleapis.com/fcm/send/fake-endpoint",
+                  getKey: () => new ArrayBuffer(0),
+                  toJSON: () => ({ endpoint: "https://fcm.googleapis.com/fcm/send/fake-endpoint" })
+                };
+              }
+            }
+          }),
+          addEventListener: () => console.log('MOCK SW: addEventListener called'),
+          removeEventListener: () => console.log('MOCK SW: removeEventListener called')
+        }
+      });
+    });
+
     // Navigate to settings
+    page.on('console', msg => console.log('PAGE LOG:', msg.text()));
+    page.on('pageerror', err => console.log('PAGE ERROR:', err.message));
     await page.goto("/app?view=settings");
 
     // Bypass onboarding overlay
@@ -24,38 +73,7 @@ test.describe("Notification Flow", () => {
     await skipBtn.click();
     await skipBtn.waitFor({ state: "hidden", timeout: 5000 });
     
-    // We mock the notification permission API so it appears as granted when requested
-    await page.evaluate(() => {
-      // Stub window.Notification
-      if (!window.Notification) {
-        Object.defineProperty(window, "Notification", {
-          configurable: true,
-          value: {
-            requestPermission: async () => 'granted',
-            permission: 'default'
-          }
-        });
-      }
-    });
 
-    // Mock push manager subscription
-    await page.evaluate(() => {
-      Object.defineProperty(navigator, 'serviceWorker', {
-        configurable: true,
-        value: {
-          register: async () => ({}),
-          ready: Promise.resolve({
-            pushManager: {
-              subscribe: async () => ({
-                endpoint: "https://fcm.googleapis.com/fcm/send/fake-endpoint",
-                getKey: () => new ArrayBuffer(0),
-                toJSON: () => ({ endpoint: "https://fcm.googleapis.com/fcm/send/fake-endpoint" })
-              })
-            }
-          })
-        }
-      });
-    });
 
     const syncRequests: ReminderSyncPayload[] = [];
 
@@ -79,6 +97,9 @@ test.describe("Notification Flow", () => {
 
     // Click Subscribe to trigger the flow
     const subscribeButton = page.getByRole("button", { name: /Subscribe/i });
+    await page.waitForTimeout(2000);
+    await page.screenshot({ path: 'test-screenshot.png', fullPage: true });
+    
     if (await subscribeButton.isVisible()) {
       await subscribeButton.click();
     } else {

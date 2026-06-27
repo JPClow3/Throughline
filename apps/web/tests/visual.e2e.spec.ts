@@ -9,6 +9,34 @@ test.describe("Visual Regression", () => {
     await page.addInitScript(() => {
       localStorage.setItem("tl_email", "tester@example.com");
       localStorage.setItem("tl_dek", btoa(String.fromCharCode.apply(null, Array.from(new Uint8Array(32)))));
+
+      // Deterministic Math.random for visual tests
+      let seed = 1;
+      Math.random = () => {
+        const x = Math.sin(seed++) * 10000;
+        return x - Math.floor(x);
+      };
+
+      // Inject strict test mode styles to disable animations globally
+      const style = document.createElement('style');
+      style.innerHTML = `
+        *, *::before, *::after {
+          animation-duration: 0s !important;
+          animation-delay: 0s !important;
+          transition-duration: 0s !important;
+          transition-delay: 0s !important;
+        }
+        svg * {
+          animation: none !important;
+        }
+      `;
+      if (document.documentElement) {
+        document.documentElement.appendChild(style);
+      } else {
+        document.addEventListener('DOMContentLoaded', () => {
+          document.documentElement.appendChild(style);
+        });
+      }
     });
 
     await page.goto("/app");

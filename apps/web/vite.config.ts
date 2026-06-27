@@ -109,6 +109,20 @@ export default defineConfig({
         scope_extensions: [
           { origin: "*.throughline.app" }
         ],
+        screenshots: [
+          {
+            src: "/screenshot-1.png",
+            sizes: "1280x720",
+            type: "image/png",
+            form_factor: "wide"
+          },
+          {
+            src: "/screenshot-2.png",
+            sizes: "720x1280",
+            type: "image/png",
+            form_factor: "narrow"
+          }
+        ],
         icons: [
           {
             src: "/pwa-icon.svg",
