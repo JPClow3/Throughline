@@ -1,5 +1,6 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
+import { OAuth2Client } from "google-auth-library";
 import type { PushApiConfig } from "./config";
 import type { UserStore } from "./userStore";
 
@@ -54,6 +55,55 @@ export function registerAuthRoutes(app: FastifyInstance, userStore: UserStore, c
     const token = userStore.createSession(user.id);
     setSessionCookie(reply, token, secure);
     return reply.code(201).send({ email: user.email });
+  });
+
+  const GoogleAuthSchema = z.object({ credential: z.string(), dek: z.string().optional() });
+  const googleClient = config.googleClientId ? new OAuth2Client(config.googleClientId) : null;
+
+  app.post("/auth/google", authRateLimit, async (request, reply) => {
+    if (!googleClient || !config.googleClientId) {
+      return reply.code(501).send({ error: "google-auth-not-configured" });
+    }
+    
+    const { credential, dek } = GoogleAuthSchema.parse(request.body);
+    
+    let payload;
+    try {
+      const ticket = await googleClient.verifyIdToken({
+        idToken: credential,
+        audience: config.googleClientId
+      });
+      payload = ticket.getPayload();
+    } catch (err) {
+      return reply.code(401).send({ error: "invalid-google-credential" });
+    }
+    
+    if (!payload || !payload.email || !payload.sub) {
+      return reply.code(401).send({ error: "invalid-google-payload" });
+    }
+    
+    const email = payload.email.trim().toLowerCase();
+    const googleId = payload.sub;
+    
+    let result = userStore.verifyGoogleLogin(email, googleId);
+    
+    if (!result) {
+      // Create user if not exists
+      if (!dek) {
+        return reply.code(400).send({ error: "dek-required-for-signup" });
+      }
+      const newUser = userStore.createGoogleUser({ email, googleId, dek });
+      if (!newUser) {
+        // If email already taken but not by this googleId (e.g. password user)
+        return reply.code(409).send({ error: "email-taken-by-another-method" });
+      }
+      result = { userId: newUser.id, dek: newUser.wrappedDek };
+    }
+    
+    const token = userStore.createSession(result.userId);
+    setSessionCookie(reply, token, secure);
+    
+    return { email, dek: result.dek };
   });
 
   // Pre-login: client needs the per-user salt to derive its keys.

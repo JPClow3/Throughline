@@ -1,5 +1,5 @@
 import { Course, Goal, taskStatuses, kanbanColumns } from "@throughline/domain";
-import { MagnifyingGlass as Search } from "@phosphor-icons/react";
+import { MagnifyingGlass as Search, Tag } from "@phosphor-icons/react";
 import { FilterState } from "../hooks/useFilters";
 
 type FilterBarProps = {
@@ -44,6 +44,15 @@ export function FilterBar({
         ))}
         <option value="__none">No project</option>
       </select>
+      <label className="toolbar-search" style={{ minWidth: "120px" }}>
+        <Tag size={15} />
+        <input
+          value={filters.tags || ""}
+          onChange={(event) => setFilter("tags", event.target.value)}
+          placeholder="Filter tags (csv)"
+          aria-label="Filter by tags"
+        />
+      </label>
       {goals && goals.length > 0 ? (
         <select
           className="toolbar-filter"

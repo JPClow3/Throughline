@@ -1,10 +1,11 @@
 import { FormEvent, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
+import { GoogleLogin } from "@react-oauth/google";
 import { useAuth } from "../auth/AuthProvider";
 import { AuthShell } from "./AuthShell";
 
 export function Signup() {
-  const { signup, status } = useAuth();
+  const { signup, loginWithGoogle, status } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -89,6 +90,36 @@ export function Signup() {
 
   return (
     <AuthShell title="Create your account" subtitle="Your data is end-to-end encrypted before it ever syncs.">
+      <div style={{ display: "flex", justifyContent: "center", marginBottom: "1rem" }}>
+        <GoogleLogin
+          onSuccess={async (credentialResponse) => {
+            if (credentialResponse.credential) {
+              try {
+                setBusy(true);
+                await loginWithGoogle(credentialResponse.credential);
+                navigate("/app");
+              } catch (err) {
+                setError(err instanceof Error ? err.message : "Google sign in failed.");
+              } finally {
+                setBusy(false);
+              }
+            }
+          }}
+          onError={() => {
+            setError("Google sign in failed.");
+          }}
+          theme="filled_black"
+          shape="pill"
+          text="signup_with"
+        />
+      </div>
+      
+      <div style={{ display: "flex", alignItems: "center", margin: "1.5rem 0", color: "var(--ink-muted)", fontSize: "0.85em" }}>
+        <div style={{ flex: 1, height: "1px", backgroundColor: "var(--surface-border)" }} />
+        <span style={{ padding: "0 1rem" }}>or create with email</span>
+        <div style={{ flex: 1, height: "1px", backgroundColor: "var(--surface-border)" }} />
+      </div>
+
       <form className="auth-form" onSubmit={submit}>
         <label>
           <span>Email</span>

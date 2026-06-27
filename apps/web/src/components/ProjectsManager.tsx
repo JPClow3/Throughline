@@ -1,4 +1,4 @@
-import { Course, Task, createCourse } from "@throughline/domain";
+import { Course, Task, createCourse, RpgAttribute, rpgAttributes } from "@throughline/domain";
 import { Check, PencilSimple, Plus, Trash as Trash2, X } from "@phosphor-icons/react";
 import { FormEvent, useState, type CSSProperties } from "react";
 
@@ -35,6 +35,8 @@ export function ProjectsManager({ courses, tasks, onUpsertCourse, onDeleteCourse
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editColor, setEditColor] = useState(PROJECT_COLORS[0]);
+  const [attribute, setAttribute] = useState<RpgAttribute | "">("");
+  const [editAttribute, setEditAttribute] = useState<RpgAttribute | "">("");
 
   const counts = new Map<string, number>();
   for (const task of tasks) {
@@ -50,14 +52,19 @@ export function ProjectsManager({ courses, tasks, onUpsertCourse, onDeleteCourse
       return;
     }
     const course = createCourse({ name: trimmed, color, icon: trimmed.slice(0, 1).toUpperCase() });
+    if (attribute) {
+      course.defaultAttributes = [attribute as RpgAttribute];
+    }
     await onUpsertCourse(course);
     setName("");
+    setAttribute("");
   }
 
   function startEdit(course: Course) {
     setEditingId(course.id);
     setEditName(course.name);
     setEditColor(course.color ?? PROJECT_COLORS[0]);
+    setEditAttribute(course.defaultAttributes?.[0] ?? "");
   }
 
   async function saveEdit(course: Course) {
@@ -65,7 +72,12 @@ export function ProjectsManager({ courses, tasks, onUpsertCourse, onDeleteCourse
     if (!trimmed) {
       return;
     }
-    await onUpsertCourse({ ...course, name: trimmed, color: editColor });
+    await onUpsertCourse({ 
+      ...course, 
+      name: trimmed, 
+      color: editColor,
+      defaultAttributes: editAttribute ? [editAttribute as RpgAttribute] : undefined
+    });
     setEditingId(null);
   }
 
@@ -89,6 +101,10 @@ export function ProjectsManager({ courses, tasks, onUpsertCourse, onDeleteCourse
                   aria-label={`Rename ${course.name}`}
                   autoFocus
                 />
+                <select value={editAttribute} onChange={(e) => setEditAttribute(e.target.value as RpgAttribute | "")} aria-label="Default attribute" style={{ width: 'auto', padding: '4px' }}>
+                  <option value="">No attribute</option>
+                  {rpgAttributes.map(a => <option key={a} value={a}>{a}</option>)}
+                </select>
                 <ColorPicker value={editColor} onChange={setEditColor} label="Project colour" />
                 <button className="icon-toggle" type="submit" aria-label={`Save ${course.name}`}>
                   <Check size={15} />
@@ -137,6 +153,10 @@ export function ProjectsManager({ courses, tasks, onUpsertCourse, onDeleteCourse
           placeholder="New project name"
           aria-label="New project name"
         />
+        <select value={attribute} onChange={(e) => setAttribute(e.target.value as RpgAttribute | "")} aria-label="Default attribute" style={{ width: 'auto' }}>
+          <option value="">No attribute</option>
+          {rpgAttributes.map(a => <option key={a} value={a}>{a}</option>)}
+        </select>
         <ColorPicker value={color} onChange={setColor} label="Project colour" />
         <button className="primary-button" type="submit">
           <Plus size={16} /> Add project

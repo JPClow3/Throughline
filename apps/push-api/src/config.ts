@@ -19,6 +19,8 @@ export type PushApiConfig = {
   cookieSecure?: boolean;
   /** Whether the server is behind a proxy like Traefik (default true). */
   trustProxy?: boolean;
+  /** Google OAuth Client ID for verification */
+  googleClientId?: string;
 };
 
 export function readPushApiConfig(env: NodeJS.ProcessEnv = process.env): PushApiConfig {
@@ -35,7 +37,8 @@ export function readPushApiConfig(env: NodeJS.ProcessEnv = process.env): PushApi
     dbPath: env.DB_PATH ?? "data/throughline.db",
     sessionSecret: env.SESSION_SECRET || undefined,
     cookieSecure: env.COOKIE_SECURE !== "false",
-    trustProxy: env.TRUST_PROXY !== "false"
+    trustProxy: env.TRUST_PROXY !== "false",
+    googleClientId: env.GOOGLE_CLIENT_ID || undefined
   };
 }
 

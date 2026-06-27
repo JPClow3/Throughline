@@ -32,6 +32,7 @@ export const CourseSchema = z.object({
   icon: z.string().min(1).max(8),
   professor: z.string().max(80).optional(),
   semester: z.string().max(40).optional(),
+  defaultAttributes: z.array(z.enum(rpgAttributes)).optional(),
   // Timestamps enable last-write-wins sync; defaults backfill older records.
   createdAt: z.string().datetime().default(() => new Date().toISOString()),
   updatedAt: z.string().datetime().default(() => new Date().toISOString())

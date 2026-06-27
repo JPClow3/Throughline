@@ -1,11 +1,12 @@
 import { FormEvent, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
+import { GoogleLogin } from "@react-oauth/google";
 import { useAuth } from "../auth/AuthProvider";
 import { AuthShell } from "./AuthShell";
 import { Notice } from "../components/Notice";
 
 export function Login() {
-  const { login, status } = useAuth();
+  const { login, loginWithGoogle, status } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -32,6 +33,35 @@ export function Login() {
 
   return (
     <AuthShell title="Welcome back" subtitle="Sign in to sync your plan across devices.">
+      <div style={{ display: "flex", justifyContent: "center", marginBottom: "1rem" }}>
+        <GoogleLogin
+          onSuccess={async (credentialResponse) => {
+            if (credentialResponse.credential) {
+              try {
+                setBusy(true);
+                await loginWithGoogle(credentialResponse.credential);
+                navigate("/app");
+              } catch (err) {
+                setError(err instanceof Error ? err.message : "Google sign in failed.");
+              } finally {
+                setBusy(false);
+              }
+            }
+          }}
+          onError={() => {
+            setError("Google sign in failed.");
+          }}
+          theme="filled_black"
+          shape="pill"
+        />
+      </div>
+      
+      <div style={{ display: "flex", alignItems: "center", margin: "1.5rem 0", color: "var(--ink-muted)", fontSize: "0.85em" }}>
+        <div style={{ flex: 1, height: "1px", backgroundColor: "var(--surface-border)" }} />
+        <span style={{ padding: "0 1rem" }}>or continue with email</span>
+        <div style={{ flex: 1, height: "1px", backgroundColor: "var(--surface-border)" }} />
+      </div>
+
       <form className="auth-form" onSubmit={submit}>
         <label>
           <span>Email</span>

@@ -10,6 +10,7 @@ export type UserRow = {
   authHash: string;
   wrappedDek: string;
   createdAt: string;
+  googleId?: string;
 };
 
 export type SessionRow = {
@@ -72,6 +73,7 @@ export function createUserStore(dbPath: string) {
   
   try { db.exec("ALTER TABLE users ADD COLUMN recovery_hash TEXT"); } catch { /* ignore */ }
   try { db.exec("ALTER TABLE users ADD COLUMN recovery_wrapped_dek TEXT"); } catch { /* ignore */ }
+  try { db.exec("ALTER TABLE users ADD COLUMN google_id TEXT"); } catch { /* ignore */ }
 
   const normalizeEmail = (email: string) => email.trim().toLowerCase();
 
@@ -124,6 +126,45 @@ export function createUserStore(dbPath: string) {
       }
 
       return null;
+    },
+
+    createGoogleUser(input: { email: string; googleId: string; dek: string }): UserRow | null {
+      const email = normalizeEmail(input.email);
+      const existing = db.prepare("SELECT id FROM users WHERE email = ?").get(email);
+      if (existing) {
+        return null; // email already taken
+      }
+      const row: UserRow = {
+        id: `user_${randomBytes(12).toString("hex")}`,
+        email,
+        salt: "", // No salt for google users
+        authHash: "", // No auth hash for google users
+        wrappedDek: input.dek, // Raw DEK stored for google users
+        createdAt: new Date().toISOString(),
+        googleId: input.googleId
+      };
+      
+      db.prepare(
+        "INSERT INTO users (id, email, salt, auth_hash, wrapped_dek, created_at, google_id) VALUES (?, ?, ?, ?, ?, ?, ?)"
+      ).run(row.id, row.email, row.salt, row.authHash, row.wrappedDek, row.createdAt, input.googleId);
+      return row;
+    },
+
+    verifyGoogleLogin(email: string, googleId: string): { userId: string; dek: string } | null {
+      const row = db.prepare("SELECT id, wrapped_dek, email FROM users WHERE google_id = ?").get(
+        googleId
+      ) as { id: string; wrapped_dek: string; email: string } | undefined;
+      
+      if (!row) return null;
+      
+      const normalizedEmail = normalizeEmail(email);
+      if (row.email !== normalizedEmail) {
+        try {
+          db.prepare("UPDATE users SET email = ? WHERE id = ?").run(normalizedEmail, row.id);
+        } catch { /* ignore unique constraint failures */ }
+      }
+      
+      return { userId: row.id, dek: row.wrapped_dek };
     },
 
     createSession(userId: string): string {

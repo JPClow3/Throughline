@@ -1,9 +1,10 @@
-import { Task } from "@throughline/domain";
-import { CheckCircle, Plus, DotsThree, Timer } from "@phosphor-icons/react";
+import { Course, Task } from "@throughline/domain";
+import { CheckCircle, Plus, DotsThree, Timer, Lightning, GraduationCap, ChartBar } from "@phosphor-icons/react";
 import { TaskCard } from "./TaskCard";
 
 type DashboardProps = {
   tasks: Task[];
+  courses: Course[];
   showGameLayer?: boolean;
   onComplete: (task: Task) => void;
   onUpdateTask?: (task: Task) => void;
@@ -14,6 +15,7 @@ type DashboardProps = {
 
 export function Dashboard({
   tasks,
+  courses,
   onComplete,
   onUpdateTask,
   onNewTask,
@@ -37,6 +39,29 @@ export function Dashboard({
   const done = tasks.filter((task) => task.status === "done").length;
   const pct = total ? Math.round((done / total) * 100) : 0;
   const strokeDashoffset = 283 - (283 * pct) / 100;
+
+  const now = new Date();
+  const startOfWeek = new Date(now);
+  startOfWeek.setDate(now.getDate() - 7); // Last 7 days
+
+  const weeklyTasks = tasks.filter(t => t.status === "done" && t.completedAt && new Date(t.completedAt) >= startOfWeek);
+  const weeklyXP = weeklyTasks.reduce((sum, t) => sum + (t.xp || 0), 0);
+
+  const timePerCourse = new Map<string, number>();
+  weeklyTasks.forEach(t => {
+    if (t.courseId) {
+      timePerCourse.set(t.courseId, (timePerCourse.get(t.courseId) || 0) + (t.estimatedMinutes || 0));
+    }
+  });
+
+  const sortedCourses = Array.from(timePerCourse.entries())
+    .map(([courseId, minutes]) => ({
+      course: courses.find(c => c.id === courseId),
+      minutes
+    }))
+    .filter(c => c.course)
+    .sort((a, b) => b.minutes - a.minutes)
+    .slice(0, 3);
 
   return (
     <div className="flex flex-col gap-[48px] max-w-container-max mx-auto w-full">
@@ -98,27 +123,75 @@ export function Dashboard({
             {dueSoon.length === 0 ? (
               <div className="text-on-surface-variant text-body-md py-4 text-center">No tasks due soon.</div>
             ) : (
-              dueSoon.map((task, idx) => (
-                <div key={task.id} onClick={() => onEdit(task)} className="group flex items-start gap-4 p-3 rounded-lg hover:bg-white/40 transition-colors border border-transparent hover:border-white/40 cursor-pointer">
-                  <button onClick={(e) => { e.stopPropagation(); onComplete(task); }} className={`mt-1 w-5 h-5 rounded-full border-2 flex-shrink-0 cursor-pointer transition-colors ${idx === 1 ? 'border-error hover:bg-error/20' : 'border-primary hover:bg-primary/20'}`}></button>
-                  <div className="flex flex-col">
-                    <TaskCard 
-                      task={task} 
-                      onComplete={onComplete} 
-                      onEdit={onEdit} 
-                      onUpdateTask={onUpdateTask}
-                      onStartFocus={onStartFocus}
-                      compact
-                    />
+              dueSoon.map((task, idx) => {
+                const isUrgent = task.difficulty >= 4 || task.priority === "high" || task.priority === "critical";
+                return (
+                  <div key={task.id} onClick={() => onEdit(task)} className="group flex items-start gap-4 p-3 rounded-lg hover:bg-white/40 transition-colors border border-transparent hover:border-white/40 cursor-pointer">
+                    <button onClick={(e) => { e.stopPropagation(); onComplete(task); }} className={`mt-1 w-5 h-5 rounded-full border-2 flex-shrink-0 cursor-pointer transition-colors ${idx === 1 ? 'border-error hover:bg-error/20' : 'border-primary hover:bg-primary/20'}`}></button>
+                    <div className="flex flex-col w-full">
+                      <TaskCard 
+                        task={task} 
+                        onComplete={onComplete} 
+                        onEdit={onEdit} 
+                        onUpdateTask={onUpdateTask}
+                        onStartFocus={onStartFocus}
+                        compact
+                        urgentGlow={isUrgent}
+                      />
+                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
           <button onClick={() => onNewTask()} className="mt-auto w-full py-3 rounded-lg border border-primary/30 text-primary font-label-md text-label-md hover:bg-primary/5 transition-colors flex items-center justify-center gap-2">
             <Plus size={16} />
             Quick Add Task
           </button>
+        </section>
+
+        <section className="lg:col-span-12 glass-panel rounded-xl p-padding-glass flex flex-col gap-6">
+          <div className="flex justify-between items-center">
+            <h2 className="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+              <ChartBar size={24} className="text-primary" />
+              Weekly Insights
+            </h2>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="flex flex-col bg-surface-container-low p-4 rounded-xl border border-outline-variant/30">
+              <span className="font-label-md text-on-surface-variant mb-2 flex items-center gap-2"><CheckCircle size={16} /> Tasks Completed</span>
+              <span className="font-display-sm text-primary">{weeklyTasks.length}</span>
+              <span className="font-body-sm text-on-surface-variant mt-1">in the last 7 days</span>
+            </div>
+            
+            <div className="flex flex-col bg-surface-container-low p-4 rounded-xl border border-outline-variant/30">
+              <span className="font-label-md text-on-surface-variant mb-2 flex items-center gap-2"><Lightning size={16} /> XP Gained</span>
+              <span className="font-display-sm text-secondary">{weeklyXP}</span>
+              <span className="font-body-sm text-on-surface-variant mt-1">keep up the momentum</span>
+            </div>
+
+            <div className="flex flex-col bg-surface-container-low p-4 rounded-xl border border-outline-variant/30">
+              <span className="font-label-md text-on-surface-variant mb-2 flex items-center gap-2"><GraduationCap size={16} /> Top Courses</span>
+              <div className="flex flex-col gap-2 mt-1">
+                {sortedCourses.length > 0 ? (
+                  sortedCourses.map((c) => (
+                    <div key={c.course?.id} className="flex justify-between items-center">
+                      <span className="font-body-sm text-on-surface truncate pr-2 flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: c.course?.color }} />
+                        {c.course?.code ?? c.course?.name}
+                      </span>
+                      <span className="font-label-sm text-on-surface-variant flex-shrink-0">
+                        {Math.round(c.minutes / 60 * 10) / 10}h
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <span className="font-body-sm text-on-surface-variant italic">No data yet</span>
+                )}
+              </div>
+            </div>
+          </div>
         </section>
 
         <section className="lg:col-span-12 glass-panel rounded-xl p-padding-glass flex flex-col gap-6">

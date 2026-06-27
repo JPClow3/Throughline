@@ -14,38 +14,38 @@ export function PrivacyPolicy() {
         <div style={{ marginBottom: "2rem" }}>
           <Link to="/" style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", color: "var(--ink-muted)", textDecoration: "none" }}>
             <ArrowLeft size={16} />
-            Back to Home
+            Voltar para o Início
           </Link>
         </div>
 
-        <h1 style={{ fontSize: "var(--text-display-lg)", marginBottom: "2rem" }}>Privacy Policy</h1>
+        <h1 style={{ fontSize: "var(--text-display-lg)", marginBottom: "2rem" }}>Política de Privacidade</h1>
         
         <div className="surface" style={{ padding: "2rem", display: "grid", gap: "1.5rem", fontSize: "1.05rem", lineHeight: "1.6" }}>
           <section>
-            <h2 style={{ fontSize: "1.4rem", marginBottom: "0.5rem" }}>Local-First By Design</h2>
+            <h2 style={{ fontSize: "1.4rem", marginBottom: "0.5rem" }}>Local-First (Primeiro Local)</h2>
             <p>
-              Throughline is built with a local-first philosophy. This means that all of your task data, project maps, and personal goals stay right where they belong: on your device. We use IndexedDB to store your data securely within your browser or installed app.
+              O Throughline é construído com uma filosofia "local-first". Isso significa que todos os dados das suas tarefas, mapas de projetos e objetivos pessoais ficam exatamente onde pertencem: no seu dispositivo. Utilizamos IndexedDB para armazenar seus dados de forma segura no seu navegador ou aplicativo instalado.
             </p>
           </section>
 
           <section>
-            <h2 style={{ fontSize: "1.4rem", marginBottom: "0.5rem" }}>Push Notifications</h2>
+            <h2 style={{ fontSize: "1.4rem", marginBottom: "0.5rem" }}>Notificações Push</h2>
             <p>
-              If you opt-in to push notifications, we only send the absolute minimum data required to trigger the alert. <strong>Push payloads are fully redacted.</strong> They only contain non-identifiable identifiers and generic urgency flags. Your task titles and descriptions never touch our notification servers.
+              Se você ativar as notificações push, enviaremos apenas o mínimo de dados necessários para acionar o alerta. <strong>Os dados do push são totalmente redigidos.</strong> Eles contêm apenas identificadores não identificáveis e alertas genéricos de urgência. Os títulos e descrições das suas tarefas nunca passam pelos nossos servidores de notificação.
             </p>
           </section>
 
           <section>
-            <h2 style={{ fontSize: "1.4rem", marginBottom: "0.5rem" }}>Zero Tracking or Analytics</h2>
+            <h2 style={{ fontSize: "1.4rem", marginBottom: "0.5rem" }}>Zero Rastreamento ou Analytics</h2>
             <p>
-              We don't want to know how you use the app. There are no third-party trackers, no analytics scripts, and no behavioral monitoring. Your workflows and study habits are strictly your business.
+              Não queremos saber como você usa o aplicativo. Não existem rastreadores de terceiros, scripts de analytics ou monitoramento comportamental. Seus fluxos de trabalho e hábitos de estudo são estritamente assunto seu.
             </p>
           </section>
 
           <section>
-            <h2 style={{ fontSize: "1.4rem", marginBottom: "0.5rem" }}>Future Cloud Sync</h2>
+            <h2 style={{ fontSize: "1.4rem", marginBottom: "0.5rem" }}>Futura Sincronização em Nuvem</h2>
             <p>
-              When we launch multi-device synchronization, it will be built with End-to-End (E2E) encryption. Our servers will only handle encrypted blobs, creating a zero-knowledge environment where nobody—not even us—can read your data.
+              Quando lançarmos a sincronização entre múltiplos dispositivos, ela será construída com criptografia de ponta a ponta (E2E). Nossos servidores lidarão apenas com pacotes criptografados, criando um ambiente de conhecimento zero onde ninguém—nem mesmo nós—poderá ler seus dados.
             </p>
           </section>
         </div>

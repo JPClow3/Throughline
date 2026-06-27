@@ -163,7 +163,8 @@ export function Landing() {
           <nav className="landing-nav-links" aria-label="Sections">
             <a href="#how">How it works</a>
             <a href="#views">The app</a>
-            <Link to="/privacy">Privacy</Link>
+            <Link to="/privacy">Privacidade</Link>
+            <Link to="/terms">Termos</Link>
             <a href="#faq">FAQ</a>
           </nav>
           <div className="landing-nav-actions">
@@ -341,7 +342,8 @@ export function Landing() {
               <h4>Product</h4>
               <a href="#how">How it works</a>
               <a href="#views">The app</a>
-              <Link to="/privacy">Privacy</Link>
+              <Link to="/privacy">Privacidade</Link>
+              <Link to="/terms">Termos</Link>
               <a href="#faq">FAQ</a>
             </div>
             <div>

@@ -33,6 +33,7 @@ type TaskDraft = {
   tags?: string[];
   subtasks?: Subtask[];
   recurrence?: RecurrencePattern;
+  completedAt?: string;
 };
 
 type GoalDraft = {
@@ -106,7 +107,8 @@ export function createTask(input: TaskDraft & { id?: string; createdAt?: string 
     recurrence: input.recurrence,
     visualSeed: Math.floor(Math.random() * 9999),
     createdAt: input.createdAt ?? now,
-    updatedAt: now
+    updatedAt: now,
+    completedAt: input.completedAt
   });
 
   return {

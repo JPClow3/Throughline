@@ -1,7 +1,7 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { useCallback, useEffect, useOptimistic, startTransition } from "react";
 import { Task, TaskStatus } from "@throughline/domain";
-import { seedIfEmpty } from "../data/db";
+import { seedIfEmpty, seedDailyQuests } from "../data/db";
 import { syncRedactedRemindersFromLocalState } from "../data/reminderSync";
 import {
   TaskInput,
@@ -13,7 +13,8 @@ import {
   listTasks,
   updateTask as updateTaskRecord,
   updateTaskStatus as updateTaskStatusRecord,
-  upsertCourse as upsertCourseRecord
+  upsertCourse as upsertCourseRecord,
+  recordFocusSession as recordFocusSessionRecord
 } from "../data/repositories";
 
 type TaskOptimisticAction = 
@@ -23,6 +24,7 @@ type TaskOptimisticAction =
 export function useTasks() {
   useEffect(() => {
     void seedIfEmpty();
+    void seedDailyQuests();
   }, []);
 
   const baseTasks = useLiveQuery(() => listTasks(), [], []);
@@ -87,6 +89,10 @@ export function useTasks() {
     await deleteCourseRecord(courseId);
   }, []);
 
+  const recordFocusSession = useCallback(async (durationMinutes: number = 25) => {
+    return await recordFocusSessionRecord(durationMinutes);
+  }, []);
+
   return {
     tasks: optimisticTasks,
     courses,
@@ -98,6 +104,7 @@ export function useTasks() {
     updateTaskStatus,
     completeTask,
     upsertCourse,
-    deleteCourse
+    deleteCourse,
+    recordFocusSession
   };
 }

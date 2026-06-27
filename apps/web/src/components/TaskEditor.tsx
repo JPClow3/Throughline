@@ -34,6 +34,7 @@ export function TaskEditor({ task, courses, goals = [], onSave, onDelete }: Task
   const [tags, setTags] = useState(task.tags.join(", "));
   const [subtasks, setSubtasks] = useState([...task.subtasks]);
   const [recurrence, setRecurrence] = useState<"daily" | "weekly" | "biweekly" | "monthly" | "custom" | "">(task.recurrence?.pattern ?? "");
+  const [attributes, setAttributes] = useState(task.attributes);
 
   function addSubtask() {
     setSubtasks([...subtasks, { id: crypto.randomUUID(), title: "", completed: false }]);
@@ -87,6 +88,7 @@ export function TaskEditor({ task, courses, goals = [], onSave, onDelete }: Task
         .filter(Boolean),
       subtasks: subtasks.map(st => ({ ...st, title: st.title.trim() })).filter(st => st.title),
       recurrence: recurrence ? { pattern: recurrence as "daily" | "weekly" | "biweekly" | "monthly" | "custom" } : undefined,
+      attributes,
       completedAt: status === "done" ? task.completedAt ?? new Date().toISOString() : undefined
     });
   }
@@ -100,7 +102,14 @@ export function TaskEditor({ task, courses, goals = [], onSave, onDelete }: Task
       <div className="composer-grid">
         <label>
           <span>Project</span>
-          <select value={courseId} onChange={(event) => setCourseId(event.target.value)}>
+          <select value={courseId} onChange={(event) => {
+            const nextCourseId = event.target.value;
+            setCourseId(nextCourseId);
+            const course = courses.find(c => c.id === nextCourseId);
+            if (course?.defaultAttributes?.length) {
+              setAttributes(course.defaultAttributes);
+            }
+          }}>
             <option value="">None</option>
             {courses.map((course) => (
               <option key={course.id} value={course.id}>

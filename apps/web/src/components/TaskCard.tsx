@@ -1,7 +1,8 @@
 import { Course, Task, TaskStatus, kanbanColumns } from "@throughline/domain";
 import { Check, Clock as Clock3, Diamond as Gem, ListChecks, Note as StickyNote, Target, Plus, CaretDown, CaretUp, Play, ArrowsClockwise } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "motion/react";
-import { useState, type CSSProperties } from "react";
+import * as React from "react";
+import { useState, useEffect, useRef, type CSSProperties } from "react";
 import { APP_LOCALE, capitalizeFirst } from "../lib/format";
 
 type TaskCardProps = {
@@ -21,9 +22,61 @@ type TaskCardProps = {
   /** Open the Notes view (used by the linked-notes count chip). */
   onOpenNotes?: () => void;
   onStartFocus?: (task: Task) => void;
+  /** Adds a distinct visual urgency (pulsing glow) */
+  urgentGlow?: boolean;
 };
 
 type DueTone = "done" | "overdue" | "soon" | "normal";
+
+function RewardAnimation({ showGameLayer }: { showGameLayer: boolean }) {
+  const [particles, setParticles] = useState<{x: number, y: number, scale: number, duration: number}[]>([]);
+
+  useEffect(() => {
+    if (!showGameLayer) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setParticles(
+      Array.from({ length: 12 }).map((_, i) => {
+        const angle = (i / 12) * Math.PI * 2;
+        const distance = 60 + Math.random() * 40;
+        return {
+          x: Math.cos(angle) * distance,
+          y: Math.sin(angle) * distance,
+          scale: Math.random() * 0.5 + 0.5,
+          duration: 0.6 + Math.random() * 0.4
+        };
+      })
+    );
+  }, [showGameLayer]);
+
+  return (
+    <div className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-visible z-10" aria-hidden="true">
+      <motion.div
+        initial={{ opacity: 0, scale: 2, rotate: -15 }}
+        animate={{ opacity: [0, 1, 1, 0], scale: [2, 1, 1, 1.1], rotate: [-15, -5, -5, -5] }}
+        transition={{ duration: 1.5, times: [0, 0.15, 0.8, 1], ease: "easeOut" }}
+        className="text-4xl font-black tracking-widest uppercase border-4 border-current px-4 py-2 rounded-lg mix-blend-overlay"
+        style={{ color: 'var(--tl-accent-violet)' }}
+      >
+        DONE
+      </motion.div>
+      {showGameLayer && particles.map((p, i) => (
+        <motion.div
+          key={i}
+          initial={{ x: 0, y: 0, opacity: 1, scale: 0 }}
+          animate={{ 
+            x: p.x, 
+            y: p.y,
+            opacity: 0,
+            scale: p.scale
+          }}
+          transition={{ duration: p.duration, ease: "easeOut" }}
+          className="absolute w-3 h-3 rounded-full"
+          style={{ backgroundColor: 'var(--tl-accent-violet)' }}
+        />
+      ))}
+    </div>
+  );
+}
 
 export function TaskCard({
   task,
@@ -37,7 +90,8 @@ export function TaskCard({
   onEdit,
   onUpdateTask,
   onOpenNotes,
-  onStartFocus
+  onStartFocus,
+  urgentGlow = false
 }: TaskCardProps) {
   const done = task.status === "done";
   const due = task.dueAt ? new Date(task.dueAt) : undefined;
@@ -47,6 +101,17 @@ export function TaskCard({
 
   const [expanded, setExpanded] = useState(false);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
+  const [justCompleted, setJustCompleted] = useState(false);
+  const wasDoneRef = useRef(task.status === "done");
+
+  useEffect(() => {
+    if (task.status === "done" && !wasDoneRef.current) {
+      setJustCompleted(true);
+      const timer = setTimeout(() => setJustCompleted(false), 2000);
+      return () => clearTimeout(timer);
+    }
+    wasDoneRef.current = task.status === "done";
+  }, [task.status]);
 
   function toggleSubtask(index: number) {
     if (!onUpdateTask) return;
@@ -66,13 +131,35 @@ export function TaskCard({
 
   return (
     <motion.article
-      className={`task-card${compact ? " task-card-compact" : ""}${done ? " is-done" : ""}`}
+      className={`task-card${compact ? " task-card-compact" : ""}${done ? " is-done" : ""}${urgentGlow ? " urgent-pulse-glow" : ""} relative`}
       layout
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -2 }}
       transition={{ type: "spring", stiffness: 300, damping: 28 }}
     >
+      <AnimatePresence>
+        {justCompleted && (
+          <motion.div
+            initial={{ opacity: 0, y: 0, scale: 0.5 }}
+            animate={{ opacity: 1, y: -40, scale: 1.2 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1.5, ease: "easeOut" }}
+            className="absolute z-50 pointer-events-none flex flex-col items-center gap-1 font-bold"
+            style={{ left: "50%", x: "-50%", top: "20%" }}
+          >
+            <span className="text-primary drop-shadow-md bg-surface/50 backdrop-blur px-2 py-1 rounded-full whitespace-nowrap">
+              +{task.xp} XP
+            </span>
+            {task.attributes?.map(attr => (
+              <span key={attr} className="text-[10px] text-primary/90 uppercase tracking-widest drop-shadow-sm bg-surface/50 backdrop-blur px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                + {attr}
+              </span>
+            ))}
+          </motion.div>
+        )}
+        {justCompleted && <RewardAnimation showGameLayer={showGameLayer} />}
+      </AnimatePresence>
       <div className="task-card-top">
         {course ? (
           <span className="project-chip" style={{ "--project-color": course.color } as CSSProperties}>

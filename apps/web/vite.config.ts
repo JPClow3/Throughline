@@ -18,7 +18,7 @@ export default defineConfig({
     chunkSizeWarningLimit: 950
   },
   server: { proxy: apiProxy },
-  preview: { proxy: apiProxy },
+  preview: { proxy: apiProxy, allowedHosts: true },
   plugins: [
     react(),
     tailwindcss(),

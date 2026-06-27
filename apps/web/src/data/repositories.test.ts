@@ -7,7 +7,11 @@ import {
   getReminderSyncState,
   listTasks,
   saveReminderSyncState,
-  updateTaskStatus
+  updateTaskStatus,
+  recordFocusSession,
+  upsertCourse,
+  deleteCourse,
+  listCourses
 } from "./repositories";
 
 beforeEach(async () => {
@@ -100,5 +104,60 @@ describe("web data repositories", () => {
         body: JSON.stringify({ reminders: [] })
       })
     );
+  });
+
+  it("records a focus session task", async () => {
+    const task = await recordFocusSession(30);
+    expect(task.title).toBe("Focus Session");
+    expect(task.status).toBe("done");
+    expect(task.estimatedMinutes).toBe(30);
+    expect(task.energy).toBe(3);
+    const tasks = await listTasks();
+    expect(tasks).toHaveLength(1);
+    expect(tasks[0].id).toBe(task.id);
+  });
+
+  it("seeds daily quests when empty", async () => {
+    const { seedDailyQuests } = await import("./db");
+    await seedDailyQuests();
+    const tasks = await listTasks();
+    const habitTasks = tasks.filter(t => t?.tags?.includes("habit"));
+    expect(habitTasks).toHaveLength(2);
+
+    await seedDailyQuests(); // second call should not add duplicates
+    const tasksAfter = await listTasks();
+    const habitTasksAfter = tasksAfter.filter(t => t?.tags?.includes("habit"));
+    expect(habitTasksAfter).toHaveLength(2);
+  });
+
+  it("upserts and deletes courses correctly", async () => {
+    const course = {
+      id: "course_1",
+      name: "Computer Science",
+      code: "CS101",
+      color: "#000",
+      icon: "💻",
+      defaultAttributes: ["focus"] as any,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    await upsertCourse(course);
+    let courses = await listCourses();
+    expect(courses).toHaveLength(1);
+    
+    await addTask({
+      title: "Assignment 1",
+      courseId: "course_1",
+      priority: "high",
+      energy: 2,
+      difficulty: 2,
+      attributes: ["focus"]
+    });
+    
+    await deleteCourse("course_1");
+    courses = await listCourses();
+    expect(courses).toHaveLength(0);
+    const tasks = await listTasks();
+    expect(tasks[0].courseId).toBeUndefined(); // detached
   });
 });

@@ -10,7 +10,8 @@ import {
   Task,
   TaskSchema,
   UserProgress,
-  deriveUserProgress
+  deriveUserProgress,
+  createTask
 } from "@throughline/domain";
 import Dexie, { Table } from "dexie";
 import { AppSetting } from "./types";
@@ -160,5 +161,52 @@ export async function resetSampleData() {
     await db.notes.bulkPut(sampleNotes);
     await db.tasks.bulkPut(sampleTasks.map((task) => TaskSchema.parse(task)));
     await db.progress.put(deriveUserProgress(sampleTasks));
+  });
+}
+
+export async function seedDailyQuests() {
+  const existingQuests = await db.tasks.filter(t => t.tags?.includes("habit") ?? false).toArray();
+  if (existingQuests.length > 0) return;
+
+  const now = new Date();
+  const addDays = (days: number, hour = 18) => {
+    const date = new Date(now);
+    date.setDate(date.getDate() + days);
+    date.setHours(hour, 0, 0, 0);
+    return date.toISOString();
+  };
+
+  const newQuests = [
+    createTask({
+      title: "Plan tomorrow's schedule",
+      description: "Review your notes and prepare tasks for the next day.",
+      status: "backlog",
+      dueAt: addDays(0, 21),
+      priority: "low",
+      energy: 1,
+      difficulty: 1,
+      estimatedMinutes: 10,
+      attributes: ["discipline"],
+      tags: ["habit"],
+      recurrence: { pattern: "daily" }
+    }),
+    createTask({
+      title: "Review notes for 15 mins",
+      description: "Read through recent notes to reinforce memory.",
+      status: "backlog",
+      dueAt: addDays(0, 19),
+      priority: "low",
+      energy: 2,
+      difficulty: 1,
+      estimatedMinutes: 15,
+      attributes: ["memory"],
+      tags: ["habit"],
+      recurrence: { pattern: "daily" }
+    })
+  ].map((task) => TaskSchema.parse(task));
+
+  await db.transaction("rw", [db.tasks, db.progress], async () => {
+    await db.tasks.bulkPut(newQuests);
+    await refreshProgress();
   });
 }

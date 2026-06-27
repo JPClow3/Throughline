@@ -16,6 +16,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@fontsource-variable/geist": "^5.2.9",
     "@phosphor-icons/react": "^2.1.10",
+    "@react-oauth/google": "^0.13.5",
     "@tailwindcss/vite": "^4.1.17",
     "@throughline/domain": "0.1.0",
     "cmdk": "^1.1.1",

@@ -154,6 +154,7 @@ function SortableQuest({
   return (
     <div
       ref={setNodeRef}
+      id={`task-card-${task.id}`}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={isDragging ? "sortable-quest dragging" : "sortable-quest"}
       tabIndex={0}
@@ -163,18 +164,25 @@ function SortableQuest({
           onEdit(task);
           return;
         }
+        if (e.key === " " && e.target === e.currentTarget) {
+          e.preventDefault();
+          onComplete(task);
+          return;
+        }
         if (e.ctrlKey) {
           if (e.key === "ArrowLeft") {
             const currentIndex = taskStatuses.indexOf(task.status);
             if (currentIndex > 0) {
               e.preventDefault();
               onStatusChange(task.id, taskStatuses[currentIndex - 1]);
+              setTimeout(() => document.getElementById(`task-card-${task.id}`)?.focus(), 0);
             }
           } else if (e.key === "ArrowRight") {
             const currentIndex = taskStatuses.indexOf(task.status);
             if (currentIndex < taskStatuses.length - 1) {
               e.preventDefault();
               onStatusChange(task.id, taskStatuses[currentIndex + 1]);
+              setTimeout(() => document.getElementById(`task-card-${task.id}`)?.focus(), 0);
             }
           }
         } else {

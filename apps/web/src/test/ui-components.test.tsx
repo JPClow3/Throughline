@@ -15,7 +15,12 @@ describe("calm planner UI components", () => {
     fireEvent.change(screen.getByLabelText("Description"), { target: { value: "Draft the argument and source list." } });
     fireEvent.change(screen.getByLabelText("Reminder"), { target: { value: "2026-06-04T09:30" } });
     fireEvent.change(screen.getByLabelText("Tags"), { target: { value: "paper, seminar" } });
-    fireEvent.change(screen.getByLabelText("Subtasks"), { target: { value: "Choose thesis\nCollect sources" } });
+    
+    fireEvent.click(screen.getByRole("button", { name: /Add step/i }));
+    fireEvent.change(screen.getAllByPlaceholderText("Subtask title")[0], { target: { value: "Choose thesis" } });
+    fireEvent.click(screen.getByRole("button", { name: /Add step/i }));
+    fireEvent.change(screen.getAllByPlaceholderText("Subtask title")[1], { target: { value: "Collect sources" } });
+    
     fireEvent.click(screen.getByRole("button", { name: "Add task" }));
 
     await waitFor(() => expect(onAddTask).toHaveBeenCalled());

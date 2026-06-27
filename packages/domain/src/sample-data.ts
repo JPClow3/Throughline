@@ -136,6 +136,36 @@ export const sampleTasks = [
     energy: 2,
     difficulty: 2,
     attributes: ["creativity", "discipline"]
+  }),
+  createTask({
+    id: "task_daily_plan",
+    title: "Plan tomorrow's schedule",
+    description: "Review your notes and prepare tasks for the next day.",
+    status: "backlog",
+    courseId: "course_wellbeing",
+    dueAt: addDays(0, 21),
+    priority: "low",
+    energy: 1,
+    difficulty: 1,
+    estimatedMinutes: 10,
+    attributes: ["discipline"],
+    tags: ["habit"],
+    recurrence: { pattern: "daily" }
+  }),
+  createTask({
+    id: "task_daily_review",
+    title: "Review notes for 15 mins",
+    description: "Read through recent notes to reinforce memory.",
+    status: "backlog",
+    courseId: "course_wellbeing",
+    dueAt: addDays(0, 19),
+    priority: "low",
+    energy: 2,
+    difficulty: 1,
+    estimatedMinutes: 15,
+    attributes: ["memory"],
+    tags: ["habit"],
+    recurrence: { pattern: "daily" }
   })
 ].map((task) =>
   task.status === "done" && !task.completedAt

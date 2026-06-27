@@ -162,6 +162,45 @@ export async function updateTaskStatus(taskId: string, status: TaskStatus) {
   await refreshProgress();
 }
 
+export async function syncRecurringTasks() {
+  const activeTasks = (await db.tasks.toArray()).filter(t => t.status !== "done" && t.recurrence && t.dueAt);
+  const nowTime = new Date().getTime();
+  
+  await db.transaction("rw", db.tasks, async () => {
+    for (const task of activeTasks) {
+      if (!task.dueAt || !task.recurrence) continue;
+      
+      const dueTime = new Date(task.dueAt).getTime();
+      const nextDueStr = calculateNextRecurrence(task.dueAt, task.recurrence);
+      if (!nextDueStr) continue;
+      
+      const nextDueTime = new Date(nextDueStr).getTime();
+      
+      if (nowTime >= nextDueTime) {
+        // Old task becomes a normal overdue task
+        await db.tasks.update(task.id, { recurrence: undefined, updatedAt: now() });
+        
+        let nextReminderAt: string | undefined = undefined;
+        if (task.reminderAt) {
+          const diff = dueTime - new Date(task.reminderAt).getTime();
+          nextReminderAt = new Date(nextDueTime - diff).toISOString();
+        }
+        
+        const newTask = createTask({
+          ...task,
+          subtasks: task.subtasks.map(st => ({ ...st, completed: false })),
+          status: "backlog",
+          dueAt: nextDueStr,
+          reminderAt: nextReminderAt,
+          recurrence: task.recurrence
+        });
+        
+        await db.tasks.put(newTask);
+      }
+    }
+  });
+}
+
 export async function updateTask(task: Task) {
   const updated = {
     ...task,
@@ -178,6 +217,25 @@ export async function deleteTask(taskId: string) {
   await db.tasks.delete(taskId);
   await recordTombstone("task", taskId);
   await refreshProgress();
+}
+
+export async function recordFocusSession(durationMinutes: number = 25) {
+  const task = createTask({
+    title: "Focus Session",
+    description: `Completed a ${durationMinutes} minute deep focus session.`,
+    status: "done",
+    priority: "high",
+    energy: Math.max(1, Math.min(5, Math.ceil(durationMinutes / 10))),
+    difficulty: 3,
+    estimatedMinutes: durationMinutes,
+    attributes: ["focus", "discipline"],
+    tags: ["focus"],
+    completedAt: now()
+  });
+
+  await db.tasks.put(task);
+  await refreshProgress();
+  return task;
 }
 
 export async function upsertCourse(course: Course) {

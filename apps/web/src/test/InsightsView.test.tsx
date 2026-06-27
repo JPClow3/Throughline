@@ -47,6 +47,7 @@ describe("InsightsView", () => {
       completeTask: vi.fn(),
       upsertCourse: vi.fn(),
       deleteCourse: vi.fn(),
+      recordFocusSession: vi.fn(),
       loading: false
     });
 

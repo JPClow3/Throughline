@@ -3,18 +3,19 @@ import { describe, expect, it } from "vitest";
 import { Login } from "../pages/Login";
 import { Signup } from "../pages/Signup";
 import { BrowserRouter } from "react-router-dom";
-
-
+import { GoogleOAuthProvider } from "@react-oauth/google";
 import { AuthProvider } from "../auth/AuthProvider";
 
 describe("Auth Pages", () => {
   it("renders Login page correctly", () => {
     render(
-      <BrowserRouter>
-        <AuthProvider>
-          <Login />
-        </AuthProvider>
-      </BrowserRouter>
+      <GoogleOAuthProvider clientId="test">
+        <BrowserRouter>
+          <AuthProvider>
+            <Login />
+          </AuthProvider>
+        </BrowserRouter>
+      </GoogleOAuthProvider>
     );
     expect(screen.getByRole("heading", { name: /Welcome back/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/Password or Recovery Key/i)).toBeInTheDocument();
@@ -23,11 +24,13 @@ describe("Auth Pages", () => {
 
   it("renders Signup page correctly", () => {
     render(
-      <BrowserRouter>
-        <AuthProvider>
-          <Signup />
-        </AuthProvider>
-      </BrowserRouter>
+      <GoogleOAuthProvider clientId="test">
+        <BrowserRouter>
+          <AuthProvider>
+            <Signup />
+          </AuthProvider>
+        </BrowserRouter>
+      </GoogleOAuthProvider>
     );
     expect(screen.getByRole("heading", { name: /Create your account/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/^Password$/i)).toBeInTheDocument();

@@ -11,11 +11,12 @@ import { Sheet } from "./components/Sheet";
 import { ViewSkeleton } from "./components/Skeleton";
 import { TaskComposer } from "./components/TaskComposer";
 import { TaskEditor } from "./components/TaskEditor";
+import { FocusTimer } from "./components/FocusTimer";
 import { FocusOverlay } from "./components/FocusOverlay";
 import { OnboardingOverlay } from "./components/OnboardingOverlay";
 import { CommandPalette } from "./components/CommandPalette";
 import { useAuth } from "./auth/AuthProvider";
-import { getAppearanceSettings, saveAppearanceSettings } from "./data/repositories";
+import { getAppearanceSettings, saveAppearanceSettings, syncRecurringTasks } from "./data/repositories";
 import { useGoals } from "./hooks/useGoals";
 import { useNotes } from "./hooks/useNotes";
 import { useTasks } from "./hooks/useTasks";
@@ -85,6 +86,10 @@ export function App() {
       return false;
     }
   });
+
+  React.useEffect(() => {
+    void syncRecurringTasks();
+  }, []);
 
   const openGoal = (goalId: string) => {
     setSelectedGoalId(goalId);
@@ -157,6 +162,7 @@ export function App() {
                 {view === "dashboard" ? (
                   <Dashboard
                     tasks={tasks}
+                    courses={courses}
                     onComplete={completeTask}
                     onUpdateTask={updateTask}
                     onNewTask={(date) => { setComposerDate(date); setComposerOpen(true); }}
@@ -340,6 +346,7 @@ export function App() {
         </Sheet>
         
         <FocusOverlay task={focusTask} onClose={() => setFocusTask(null)} />
+        <FocusTimer />
         
         {showOnboarding ? (
           <OnboardingOverlay onComplete={() => saveAppearanceSettings({ hasCompletedOnboarding: true })} />

@@ -25,6 +25,7 @@ type AuthContextValue = {
   dekKey: CryptoKey | null;
   signup: (email: string, password: string) => Promise<string>;
   login: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: (credential: string) => Promise<void>;
   resetPassword: (email: string, recoveryKey: string, newPassword: string) => Promise<void>;
   logout: () => Promise<void>;
 };
@@ -144,6 +145,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await persistSession(userEmail, dek);
   }, []);
 
+  const loginWithGoogle = useCallback(async (credential: string) => {
+    const freshDek = generateDek();
+    const dekStr = dekToB64(freshDek);
+    
+    const res = await api("/auth/google", { credential, dek: dekStr });
+    
+    if (!res.ok) {
+      let msg = "Could not sign in with Google. Please try again.";
+      try {
+        const err = await res.json();
+        if (err.error === "email-taken-by-another-method") {
+          msg = "An account with this email already exists using a password.";
+        }
+      } catch { /* ignore */ }
+      throw new AuthError(msg);
+    }
+    
+    const data = (await res.json()) as { email: string; dek: string };
+    const finalDek = dekFromB64(data.dek);
+    await persistSession(data.email, finalDek);
+  }, []);
+
   const resetPassword = useCallback(async (rawEmail: string, recoveryKey: string, newPassword: string) => {
     const userEmail = rawEmail.trim().toLowerCase();
     const saltRes = await api("/auth/salt", { email: userEmail });
@@ -193,8 +216,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ status, email, dekKey, signup, login, resetPassword, logout }),
-    [status, email, dekKey, signup, login, resetPassword, logout]
+    () => ({ status, email, dekKey, signup, login, loginWithGoogle, resetPassword, logout }),
+    [status, email, dekKey, signup, login, loginWithGoogle, resetPassword, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
