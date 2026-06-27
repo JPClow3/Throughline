@@ -4,18 +4,13 @@ import {
   Clock,
   CodeBlock,
   Database,
-  LockKey,
-  ShieldCheck,
-  WifiSlash,
-  CloudCheck,
-  DeviceMobile
+  ShieldCheck
 } from "@phosphor-icons/react";
 import { MotionConfig, motion } from "motion/react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { ThroughlineMark } from "../components/ThroughlineMark";
 
-const floatTransition = { duration: 7, repeat: Infinity, ease: "easeInOut" } as const;
+
 
 function Reveal({ children, delay = 0, className, style }: { children: ReactNode; delay?: number; className?: string; style?: React.CSSProperties }) {
   return (
@@ -121,16 +116,25 @@ const FAQ = [
   }
 ];
 
+import GradientText from "../components/GradientText";
+
 export function Landing() {
   return (
     <MotionConfig reducedMotion="user">
       <div className="landing text-[var(--tl-text)]">
         <AmbientBackground />
         
-        <header className="landing-nav glass-panel" style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50, borderBottom: '1px solid var(--tl-glass-border)', backdropFilter: 'blur(40px)', backgroundColor: 'var(--tl-surface-glass)' }}>
+        <header className="landing-nav glass-panel">
           <a className="landing-brand" href="#top">
             <img src="/brand/svg/throughline-icon-liquid-glass.svg" alt="" width="24" height="24" style={{ borderRadius: '6px' }} />
-            <span style={{ marginLeft: '8px', paddingRight: '4px', fontWeight: 'bold' }}>Throughline</span>
+            <GradientText
+              colors={['var(--tl-accent-blue)', 'var(--tl-accent-violet)', 'var(--tl-accent-aqua)', 'var(--tl-accent-blue)']}
+              animationSpeed={4}
+              showBorder={false}
+              className="font-bold ml-2 pr-1"
+            >
+              Throughline
+            </GradientText>
           </a>
           <nav className="landing-nav-links" aria-label="Sections">
             <a href="#how">How it works</a>
@@ -152,7 +156,7 @@ export function Landing() {
           <section className="flex flex-col items-center text-center mb-32">
             <div className="relative w-full max-w-4xl flex flex-col items-center">
               <div className="absolute inset-0 bg-[var(--tl-surface-glass)] rounded-[100px] blur-[60px] -z-10" />
-              <h1 className="font-display-lg text-[40px] md:text-[64px] font-bold text-[var(--tl-text)] mb-6 drop-shadow-sm flex flex-col gap-2 relative leading-tight" style={{ letterSpacing: '-0.04em' }}>
+              <h1 className="font-display-lg text-[40px] md:text-[64px] font-bold text-[var(--tl-text)] mb-6 drop-shadow-sm flex flex-col items-center gap-2 relative leading-tight" style={{ letterSpacing: '-0.04em' }}>
                 <Reveal delay={0} style={{ transform: 'translateZ(20px) scale(1.02)' }}>Academic Flow,</Reveal>
                 <Reveal delay={0.1} style={{ transform: 'translateZ(40px) scale(1.05)' }}>
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--tl-accent-blue)] to-[#7EA7FF]">
