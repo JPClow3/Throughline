@@ -2,6 +2,7 @@ import {
   ArrowRight,
   CalendarDots,
   CloudCheck,
+  DeviceMobile,
   Kanban,
   LockKey,
   Note as NoteIcon,
@@ -13,8 +14,41 @@ import {
 import { MotionConfig, motion } from "motion/react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
+import { ThroughlineMark } from "../components/ThroughlineMark";
 
+const NODES: Array<[number, number, number]> = [
+  [5, 17, 2.4],
+  [12, 12, 2.4],
+  [19, 7, 3]
+];
 
+// The brand mark "draws" its line, then the nodes pop in — a small on-load moment.
+function AnimatedMark({ size = 20 }: { size?: number }) {
+  return (
+    <motion.svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true" initial="hidden" animate="show">
+      <motion.path
+        d="M5 17 L19 7"
+        stroke="currentColor"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        variants={{ hidden: { pathLength: 0, opacity: 0 }, show: { pathLength: 1, opacity: 1 } }}
+        transition={{ duration: 0.7, ease: "easeInOut" }}
+      />
+      {NODES.map(([cx, cy, r], index) => (
+        <motion.circle
+          key={index}
+          cx={cx}
+          cy={cy}
+          r={r}
+          fill="currentColor"
+          style={{ transformBox: "fill-box", transformOrigin: "center" }}
+          variants={{ hidden: { scale: 0, opacity: 0 }, show: { scale: 1, opacity: 1 } }}
+          transition={{ delay: 0.45 + index * 0.12, type: "spring", stiffness: 420, damping: 18 }}
+        />
+      ))}
+    </motion.svg>
+  );
+}
 
 const floatTransition = { duration: 7, repeat: Infinity, ease: "easeInOut" } as const;
 
@@ -40,7 +74,7 @@ function BrowserFrame({ src, alt, className }: { src: string; alt: string; class
         <span />
         <span />
       </div>
-      <img src={src} alt={alt} loading="lazy" />
+      <img src={src} alt={alt} loading="lazy" width={2480} height={1600} />
     </div>
   );
 }
@@ -56,22 +90,22 @@ const SHOWCASE = [
     eyebrow: "Board",
     title: "See the work move",
     body: "A calm Kanban board across Backlog → Done, with a project filter and quick search. Drag, or change status inline.",
-    img: "/shots/board.png",
-    alt: "Throughline board view"
+    img: "/store-assets/shots/board.png",
+    alt: "Throughline Kanban board interface showing columns for Backlog, In Progress, and Done"
   },
   {
     eyebrow: "Timeline",
     title: "Plan the day, gently",
     body: "An hourly agenda for any day in the next ten, so due work has a place to land without the pressure of a packed calendar.",
-    img: "/shots/timeline.png",
-    alt: "Throughline timeline view"
+    img: "/store-assets/shots/timeline.png",
+    alt: "Throughline timeline interface showing tasks scheduled on an hourly agenda calendar"
   },
   {
     eyebrow: "Notes",
     title: "Context, cross-linked",
     body: "One markdown notebook. Link a note to any task or goal and jump straight back to the work it belongs to.",
-    img: "/shots/notes.png",
-    alt: "Throughline notes view"
+    img: "/store-assets/shots/notes.png",
+    alt: "Throughline markdown notes interface demonstrating cross-linking back to specific tasks and goals"
   }
 ];
 
@@ -109,14 +143,19 @@ export function Landing() {
   return (
     <MotionConfig reducedMotion="user">
       <div className="landing">
-        <header className="landing-nav" aria-label="Main navigation">
-          <a href="#top" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <img src="/brand/svg/throughline-lockup-horizontal.svg" alt="Throughline" className="h-6 w-auto hidden dark:block" style={{ filter: 'brightness(0) invert(1)' }} />
-            <img src="/brand/svg/throughline-lockup-horizontal.svg" alt="Throughline" className="h-6 w-auto block dark:hidden" />
+        <div className="landing-ambient-bg" />
+        <header className="landing-nav">
+          <a className="landing-brand" href="#top">
+            <span className="landing-brand-mark">
+              <AnimatedMark size={20} />
+            </span>
+            Throughline
           </a>
           <nav className="landing-nav-links" aria-label="Sections">
             <a href="#how">How it works</a>
             <a href="#views">The app</a>
+            <Link to="/privacy">Privacidade</Link>
+            <Link to="/terms">Termos</Link>
             <a href="#faq">FAQ</a>
           </nav>
           <div className="landing-nav-actions">
@@ -133,7 +172,7 @@ export function Landing() {
           <section className="landing-hero">
             <Reveal className="landing-hero-copy">
               <span className="eyebrow">A calm place to plan</span>
-              <h1>
+              <h1 className="text-shimmer">
                 Goals that quietly
                 <br />
                 pull the work forward.
@@ -143,7 +182,7 @@ export function Landing() {
                 cross-linked notebook, a board, and a timeline. Local-first and end-to-end encrypted.
               </p>
               <div className="landing-cta-row">
-                <Link className="primary-button" to="/signup">
+                <Link className="primary-button depth-hover glow-halo" to="/signup">
                   Get started <ArrowRight size={17} />
                 </Link>
                 <Link className="secondary-button" to="/app">
@@ -156,7 +195,7 @@ export function Landing() {
             </Reveal>
             <Reveal className="landing-hero-shot" delay={0.12}>
               <motion.div className="landing-float" animate={{ y: [0, -10, 0] }} transition={floatTransition}>
-                <BrowserFrame src="/shots/today.png" alt="Throughline Today view" />
+                <BrowserFrame src="/store-assets/shots/today.png" alt="Throughline Today view showing the daily task list and progress rolled up into goals" />
               </motion.div>
             </Reveal>
           </section>
@@ -169,7 +208,7 @@ export function Landing() {
             <div className="landing-steps">
               {STEPS.map((step, index) => (
                 <Reveal key={step.title} delay={index * 0.08}>
-                  <article className="landing-step glass-panel">
+                  <article className="landing-step glass-panel depth-hover">
                     <span className="landing-step-no">{index + 1}</span>
                     <span className="landing-feature-icon">{step.icon}</span>
                     <h3>{step.title}</h3>
@@ -207,70 +246,30 @@ export function Landing() {
             </div>
           </section>
 
-          <section id="privacy" className="landing-privacy max-w-[1100px] mx-auto w-full px-6 my-24">
+          <section id="privacy" className="landing-privacy">
             <Reveal>
-              <div className="landing-privacy-card glass-panel relative overflow-hidden rounded-[2rem] p-8 md:p-16 flex flex-col lg:flex-row items-center gap-12 lg:gap-24" style={{ background: 'var(--surface-l2-bg)' }}>
-                {/* Left Column: Text & Badges */}
-                <div className="flex-1 space-y-8 z-10">
-                  <div className="w-14 h-14 rounded-2xl bg-[var(--accent)]/10 dark:bg-[var(--accent)]/20 flex items-center justify-center text-[var(--accent)] shadow-inner">
-                    <LockKey size={28} weight="duotone" />
-                  </div>
-                  
-                  <div className="space-y-4">
-                    <h2 className="text-4xl md:text-5xl font-medium tracking-tight text-[var(--ink)]">Private by design.</h2>
-                    <p className="text-lg md:text-xl text-[var(--ink-muted)] leading-relaxed max-w-lg">
-                      Your goals, tasks, and notes are encrypted on your device with a key only you hold.
-                      Throughline's server stores nothing it can read. True data portability via clean JSON.
-                    </p>
-                  </div>
-
-                  <div className="flex flex-wrap gap-3 pt-2">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--surface-l1-bg)] border border-[var(--glass-border)] text-sm font-medium text-[var(--ink)] shadow-sm">
-                      <LockKey size={16} /> E2E Encrypted
-                    </div>
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--surface-l1-bg)] border border-[var(--glass-border)] text-sm font-medium text-[var(--ink)] shadow-sm">
-                      <WifiSlash size={16} /> Fully Offline
-                    </div>
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--surface-l1-bg)] border border-[var(--glass-border)] text-sm font-medium text-[var(--ink)] shadow-sm">
-                      <CloudCheck size={16} /> Cross-device Sync
-                    </div>
-                  </div>
-                </div>
-
-                {/* Right Column: Code Snippet */}
-                <div className="flex-1 w-full z-10">
-                  <div className="glass-panel rounded-[2rem] p-6 shadow-2xl bg-white/40 dark:bg-black/20 border-[var(--glass-border)] backdrop-blur-xl relative overflow-hidden group hover:scale-[1.02] transition-transform duration-500">
-                    <div className="absolute inset-0 bg-gradient-to-br from-[var(--tl-accent-blue)]/10 to-[var(--tl-accent-violet)]/10 opacity-50"></div>
-                    {/* Window Controls */}
-                    <div className="flex gap-2 mb-6 relative z-10">
-                      <div className="w-3 h-3 rounded-full bg-[#ff5f56]"></div>
-                      <div className="w-3 h-3 rounded-full bg-[#27c93f]"></div>
-                      <div className="w-3 h-3 rounded-full bg-[#ffbd2e]"></div>
-                    </div>
-                    <pre className="text-sm md:text-base font-mono text-[var(--ink-muted)] relative z-10 overflow-x-auto">
-                      <code className="leading-loose">
-                        <span className="text-[var(--ink-faint)]">{"{"}</span>
-                        <br />
-                        {"  "}<span className="text-[var(--accent)]">"user"</span>: <span className="text-[var(--tl-progress)]">"scholar_01"</span>,
-                        <br />
-                        {"  "}<span className="text-[var(--accent)]">"workspace"</span>: <span className="text-[var(--tl-progress)]">"Thesis_Drafting"</span>,
-                        <br />
-                        {"  "}<span className="text-[var(--accent)]">"flow_state"</span>: <span className="text-[var(--tl-progress)]">"active"</span>,
-                        <br />
-                        {"  "}<span className="text-[var(--accent)]">"data_locality"</span>: <span className="text-[var(--tl-progress)]">"100%"</span>,
-                        <br />
-                        {"  "}<span className="text-[var(--accent)]">"sync"</span>: {"{"}
-                        <br />
-                        {"    "}<span className="text-[var(--accent)]">"provider"</span>: <span className="text-[var(--tl-progress)]">"e2e_encrypted"</span>,
-                        <br />
-                        {"    "}<span className="text-[var(--accent)]">"status"</span>: <span className="text-[var(--tl-progress)]">"isolated"</span>
-                        <br />
-                        {"  "}{"}"}
-                        <br />
-                        <span className="text-[var(--ink-faint)]">{"}"}</span>
-                      </code>
-                    </pre>
-                  </div>
+              <div className="landing-privacy-card glass-heavy depth-hover">
+                <span className="landing-feature-icon">
+                  <LockKey size={22} />
+                </span>
+                <h2>Private by design.</h2>
+                <p>
+                  Your goals, tasks, and notes are encrypted on your device with a key only you hold.
+                  Throughline's server stores nothing it can read.
+                </p>
+                <div className="landing-privacy-points">
+                  <span>
+                    <LockKey size={16} /> End-to-end encrypted
+                  </span>
+                  <span>
+                    <WifiSlash size={16} /> Works fully offline
+                  </span>
+                  <span>
+                    <CloudCheck size={16} /> Syncs across your devices
+                  </span>
+                  <span>
+                    <DeviceMobile size={16} /> Installs as an app
+                  </span>
                 </div>
               </div>
             </Reveal>
@@ -284,7 +283,7 @@ export function Landing() {
             <div className="landing-features">
               {FEATURES.map((feature, index) => (
                 <Reveal key={feature.title} delay={index * 0.06}>
-                  <article className="landing-feature glass-panel">
+                  <article className="landing-feature glass-panel depth-hover">
                     <span className="landing-feature-icon">{feature.icon}</span>
                     <h3>{feature.title}</h3>
                     <p>{feature.body}</p>
@@ -302,7 +301,7 @@ export function Landing() {
             <div className="landing-faq-list">
               {FAQ.map((item) => (
                 <Reveal key={item.q}>
-                  <details className="landing-faq-item glass-panel">
+                  <details className="landing-faq-item glass-panel depth-hover">
                     <summary>{item.q}</summary>
                     <p>{item.a}</p>
                   </details>
@@ -315,7 +314,7 @@ export function Landing() {
             <Reveal>
               <h2>Start with one goal.</h2>
               <p>Add the first step today — Throughline keeps the rest calm.</p>
-              <Link className="primary-button" to="/signup">
+              <Link className="primary-button depth-hover glow-halo" to="/signup">
                 Get started <ArrowRight size={17} />
               </Link>
             </Reveal>
@@ -325,21 +324,21 @@ export function Landing() {
         <footer className="landing-footer">
           <div className="landing-footer-brand">
             <span className="landing-brand">
-              <img src="/brand/svg/throughline-lockup-horizontal.svg" alt="Throughline" className="h-6 w-auto hidden dark:block" style={{ filter: 'brightness(0) invert(1)' }} />
-              <img src="/brand/svg/throughline-lockup-horizontal.svg" alt="Throughline" className="h-6 w-auto block dark:hidden" />
+              <ThroughlineMark size={16} /> Throughline
             </span>
             <span>A calm place to plan.</span>
           </div>
           <div className="landing-footer-cols">
             <div>
-              <h4>Product</h4>
+              <h2>Product</h2>
               <a href="#how">How it works</a>
               <a href="#views">The app</a>
-              <Link to="/privacy">Privacy</Link>
+              <Link to="/privacy">Privacidade</Link>
+              <Link to="/terms">Termos</Link>
               <a href="#faq">FAQ</a>
             </div>
             <div>
-              <h4>Account</h4>
+              <h2>Account</h2>
               <Link to="/login">Log in</Link>
               <Link to="/signup">Get started</Link>
               <Link to="/app">Open the app</Link>
