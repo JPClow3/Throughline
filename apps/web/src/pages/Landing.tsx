@@ -48,9 +48,9 @@ function BrowserFrame({ src, alt, className }: { src: string; alt: string; class
 }
 
 const STEPS = [
-  { icon: <Target size={20} />, title: "Define the finish line", body: "Set a clear goal. Something real and meaningful." },
-  { icon: <Path size={20} />, title: "Map the path", body: "Break your goal down into actionable, bite-sized tasks." },
-  { icon: <Sparkle size={20} />, title: "Make progress", body: "Check things off and watch your progress climb instantly." }
+  { icon: <Target size={20} color="var(--tl-accent-blue)" />, title: "Define the finish line", body: "Set a clear goal. Something real and meaningful." },
+  { icon: <Path size={20} color="var(--tl-accent-violet)" />, title: "Map the path", body: "Break your goal down into actionable, bite-sized tasks." },
+  { icon: <Sparkle size={20} color="var(--tl-accent-aqua)" />, title: "Make progress", body: "Check things off and watch your progress climb instantly." }
 ];
 
 const SHOWCASE = [
@@ -78,10 +78,10 @@ const SHOWCASE = [
 ];
 
 const FEATURES = [
-  { icon: <Target size={18} />, title: "Goals into Tasks", body: "Tasks live under goals, rolling up real progress automatically." },
-  { icon: <NoteIcon size={18} />, title: "Smart Notebook", body: "Rich markdown notes linked directly to your workflows." },
-  { icon: <Kanban size={18} />, title: "Board & Timeline", body: "Two seamless views for your tasks, instantly synced." },
-  { icon: <CalendarDots size={18} />, title: "Universal Sync", body: "Export your schedule to any calendar you already use." }
+  { icon: <Target size={18} color="var(--tl-accent-blue)" />, title: "Goals into Tasks", body: "Tasks live under goals, rolling up real progress automatically." },
+  { icon: <NoteIcon size={18} color="var(--tl-accent-aqua)" />, title: "Smart Notebook", body: "Rich markdown notes linked directly to your workflows." },
+  { icon: <Kanban size={18} color="var(--tl-accent-violet)" />, title: "Board & Timeline", body: "Two seamless views for your tasks, instantly synced." },
+  { icon: <CalendarDots size={18} color="var(--tl-accent-pink)" />, title: "Universal Sync", body: "Export your schedule to any calendar you already use." }
 ];
 
 const FAQ = [
@@ -115,7 +115,7 @@ export function Landing() {
         <header className="landing-nav">
           <a className="landing-brand" href="#top">
             <img src="/brand/svg/throughline-icon-liquid-glass.svg" alt="" width="24" height="24" style={{ borderRadius: '6px' }} />
-            <span style={{ marginLeft: '8px' }}>Throughline</span>
+            <span className="text-shimmer" style={{ marginLeft: '8px', paddingRight: '4px' }}>Throughline</span>
           </a>
           <nav className="landing-nav-links" aria-label="Sections">
             <a href="#how">How it works</a>
@@ -152,7 +152,7 @@ export function Landing() {
                 </Link>
               </div>
               <span className="landing-trust">
-                <LockKey size={14} /> End-to-end encrypted · works offline · no ads, ever
+                <LockKey size={14} color="var(--tl-accent-aqua)" /> End-to-end encrypted · works offline · no ads, ever
               </span>
             </Reveal>
             <Reveal className="landing-hero-shot" delay={0.12}>
@@ -211,7 +211,7 @@ export function Landing() {
           <section id="privacy" className="landing-privacy">
             <Reveal>
               <div className="landing-privacy-card glass-heavy depth-hover">
-                <span className="landing-feature-icon">
+                <span className="landing-feature-icon" style={{ color: 'var(--tl-accent-aqua)' }}>
                   <LockKey size={22} />
                 </span>
                 <h2>Private by design.</h2>
@@ -221,16 +221,16 @@ export function Landing() {
                 </p>
                 <div className="landing-privacy-points">
                   <span>
-                    <LockKey size={16} /> End-to-end encrypted
+                    <LockKey size={16} color="var(--tl-accent-aqua)" /> End-to-end encrypted
                   </span>
                   <span>
-                    <WifiSlash size={16} /> Works fully offline
+                    <WifiSlash size={16} color="var(--tl-accent-aqua)" /> Works fully offline
                   </span>
                   <span>
-                    <CloudCheck size={16} /> Syncs across your devices
+                    <CloudCheck size={16} color="var(--tl-accent-aqua)" /> Syncs across your devices
                   </span>
                   <span>
-                    <DeviceMobile size={16} /> Installs as an app
+                    <DeviceMobile size={16} color="var(--tl-accent-aqua)" /> Installs as an app
                   </span>
                 </div>
               </div>

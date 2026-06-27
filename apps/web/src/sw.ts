@@ -37,7 +37,7 @@ self.addEventListener("fetch", (event) => {
             }),
             { headers: { "Content-Type": "application/json" } }
           );
-        } catch (e) {
+        } catch {
           return fetch(event.request);
         }
       })()
