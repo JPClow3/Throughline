@@ -97,7 +97,7 @@ export function TaskEditor({ task, courses, goals = [], onSave, onDelete }: Task
     <form className="composer-form" onSubmit={submit}>
       <label>
         <span>Title</span>
-        <input autoFocus value={title} onChange={(event) => setTitle(event.target.value)} />
+        <input autoFocus value={title} onChange={(event) => setTitle(event.target.value)} maxLength={140} />
       </label>
       <div className="composer-grid">
         <label>

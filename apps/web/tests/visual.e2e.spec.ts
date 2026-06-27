@@ -5,6 +5,10 @@ test.describe("Visual Regression", () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
   test.beforeEach(async ({ page }) => {
+    // Prevent vite proxy ECONNREFUSED logs by mocking API routes
+    await page.route("**/auth/me", route => route.fulfill({ status: 200 }));
+    await page.route("**/sync/pull*", route => route.fulfill({ status: 200, json: { tasks: [], goals: [], notes: [], courses: [] } }));
+
     // Seed local session marker so the guard admits us without a running backend
     await page.addInitScript(() => {
       localStorage.setItem("tl_email", "tester@example.com");

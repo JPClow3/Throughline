@@ -77,7 +77,7 @@ export function OnboardingOverlay({ onComplete }: { onComplete: () => void }) {
               )}
               <button
                 onClick={handleNext}
-                className="bg-primary text-on-primary px-5 py-2.5 rounded-xl font-label-lg text-label-lg flex items-center gap-2 hover:bg-primary/90 transition-colors shadow-sm active:scale-[0.98]"
+                className="bg-primary text-on-primary px-5 py-2.5 rounded-xl font-label-lg text-label-lg flex items-center gap-2 hover:bg-primary/90 interactive-scale shadow-sm"
               >
                 {currentStep === steps.length - 1 ? (
                   <>Get started <Check weight="bold" size={18} /></>

@@ -62,7 +62,7 @@ export function AppShell({
                 className={`w-12 h-12 rounded-lg flex items-center justify-center transition-all duration-200 group relative
                   ${isActive 
                     ? "text-primary scale-110 bg-[var(--accent-soft)] shadow-sm" 
-                    : "text-on-surface-variant hover:scale-[1.015] hover:bg-[var(--accent-soft)] active:scale-[0.98]"}`}
+                    : "text-on-surface-variant interactive-scale hover:bg-[var(--accent-soft)]"}`}
               >
                 {item.icon}
                 <span className="sr-only">{item.label}</span>
@@ -87,7 +87,7 @@ export function AppShell({
           className={`w-12 h-12 rounded-lg flex items-center justify-center mt-auto transition-all duration-200 group
             ${view === "settings" 
               ? "text-primary scale-110 bg-[var(--accent-soft)]" 
-              : "text-on-surface-variant hover:scale-[1.015] hover:bg-[var(--accent-soft)] active:scale-[0.98]"}`}
+              : "text-on-surface-variant interactive-scale hover:bg-[var(--accent-soft)]"}`}
         >
           <Settings size={24} />
           <span className="sr-only">Settings</span>
@@ -126,7 +126,7 @@ export function AppShell({
                 <Bell size={20} />
               </button>
             </div>
-            <button onClick={() => onNewTask?.()} className="bg-primary text-on-primary font-label-md text-label-md px-6 py-2 rounded-lg hover:scale-[1.015] active:scale-[0.98] transition-all shadow-md flex items-center gap-2">
+            <button onClick={() => onNewTask?.()} className="bg-primary text-on-primary font-label-md text-label-md px-6 py-2 rounded-lg interactive-scale shadow-md flex items-center gap-2">
               <Plus size={16} weight="bold" />
               New Task
             </button>
@@ -140,7 +140,7 @@ export function AppShell({
         {/* Mobile FAB for New Task */}
         <button
           onClick={() => onNewTask?.()}
-          className="md:hidden fixed bottom-24 right-6 w-14 h-14 bg-primary text-on-primary rounded-full shadow-lg flex items-center justify-center hover:scale-[1.015] active:scale-[0.98] transition-all z-50"
+          className="md:hidden fixed bottom-24 right-6 w-14 h-14 bg-primary text-on-primary rounded-full shadow-lg flex items-center justify-center interactive-scale z-50"
           aria-label="New task"
         >
           <Plus size={24} weight="bold" />

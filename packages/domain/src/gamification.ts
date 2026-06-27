@@ -62,6 +62,11 @@ export function calculateCompletionStreak(tasks: Pick<Task, "completedAt">[]) {
   const cursor = new Date();
   cursor.setHours(0, 0, 0, 0);
 
+  // If a task hasn't been completed today, start checking from yesterday.
+  if (!completedDays.has(cursor.toISOString().slice(0, 10))) {
+    cursor.setDate(cursor.getDate() - 1);
+  }
+
   while (completedDays.has(cursor.toISOString().slice(0, 10))) {
     streak += 1;
     cursor.setDate(cursor.getDate() - 1);

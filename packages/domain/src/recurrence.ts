@@ -33,5 +33,9 @@ export function calculateNextRecurrence(currentDueAt: string | undefined, recurr
       break;
   }
 
+  if (recurrence.endDate && nextDate > new Date(recurrence.endDate)) {
+    return undefined;
+  }
+
   return nextDate.toISOString();
 }

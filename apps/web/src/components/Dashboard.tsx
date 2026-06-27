@@ -74,7 +74,7 @@ export function Dashboard({
         <section className="lg:col-span-8 glass-panel rounded-xl p-padding-glass flex flex-col gap-6">
           <div className="flex justify-between items-center">
             <h2 className="font-headline-md text-headline-md text-on-surface">Daily Progress</h2>
-            <button className="text-primary hover:bg-[var(--primary-fixed)] rounded-full p-2 hover:scale-[1.015] active:scale-[0.98] transition-all">
+            <button className="text-primary hover:bg-[var(--primary-fixed)] rounded-full p-2 interactive-scale">
               <DotsThree size={24} weight="bold" />
             </button>
           </div>
@@ -142,7 +142,7 @@ export function Dashboard({
               })
             )}
           </div>
-          <button onClick={() => onNewTask()} className="mt-auto w-full py-3 rounded-lg border border-[var(--color-primary)]/30 text-primary font-label-md text-label-md hover:bg-[var(--color-primary)]/5 hover:scale-[1.015] active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+          <button onClick={() => onNewTask()} className="mt-auto w-full py-3 rounded-lg border border-[var(--color-primary)]/30 text-primary font-label-md text-label-md hover:bg-[var(--color-primary)]/5 interactive-scale flex items-center justify-center gap-2">
             <Plus size={16} />
             Quick Add Task
           </button>

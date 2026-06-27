@@ -89,7 +89,7 @@ const AgendaRowRender = React.forwardRef<HTMLDivElement, AgendaRowRenderProps & 
                   e.stopPropagation();
                   onStartFocus(task);
                 }}
-                className="meta-chip meta-chip-button hover:bg-[var(--accent-soft)] hover:scale-[1.015] active:scale-[0.98] transition-all cursor-pointer"
+                className="meta-chip meta-chip-button hover:bg-[var(--accent-soft)] interactive-scale cursor-pointer"
                 style={{ border: "1px solid var(--border)", background: "var(--surface)" }}
                 aria-label={`Start focus mode for ${task.title}`}
               >
@@ -242,7 +242,7 @@ export function CalendarTimeline({
           </h2>
           <button
             onClick={() => onNewTask?.(selectedDate)}
-            className="bg-primary text-on-primary font-label-md text-label-md px-4 py-2 rounded-lg hover:scale-[1.015] active:scale-[0.98] transition-all flex items-center gap-2"
+            className="bg-primary text-on-primary font-label-md text-label-md px-4 py-2 rounded-lg interactive-scale flex items-center gap-2"
           >
             <Plus size={16} weight="bold" />
             New Task for Today

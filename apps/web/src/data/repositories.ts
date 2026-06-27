@@ -147,8 +147,9 @@ export async function updateTaskStatus(taskId: string, status: TaskStatus) {
         }
       }
 
+      const { id, createdAt, completedAt, updatedAt, ...restTask } = task;
       const newTask = createTask({
-        ...task,
+        ...restTask,
         subtasks,
         status: "backlog",
         dueAt: nextDueAt,
@@ -186,8 +187,9 @@ export async function syncRecurringTasks() {
           nextReminderAt = new Date(nextDueTime - diff).toISOString();
         }
         
+        const { id, createdAt, completedAt, updatedAt, ...restTask } = task;
         const newTask = createTask({
-          ...task,
+          ...restTask,
           subtasks: task.subtasks.map(st => ({ ...st, completed: false })),
           status: "backlog",
           dueAt: nextDueStr,
@@ -245,10 +247,13 @@ export async function upsertCourse(course: Course) {
 export async function deleteCourse(courseId: string) {
   // Detach the project from its tasks rather than deleting the tasks themselves.
   await db.transaction("rw", db.courses, db.tasks, db.tombstones, async () => {
-    const linkedTasks = await db.tasks.where("courseId").equals(courseId).toArray();
-    await Promise.all(
-      linkedTasks.map((task) => db.tasks.update(task.id, { courseId: undefined, updatedAt: now() }))
-    );
+    await db.tasks
+      .where("courseId")
+      .equals(courseId)
+      .modify((task) => {
+        delete task.courseId;
+        task.updatedAt = now();
+      });
     await db.courses.delete(courseId);
     await recordTombstone("course", courseId);
   });
@@ -285,10 +290,13 @@ export async function setGoalStatus(goalId: string, status: GoalStatus) {
 export async function deleteGoal(goalId: string) {
   // Keep the child tasks but detach them so they are not orphaned to a missing goal.
   await db.transaction("rw", db.goals, db.tasks, db.tombstones, async () => {
-    const childTasks = await db.tasks.where("goalId").equals(goalId).toArray();
-    await Promise.all(
-      childTasks.map((task) => db.tasks.update(task.id, { goalId: undefined, updatedAt: now() }))
-    );
+    await db.tasks
+      .where("goalId")
+      .equals(goalId)
+      .modify((task) => {
+        delete task.goalId;
+        task.updatedAt = now();
+      });
     await db.goals.delete(goalId);
     await recordTombstone("goal", goalId);
   });

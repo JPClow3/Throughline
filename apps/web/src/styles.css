@@ -166,6 +166,16 @@
     background: rgba(255, 255, 255, 0.9);
     border: 1px solid rgba(255, 255, 255, 0.20);
   }
+
+  .interactive-scale {
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .interactive-scale:hover {
+    transform: scale(1.015);
+  }
+  .interactive-scale:active {
+    transform: scale(0.98);
+  }
 }
 
 /* =========================================================================
@@ -275,20 +285,20 @@
   --shadow-lg: 0 20px 48px rgba(18, 23, 33, 0.16), 0 6px 14px rgba(18, 23, 33, 0.08);
   --shadow-xl: 0 30px 66px rgba(18, 23, 33, 0.22), 0 10px 22px rgba(18, 23, 33, 0.12);
 
-  /* LiquidGlass Elevations (Light Mode: Solid White Cards) */
-  --surface-l1-bg: #ffffff;
-  --surface-l1-blur: blur(0px);
+  /* LiquidGlass Elevations (Light Mode) */
+  --surface-l1-bg: rgba(255, 255, 255, 0.60);
+  --surface-l1-blur: blur(40px);
   --surface-l1-shadow: 0px 4px 12px rgba(19, 27, 46, 0.04);
   
-  --surface-l2-bg: #ffffff;
-  --surface-l2-blur: blur(0px);
+  --surface-l2-bg: rgba(255, 255, 255, 0.80);
+  --surface-l2-blur: blur(60px);
   --surface-l2-shadow: 0px 8px 24px rgba(19, 27, 46, 0.08);
   
-  --surface-l3-bg: #ffffff;
-  --surface-l3-blur: blur(0px);
+  --surface-l3-bg: rgba(255, 255, 255, 0.90);
+  --surface-l3-blur: blur(80px);
   --surface-l3-shadow: 0px 16px 48px rgba(19, 27, 46, 0.12);
   
-  --glass-border: rgba(19, 27, 46, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.20);
 
   /* Floating chrome — stronger frost */
   --chrome-bg: rgba(255, 255, 255, 0.85);

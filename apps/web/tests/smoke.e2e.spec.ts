@@ -3,6 +3,8 @@ import { expect, test } from "@playwright/test";
 // The /app routes are auth-gated. Seed a local session marker so the guard
 // admits us without a running backend (background /auth/me just fails offline).
 test.beforeEach(async ({ page }) => {
+  await page.route("**/auth/me", route => route.fulfill({ status: 200 }));
+  await page.route("**/sync/pull*", route => route.fulfill({ status: 200, json: { tasks: [], goals: [], notes: [], courses: [] } }));
   await page.addInitScript(() => {
     localStorage.setItem("tl_email", "tester@example.com");
     localStorage.setItem("tl_dek", btoa(String.fromCharCode.apply(null, Array.from(new Uint8Array(32)))));
