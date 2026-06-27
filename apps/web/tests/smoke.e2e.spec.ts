@@ -21,7 +21,7 @@ test("renders today and board", async ({ page }) => {
   await skipBtn.waitFor({ state: "hidden", timeout: 5000 });
   
   await expect(page.getByRole("heading", { name: /Good (morning|afternoon|evening)/ })).toBeVisible();
-  await page.getByLabel("Board").click();
+  await page.locator('a[aria-label="Board"]:visible').click();
   await expect(page.getByRole("heading", { name: "Backlog" })).toBeVisible();
 });
 
@@ -42,7 +42,7 @@ test("captures, moves, and completes a task", async ({ page }) => {
   // The quick-add sheet closes after capture.
   await expect(page.getByLabel("Title")).toHaveCount(0);
 
-  await page.getByLabel("Board").click();
+  await page.locator('a[aria-label="Board"]:visible').click();
   await expect(page.getByRole("heading", { name: title })).toBeVisible();
   await page.getByLabel(`Move ${title}`).selectOption("doing");
   await expect(page.getByLabel(`Move ${title}`)).toHaveValue("doing");

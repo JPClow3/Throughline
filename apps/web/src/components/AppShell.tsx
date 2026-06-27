@@ -164,6 +164,8 @@ export function AppShell({
                   ${isActive 
                     ? "text-primary bg-[var(--accent-soft)]" 
                     : "text-on-surface-variant"}`}
+                title={item.label}
+                aria-label={item.label}
               >
                 {item.icon}
                 <span className="text-[10px] font-medium mt-1">{item.label}</span>

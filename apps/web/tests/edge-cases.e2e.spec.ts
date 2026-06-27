@@ -49,7 +49,7 @@ test.describe("Edge Cases & Boundaries", () => {
     await page.getByLabel("Title").fill(longTitle);
     await page.getByRole("button", { name: "Add task", exact: true }).click();
     
-    await page.getByLabel("Board").click();
+    await page.locator('a[aria-label="Board"]:visible').click();
     
     // Verify it renders correctly without breaking layout, up to max length of 140 chars
     const truncatedTitle = longTitle.substring(0, 140);
@@ -71,7 +71,7 @@ test.describe("Edge Cases & Boundaries", () => {
     await page.getByLabel("Due").fill("2020-01-01T10:00");
     await page.getByRole("button", { name: "Add task", exact: true }).click();
     
-    await page.getByLabel("Board").click();
+    await page.locator('a[aria-label="Board"]:visible').click();
     
     const taskCard = page.locator(".task-card", { hasText: title });
     await expect(taskCard).toBeVisible();
@@ -95,11 +95,11 @@ test.describe("Edge Cases & Boundaries", () => {
     try {
       await addTaskBtn.click({ timeout: 500 });
       await addTaskBtn.click({ timeout: 500 });
-    } catch(e) {
+    } catch {
       // It's fine if it fails because it's no longer visible
     }
     
-    await page.getByLabel("Board").click();
+    await page.locator('a[aria-label="Board"]:visible').click();
     
     // Ensure only ONE task was created
     const taskCards = page.locator(".task-card", { hasText: title });

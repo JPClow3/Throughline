@@ -33,7 +33,7 @@ test("keeps core dashboard and Kanban interactions inside smoke budgets", async 
   });
 
   const kanbanStart = Date.now();
-  await page.getByLabel("Board").click();
+  await page.locator('a[aria-label="Board"]:visible').click();
   await expect(page.getByRole("heading", { name: "Backlog" })).toBeVisible();
   const kanbanSwitchMs = Date.now() - kanbanStart;
 

@@ -42,7 +42,7 @@ test.describe("Component Interactions & Buttons", () => {
     await page.getByRole("button", { name: "Add task", exact: true }).click();
     
     // 2. Interact with the created TaskCard on the Board
-    await page.getByLabel("Board").click();
+    await page.locator('a[aria-label="Board"]:visible').click();
     
     const taskCard = page.locator(".task-card", { hasText: title });
     await expect(taskCard).toBeVisible();
@@ -78,7 +78,7 @@ test.describe("Component Interactions & Buttons", () => {
 
   test("Global nav and settings interactions", async ({ page }) => {
     // There are some global navigation buttons like "Board", "Goals", "Notes"
-    await page.getByLabel("Board").click();
+    await page.locator('a[aria-label="Board"]:visible').click();
     await expect(page.getByRole("heading", { name: "Backlog" })).toBeVisible();
 
     // There should be a user menu or settings button somewhere

@@ -147,6 +147,7 @@ export async function updateTaskStatus(taskId: string, status: TaskStatus) {
         }
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { id, createdAt, completedAt, updatedAt, ...restTask } = task;
       const newTask = createTask({
         ...restTask,
@@ -187,6 +188,7 @@ export async function syncRecurringTasks() {
           nextReminderAt = new Date(nextDueTime - diff).toISOString();
         }
         
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { id, createdAt, completedAt, updatedAt, ...restTask } = task;
         const newTask = createTask({
           ...restTask,

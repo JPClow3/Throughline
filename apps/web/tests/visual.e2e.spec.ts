@@ -59,19 +59,19 @@ test.describe("Visual Regression", () => {
 
   test("Today view", async ({ page }) => {
     // Navigate to Dashboard (Today)
-    await page.getByLabel("Today").click();
+    await page.locator('a[aria-label="Today"]:visible').click();
     await page.waitForLoadState("networkidle");
     await expect(page).toHaveScreenshot("today-view.png", { fullPage: true });
   });
 
   test("Kanban board", async ({ page }) => {
-    await page.getByLabel("Board").click();
+    await page.locator('a[aria-label="Board"]:visible').click();
     await page.waitForLoadState("networkidle");
     await expect(page).toHaveScreenshot("kanban-board.png", { fullPage: true });
   });
 
   test("Goal detail with progress ring", async ({ page }) => {
-    await page.getByLabel("Goals").click();
+    await page.locator('a[aria-label="Goals"]:visible').click();
     await page.waitForLoadState("networkidle");
     
     // Click the first goal to open detail

@@ -22,7 +22,7 @@ test("handles repeated task capture and board rendering", async ({ page }) => {
     await expect(page.getByLabel("Title")).toHaveCount(0);
   }
 
-  await page.getByLabel("Board").click();
+  await page.locator('a[aria-label="Board"]:visible').click();
   await expect(page.getByRole("heading", { name: "Backlog" })).toBeVisible();
   await expect(page.getByText("Stress task 20")).toBeVisible();
   // 14 seeded tasks (incl. 4 goal steps and 6 daily quests) + 20 captured here.
