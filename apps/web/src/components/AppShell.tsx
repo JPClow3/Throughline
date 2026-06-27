@@ -48,11 +48,17 @@ export function AppShell({
           {navItems.map((item) => {
             const isActive = view === item.view;
             return (
-              <button
+              <a
                 key={item.view}
+                href={`/app?view=${item.view}`}
                 aria-label={item.label}
                 title={item.label}
-                onClick={() => onViewChange(item.view)}
+                onClick={(e) => {
+                  if (e.button === 0 && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                    e.preventDefault();
+                    onViewChange(item.view);
+                  }
+                }}
                 className={`w-12 h-12 rounded-lg flex items-center justify-center transition-all duration-200 group relative
                   ${isActive 
                     ? "text-primary scale-110 bg-[var(--accent-soft)] shadow-sm" 
@@ -63,15 +69,21 @@ export function AppShell({
                 {isActive && (
                   <div className="absolute -right-2 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-l-full"></div>
                 )}
-              </button>
+              </a>
             );
           })}
         </div>
 
-        <button
+        <a
+          href="/app?view=settings"
           aria-label="Settings"
           title="Settings"
-          onClick={() => onViewChange("settings")}
+          onClick={(e) => {
+            if (e.button === 0 && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+              e.preventDefault();
+              onViewChange("settings");
+            }
+          }}
           className={`w-12 h-12 rounded-lg flex items-center justify-center mt-auto transition-all duration-200 group
             ${view === "settings" 
               ? "text-primary scale-110 bg-[var(--accent-soft)]" 
@@ -79,7 +91,7 @@ export function AppShell({
         >
           <Settings size={24} />
           <span className="sr-only">Settings</span>
-        </button>
+        </a>
       </nav>
 
       <main id="main-content" className="flex-1 ml-0 md:ml-[112px] h-full flex flex-col pt-4 md:pt-6 px-4 md:pl-0 md:pr-6 pb-24 md:pb-6 overflow-y-auto">
@@ -139,9 +151,15 @@ export function AppShell({
           {navItems.slice(0, 5).map((item) => {
             const isActive = view === item.view;
             return (
-              <button
+              <a
                 key={item.view}
-                onClick={() => onViewChange(item.view)}
+                href={`/app?view=${item.view}`}
+                onClick={(e) => {
+                  if (e.button === 0 && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+                    e.preventDefault();
+                    onViewChange(item.view);
+                  }
+                }}
                 className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-all
                   ${isActive 
                     ? "text-primary bg-[var(--accent-soft)]" 
@@ -149,7 +167,7 @@ export function AppShell({
               >
                 {item.icon}
                 <span className="text-[10px] font-medium mt-1">{item.label}</span>
-              </button>
+              </a>
             );
           })}
         </nav>

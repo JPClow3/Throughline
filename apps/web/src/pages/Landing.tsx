@@ -16,39 +16,7 @@ import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { ThroughlineMark } from "../components/ThroughlineMark";
 
-const NODES: Array<[number, number, number]> = [
-  [5, 17, 2.4],
-  [12, 12, 2.4],
-  [19, 7, 3]
-];
-
-// The brand mark "draws" its line, then the nodes pop in — a small on-load moment.
-function AnimatedMark({ size = 20 }: { size?: number }) {
-  return (
-    <motion.svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true" initial="hidden" animate="show">
-      <motion.path
-        d="M5 17 L19 7"
-        stroke="currentColor"
-        strokeWidth="2.2"
-        strokeLinecap="round"
-        variants={{ hidden: { pathLength: 0, opacity: 0 }, show: { pathLength: 1, opacity: 1 } }}
-        transition={{ duration: 0.7, ease: "easeInOut" }}
-      />
-      {NODES.map(([cx, cy, r], index) => (
-        <motion.circle
-          key={index}
-          cx={cx}
-          cy={cy}
-          r={r}
-          fill="currentColor"
-          style={{ transformBox: "fill-box", transformOrigin: "center" }}
-          variants={{ hidden: { scale: 0, opacity: 0 }, show: { scale: 1, opacity: 1 } }}
-          transition={{ delay: 0.45 + index * 0.12, type: "spring", stiffness: 420, damping: 18 }}
-        />
-      ))}
-    </motion.svg>
-  );
-}
+// Removed AnimatedMark in favor of static brand asset
 
 const floatTransition = { duration: 7, repeat: Infinity, ease: "easeInOut" } as const;
 
@@ -80,40 +48,40 @@ function BrowserFrame({ src, alt, className }: { src: string; alt: string; class
 }
 
 const STEPS = [
-  { icon: <Target size={20} />, title: "Set an end goal", body: "Name what you're working toward — “Launch my side project”, “Run a 10k”." },
-  { icon: <Path size={20} />, title: "Break it into steps", body: "Add ordered tasks under the goal. Reorder them as the plan changes." },
-  { icon: <Sparkle size={20} />, title: "Watch it roll up", body: "Finish steps and progress climbs on its own — on Today, the board, and the timeline." }
+  { icon: <Target size={20} />, title: "Define the finish line", body: "Set a clear goal. Something real and meaningful." },
+  { icon: <Path size={20} />, title: "Map the path", body: "Break your goal down into actionable, bite-sized tasks." },
+  { icon: <Sparkle size={20} />, title: "Make progress", body: "Check things off and watch your progress climb instantly." }
 ];
 
 const SHOWCASE = [
   {
     eyebrow: "Board",
-    title: "See the work move",
-    body: "A calm Kanban board across Backlog → Done, with a project filter and quick search. Drag, or change status inline.",
+    title: "Visualize your workflow",
+    body: "A beautifully clean Kanban board. Drag, drop, and focus on what needs to be done next.",
     img: "/store-assets/shots/board.png",
-    alt: "Throughline Kanban board interface showing columns for Backlog, In Progress, and Done"
+    alt: "Throughline Kanban board interface"
   },
   {
     eyebrow: "Timeline",
-    title: "Plan the day, gently",
-    body: "An hourly agenda for any day in the next ten, so due work has a place to land without the pressure of a packed calendar.",
+    title: "Pace yourself",
+    body: "A gentle hourly agenda. Schedule tasks without the overwhelming pressure of a stuffed calendar.",
     img: "/store-assets/shots/timeline.png",
-    alt: "Throughline timeline interface showing tasks scheduled on an hourly agenda calendar"
+    alt: "Throughline timeline interface"
   },
   {
     eyebrow: "Notes",
-    title: "Context, cross-linked",
-    body: "One markdown notebook. Link a note to any task or goal and jump straight back to the work it belongs to.",
+    title: "Everything connected",
+    body: "A built-in markdown notebook that naturally links back to your tasks and goals.",
     img: "/store-assets/shots/notes.png",
-    alt: "Throughline markdown notes interface demonstrating cross-linking back to specific tasks and goals"
+    alt: "Throughline markdown notes interface"
   }
 ];
 
 const FEATURES = [
-  { icon: <Target size={18} />, title: "Goals hold tasks", body: "Real child steps with derived roll-up progress." },
-  { icon: <NoteIcon size={18} />, title: "Cross-linked notes", body: "A notebook that points back to your work." },
-  { icon: <Kanban size={18} />, title: "Board & timeline", body: "The same plan, two calm views — filterable." },
-  { icon: <CalendarDots size={18} />, title: "ICS export", body: "Send due dates to your calendar of choice." }
+  { icon: <Target size={18} />, title: "Goals into Tasks", body: "Tasks live under goals, rolling up real progress automatically." },
+  { icon: <NoteIcon size={18} />, title: "Smart Notebook", body: "Rich markdown notes linked directly to your workflows." },
+  { icon: <Kanban size={18} />, title: "Board & Timeline", body: "Two seamless views for your tasks, instantly synced." },
+  { icon: <CalendarDots size={18} />, title: "Universal Sync", body: "Export your schedule to any calendar you already use." }
 ];
 
 const FAQ = [
@@ -146,16 +114,12 @@ export function Landing() {
         <div className="landing-ambient-bg" />
         <header className="landing-nav">
           <a className="landing-brand" href="#top">
-            <span className="landing-brand-mark">
-              <AnimatedMark size={20} />
-            </span>
-            Throughline
+            <img src="/brand/svg/throughline-icon-liquid-glass.svg" alt="" width="24" height="24" style={{ borderRadius: '6px' }} />
+            <span style={{ marginLeft: '8px' }}>Throughline</span>
           </a>
           <nav className="landing-nav-links" aria-label="Sections">
             <a href="#how">How it works</a>
             <a href="#views">The app</a>
-            <Link to="/privacy">Privacidade</Link>
-            <Link to="/terms">Termos</Link>
             <a href="#faq">FAQ</a>
           </nav>
           <div className="landing-nav-actions">
@@ -172,14 +136,12 @@ export function Landing() {
           <section className="landing-hero">
             <Reveal className="landing-hero-copy">
               <span className="eyebrow">A calm place to plan</span>
-              <h1 className="text-shimmer">
-                Goals that quietly
-                <br />
-                pull the work forward.
+              <h1 className="text-shimmer" style={{ fontSize: "clamp(3rem, 10vw, 5rem)", letterSpacing: "-0.04em", lineHeight: 1.1, paddingBottom: "0.2em", marginBottom: "0.2em" }}>
+                Throughline
               </h1>
               <p className="landing-lede">
-                Throughline is a calm, private planner where end goals hold real tasks — with a
-                cross-linked notebook, a board, and a timeline. Local-first and end-to-end encrypted.
+                The smart planner that quietly pulls the work forward. 
+                A beautiful, private space where goals naturally turn into action.
               </p>
               <div className="landing-cta-row">
                 <Link className="primary-button depth-hover glow-halo" to="/signup">

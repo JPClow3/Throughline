@@ -3,6 +3,7 @@ import { useCallback, useEffect, useOptimistic, startTransition } from "react";
 import { Task, TaskStatus } from "@throughline/domain";
 import { seedIfEmpty, seedDailyQuests } from "../data/db";
 import { syncRedactedRemindersFromLocalState } from "../data/reminderSync";
+import { registerBackgroundSync } from "../lib/syncRegistration";
 import {
   TaskInput,
   addTask as addTaskRecord,
@@ -48,6 +49,7 @@ export function useTasks() {
   const addTask = useCallback(async (input: TaskInput) => {
     await addTaskRecord(input);
     void syncRedactedRemindersFromLocalState();
+    void registerBackgroundSync("sync-tasks");
   }, []);
 
   const updateTaskStatus = useCallback(async (taskId: string, status: TaskStatus) => {
@@ -55,6 +57,7 @@ export function useTasks() {
       dispatchOptimisticTask({ type: 'update', payload: { id: taskId, status } });
       await updateTaskStatusRecord(taskId, status);
       void syncRedactedRemindersFromLocalState();
+      void registerBackgroundSync("sync-tasks");
     });
   }, [dispatchOptimisticTask]);
 
@@ -70,6 +73,7 @@ export function useTasks() {
       dispatchOptimisticTask({ type: 'update', payload: task });
       await updateTaskRecord(task);
       void syncRedactedRemindersFromLocalState();
+      void registerBackgroundSync("sync-tasks");
     });
   }, [dispatchOptimisticTask]);
 
@@ -78,6 +82,7 @@ export function useTasks() {
       dispatchOptimisticTask({ type: 'delete', payload: taskId });
       await deleteTaskRecord(taskId);
       void syncRedactedRemindersFromLocalState();
+      void registerBackgroundSync("sync-tasks");
     });
   }, [dispatchOptimisticTask]);
 

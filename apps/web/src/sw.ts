@@ -3,6 +3,8 @@ declare const self: ServiceWorkerGlobalScope;
 
 import { precacheAndRoute } from "workbox-precaching";
 import { clientsClaim } from "workbox-core";
+import { syncRedactedRemindersFromLocalState } from "./data/reminderSync";
+import { listTasks } from "./data/repositories";
 
 // Skip waiting and claim clients to take control immediately
 self.skipWaiting();
@@ -10,6 +12,38 @@ clientsClaim();
 
 // Precache the manifest injected by vite-plugin-pwa
 precacheAndRoute(self.__WB_MANIFEST);
+
+// Intercept widget data requests
+self.addEventListener("fetch", (event) => {
+  const url = new URL(event.request.url);
+  if (url.pathname === "/widgets/today-data.json") {
+    event.respondWith(
+      (async () => {
+        try {
+          const tasks = await listTasks();
+          const todayStr = new Date().toISOString().slice(0, 10);
+          const todayTasks = tasks.filter(
+            (t) => (t.dueAt?.startsWith(todayStr) || t.status === "doing") && t.status !== "done"
+          );
+
+          return new Response(
+            JSON.stringify({
+              title: "Today's Tasks",
+              description: "Your focus for today.",
+              tasks: todayTasks.slice(0, 5).map((t) => ({
+                status: "☐",
+                name: t.title,
+              })),
+            }),
+            { headers: { "Content-Type": "application/json" } }
+          );
+        } catch (e) {
+          return fetch(event.request);
+        }
+      })()
+    );
+  }
+});
 
 // Listen for push notifications
 self.addEventListener("push", (event) => {
@@ -65,6 +99,8 @@ self.addEventListener("sync", (event: Event) => {
     syncEvent.waitUntil(
       (async () => {
         console.log("[ServiceWorker] Background sync (sync-tasks) running");
+        await syncRedactedRemindersFromLocalState();
+        
         // Notify open clients that a background sync has occurred
         const clients = await self.clients.matchAll();
         for (const client of clients) {
@@ -82,7 +118,8 @@ self.addEventListener("periodicsync", (event: Event) => {
     syncEvent.waitUntil(
       (async () => {
         console.log("[ServiceWorker] Periodic sync (update-tasks) running");
-        // E.g., fetch new data from server and store in indexedDB
+        await syncRedactedRemindersFromLocalState();
+
         const clients = await self.clients.matchAll();
         for (const client of clients) {
           client.postMessage({ type: "PERIODIC_SYNC_COMPLETED", tag: syncEvent.tag });
