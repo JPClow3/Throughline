@@ -137,7 +137,7 @@ describe("web data repositories", () => {
       code: "CS101",
       color: "#000",
       icon: "💻",
-      defaultAttributes: ["focus"] as any,
+      defaultAttributes: ["focus"] as import("@throughline/domain").RpgAttribute[],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };

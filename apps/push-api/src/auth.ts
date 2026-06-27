@@ -74,7 +74,7 @@ export function registerAuthRoutes(app: FastifyInstance, userStore: UserStore, c
         audience: config.googleClientId
       });
       payload = ticket.getPayload();
-    } catch (err) {
+    } catch {
       return reply.code(401).send({ error: "invalid-google-credential" });
     }
     
