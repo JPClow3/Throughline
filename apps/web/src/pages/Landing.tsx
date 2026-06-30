@@ -43,9 +43,9 @@ function BrowserFrame({ src, alt, className }: { src: string; alt: string; class
 function AmbientBackground() {
   return (
     <div className="fixed inset-0 z-[-2] pointer-events-none overflow-hidden">
-      <div className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] bg-gradient-to-br from-[var(--tl-accent-blue)]/30 to-[var(--tl-accent-violet)]/10 rounded-full blur-[100px] animate-pulse-bio" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[70vw] h-[70vw] bg-gradient-to-tl from-[var(--tl-accent-aqua)]/20 to-[var(--tl-accent-blue)]/10 rounded-full blur-[120px] animate-pulse-bio" style={{ animationDelay: '-4s' }} />
-      <div className="absolute top-[40%] left-[60%] w-[40vw] h-[40vw] bg-[var(--tl-accent-aqua)]/10 rounded-full blur-[150px] animate-pulse-bio" style={{ animationDelay: '-2s' }} />
+      <div className="absolute top-[-10%] left-0 -translate-x-1/2 w-[60vw] h-[60vw] bg-gradient-to-br from-[var(--tl-accent-blue)]/30 to-[var(--tl-accent-violet)]/10 rounded-full blur-[100px] animate-pulse-bio" />
+      <div className="absolute bottom-[-10%] right-0 translate-x-1/2 w-[70vw] h-[70vw] bg-gradient-to-tl from-[var(--tl-accent-aqua)]/20 to-[var(--tl-accent-blue)]/10 rounded-full blur-[120px] animate-pulse-bio" style={{ animationDelay: '-4s' }} />
+      <div className="absolute top-[40%] right-0 w-[40vw] h-[40vw] bg-[var(--tl-accent-aqua)]/10 rounded-full blur-[150px] animate-pulse-bio" style={{ animationDelay: '-2s' }} />
       
       <div className="fixed inset-0 z-[-1] pointer-events-none opacity-25 flex items-center justify-center scale-150">
         <svg className="w-full h-full animate-float-slow" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
@@ -154,7 +154,7 @@ export function Landing() {
         <main id="top" className="landing-main" style={{ paddingTop: '160px' }}>
           {/* Hero Section */}
           <section className="flex flex-col items-center text-center mb-32">
-            <div className="relative w-full max-w-4xl flex flex-col items-center">
+            <div className="relative w-full max-w-4xl min-w-0 flex flex-col items-center">
               <div className="absolute inset-0 bg-[var(--tl-surface-glass)] rounded-[100px] blur-[60px] -z-10" />
               <h1 className="font-display-lg text-[40px] md:text-[64px] font-bold text-[var(--tl-text)] mb-6 drop-shadow-sm flex flex-col items-center gap-2 relative leading-tight" style={{ letterSpacing: 0 }}>
                 <Reveal delay={0} style={{ transform: 'translateZ(20px) scale(1.02)' }}>Academic Flow,</Reveal>
@@ -220,8 +220,8 @@ export function Landing() {
                   </Reveal>
                   <motion.div
                     className="landing-showcase-shot"
-                    initial={{ opacity: 0, x: index % 2 ? -44 : 44 }}
-                    whileInView={{ opacity: 1, x: 0 }}
+                    initial={{ opacity: 0, y: 24 }}
+                    whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, margin: "-80px" }}
                     transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
                   >

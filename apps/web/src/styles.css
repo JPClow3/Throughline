@@ -409,6 +409,7 @@ html,
 body {
   font-family: var(--font-sans);
   color: var(--ink);
+  overflow-x: hidden;
 }
 
 body {
@@ -625,6 +626,7 @@ main {
 .view-frame {
   min-height: calc(100vh - var(--space-6) * 2);
   min-width: 0;
+  width: 100%;
 }
 
 /* Current shell typography/iconography */
@@ -2409,7 +2411,7 @@ meter {
 
 .kanban-board {
   display: grid;
-  grid-template-columns: repeat(5, minmax(14.5rem, 1fr));
+  grid-template-columns: repeat(5, minmax(11rem, 1fr));
   gap: var(--space-4);
   overflow-x: auto;
   padding-bottom: var(--space-3);
@@ -2429,7 +2431,7 @@ meter {
 
 .kanban-mobile-tabs {
   display: grid;
-  grid-template-columns: repeat(5, minmax(5.5rem, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: var(--space-2);
   max-width: 100%;
   overflow-x: auto;
@@ -2442,7 +2444,7 @@ meter {
   justify-items: start;
   gap: 0.2rem;
   min-height: var(--control-h);
-  min-width: 5.5rem;
+  min-width: 0;
   padding: 0.45rem 0.65rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-control);
@@ -2584,8 +2586,10 @@ meter {
   display: flex;
   gap: var(--space-2);
   overflow-x: auto;
+  max-width: 100%;
   padding-bottom: var(--space-3);
   margin-bottom: var(--space-5);
+  overscroll-behavior-inline: contain;
 }
 
 .day-chip {
@@ -3611,9 +3615,11 @@ html {
 }
 
 .landing {
-  max-width: 76rem;
+  width: 100%;
+  max-width: min(76rem, 100vw);
   margin: 0 auto;
   padding: 0 var(--space-6) var(--space-10);
+  overflow-x: clip;
 }
 
 .landing-nav {
@@ -3695,6 +3701,13 @@ html {
 .landing-main {
   display: grid;
   gap: var(--space-10);
+  min-width: 0;
+  overflow-x: clip;
+}
+
+.landing-main > * {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .landing-hero {
@@ -3771,6 +3784,8 @@ html {
 /* Generic section */
 .landing-section {
   padding: var(--space-8) 0;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .landing-section-head {
@@ -3840,13 +3855,24 @@ html {
 .landing-showcase {
   display: grid;
   gap: var(--space-10);
+  min-width: 0;
+  overflow-x: clip;
 }
 
 .landing-showcase-row {
   display: grid;
-  grid-template-columns: 0.85fr 1.15fr;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
   gap: var(--space-8);
   align-items: center;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+.landing-showcase-shot,
+.landing-showcase-shot .browser-frame {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .landing-showcase-row.is-reversed .landing-showcase-text {
@@ -4551,8 +4577,8 @@ html {
 
 @media (max-width: 720px) {
   #main-content {
-    padding-left: var(--space-3);
-    padding-right: var(--space-3);
+    padding-left: var(--space-4);
+    padding-right: var(--space-4);
   }
 
   .app-shell {
@@ -4691,8 +4717,8 @@ html {
 
 @media (max-width: 480px) {
   #main-content {
-    padding-left: var(--space-2);
-    padding-right: var(--space-2);
+    padding-left: var(--space-4);
+    padding-right: var(--space-4);
   }
 
   .today-page {
@@ -4750,6 +4776,10 @@ html {
     flex-wrap: wrap;
   }
 
+  .kanban-mobile-tabs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .project-row-edit,
   .button-row {
     align-items: stretch;
@@ -4765,8 +4795,8 @@ html {
 
 @media (max-width: 340px) {
   #main-content {
-    padding-left: 0.35rem;
-    padding-right: 0.35rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
   }
 
   .today-task-surface,

@@ -44,4 +44,16 @@ describe("AppShell", () => {
 
     expect(container.querySelector(".shell-mobile-primary-action")).not.toBeInTheDocument();
   });
+
+  it("keeps desktop chrome out of tablet widths and leaves a gutter beside the sidebar", () => {
+    const { container } = render(
+      <AppShell view="dashboard" onViewChange={vi.fn()} onNewTask={vi.fn()}>
+        <h1>Today</h1>
+      </AppShell>
+    );
+
+    expect(container.querySelector(".shell-sidebar")).toHaveClass("hidden", "lg:flex");
+    expect(container.querySelector("#main-content")).toHaveClass("lg:ml-[280px]", "lg:pl-8");
+    expect(container.querySelector("nav.md\\:hidden")).toBeNull();
+  });
 });

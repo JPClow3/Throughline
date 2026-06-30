@@ -98,7 +98,7 @@ describe("NotesView", () => {
     Object.defineProperty(window, "matchMedia", {
       writable: true,
       value: vi.fn().mockImplementation((query: string) => ({
-        matches: query === "(max-width: 720px)",
+        matches: query === "(max-width: 720px)" || query === "(max-width: 1100px)",
         media: query,
         onchange: null,
         addEventListener: vi.fn(),

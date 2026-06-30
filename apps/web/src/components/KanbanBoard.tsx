@@ -187,7 +187,7 @@ export function KanbanBoard({
 }
 
 function useCompactBoard() {
-  const query = "(max-width: 720px)";
+  const query = "(max-width: 1100px)";
   const [matches, setMatches] = useState(() => {
     if (typeof window === "undefined" || !window.matchMedia) return false;
     return window.matchMedia(query).matches;

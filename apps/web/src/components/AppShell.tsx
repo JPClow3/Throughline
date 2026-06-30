@@ -63,7 +63,7 @@ export function AppShell({
   return (
     <div className="flex h-screen w-full relative">
       <a href="#main-content" className="skip-link">Skip to main content</a>
-      <nav className="shell-sidebar hidden md:flex fixed left-6 top-6 bottom-6 w-56 rounded-xl bg-[var(--chrome-bg)] border-[var(--glass-border)] shadow-sm flex-col py-base px-3 z-50" style={{ backdropFilter: 'var(--chrome-blur)', WebkitBackdropFilter: 'var(--chrome-blur)' }}>
+      <nav className="shell-sidebar hidden lg:flex fixed left-6 top-6 bottom-6 w-56 rounded-xl bg-[var(--chrome-bg)] border-[var(--glass-border)] shadow-sm flex-col py-base px-3 z-50" style={{ backdropFilter: 'var(--chrome-blur)', WebkitBackdropFilter: 'var(--chrome-blur)' }}>
         <div className="shell-brand">
           <span className="shell-brand-mark">
             <ThroughlineMark size={22} />
@@ -123,9 +123,9 @@ export function AppShell({
         </a>
       </nav>
 
-      <main id="main-content" className="flex-1 ml-0 md:ml-[248px] h-full flex flex-col pt-4 md:pt-6 px-4 md:pl-0 md:pr-6 pb-40 md:pb-6 overflow-y-auto">
+      <main id="main-content" className="flex-1 ml-0 lg:ml-[280px] h-full flex flex-col pt-4 lg:pt-6 px-4 lg:pl-8 lg:pr-8 pb-40 lg:pb-6 overflow-y-auto">
         {/* Mobile Top Header */}
-        <div className="flex md:hidden justify-between items-center w-full h-12 mb-6 flex-shrink-0">
+        <div className="flex lg:hidden justify-between items-center w-full h-12 mb-6 flex-shrink-0">
           <span className="mobile-brand">Throughline</span>
           <div className="flex items-center gap-3">
             <button type="button" className="shell-icon-button text-on-surface-variant hover:bg-[var(--accent-soft)] rounded-full p-2 transition-all" aria-label="Notifications">
@@ -137,7 +137,7 @@ export function AppShell({
           </div>
         </div>
 
-        <nav className="hidden md:flex justify-between items-center w-full h-16 mb-8 flex-shrink-0">
+        <nav className="hidden lg:flex justify-between items-center w-full h-16 mb-8 flex-shrink-0">
           <div className="flex items-center gap-gutter">
             <button
               type="button"
@@ -157,7 +157,7 @@ export function AppShell({
               <button
                 key={action.label}
                 type="button"
-                className={`shell-quiet-action${action.mobileOnly ? " hidden md:inline-flex" : ""}`}
+                className={`shell-quiet-action${action.mobileOnly ? " hidden lg:inline-flex" : ""}`}
                 onClick={action.onClick}
                 aria-label={action.label}
               >
@@ -189,7 +189,7 @@ export function AppShell({
           <button
             type="button"
             onClick={primaryAction.onClick}
-            className="shell-mobile-primary-action md:hidden"
+            className="shell-mobile-primary-action lg:hidden"
             aria-label={primaryAction.label}
           >
             <span aria-hidden="true">{primaryAction.icon}</span>
@@ -197,7 +197,7 @@ export function AppShell({
         ) : null}
 
         {/* Mobile Bottom Navigation */}
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 h-20 bg-[var(--chrome-bg)] border-t border-[var(--glass-border)] shadow-[0_-4px_24px_rgba(0,0,0,0.04)] flex justify-around items-center px-2 pb-safe z-50" style={{ backdropFilter: 'var(--chrome-blur)', WebkitBackdropFilter: 'var(--chrome-blur)' }}>
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-20 bg-[var(--chrome-bg)] border-t border-[var(--glass-border)] shadow-[0_-4px_24px_rgba(0,0,0,0.04)] flex justify-around items-center px-2 pb-safe z-50" style={{ backdropFilter: 'var(--chrome-blur)', WebkitBackdropFilter: 'var(--chrome-blur)' }}>
           {mobilePrimaryItems.map((item) => {
             const isActive = view === item.view;
             return (
@@ -239,7 +239,7 @@ export function AppShell({
           </button>
         </nav>
         {mobileMoreOpen ? (
-          <div className="md:hidden fixed bottom-24 left-4 right-4 z-50 rounded-xl bg-[var(--chrome-bg)] border border-[var(--glass-border)] shadow-lg p-2 grid grid-cols-2 gap-2" style={{ backdropFilter: 'var(--chrome-blur)', WebkitBackdropFilter: 'var(--chrome-blur)' }}>
+          <div className="lg:hidden fixed bottom-24 left-4 right-4 z-50 rounded-xl bg-[var(--chrome-bg)] border border-[var(--glass-border)] shadow-lg p-2 grid grid-cols-2 gap-2" style={{ backdropFilter: 'var(--chrome-blur)', WebkitBackdropFilter: 'var(--chrome-blur)' }}>
             {mobileMoreItems.map((item) => (
               <button
                 key={item.view}
