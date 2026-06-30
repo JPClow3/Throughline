@@ -207,6 +207,15 @@ export function createUserStore(dbPath: string) {
       );
     },
 
+    updateRecoveryKey(userId: string, recoveryAuthKey: string, recoveryWrappedDek: string) {
+      const recoveryHash = hashAuthKey(recoveryAuthKey);
+      db.prepare("UPDATE users SET recovery_hash = ?, recovery_wrapped_dek = ? WHERE id = ?").run(
+        recoveryHash,
+        recoveryWrappedDek,
+        userId
+      );
+    },
+
     deleteSession(token: string) {
       db.prepare("DELETE FROM sessions WHERE token = ?").run(token);
     }

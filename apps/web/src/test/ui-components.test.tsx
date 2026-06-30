@@ -4,8 +4,22 @@ import { describe, expect, it, vi } from "vitest";
 import { TaskCard } from "../components/TaskCard";
 import { SettingsPanel } from "../components/SettingsPanel";
 import { TaskComposer } from "../components/TaskComposer";
+import { FocusTimer } from "../components/FocusTimer";
 
 describe("calm planner UI components", () => {
+  it("keeps quick capture disabled until a title is entered", () => {
+    const onAddTask = vi.fn().mockResolvedValue(undefined);
+    render(<TaskComposer courses={sampleCourses} onAddTask={onAddTask} />);
+
+    const addButton = screen.getByRole("button", { name: "Add task" });
+    expect(screen.getByLabelText("Title")).toBeRequired();
+    expect(addButton).toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText("Title"), { target: { value: "Write research outline" } });
+
+    expect(addButton).toBeEnabled();
+  });
+
   it("captures quick task fields and optional expanded details", async () => {
     const onAddTask = vi.fn().mockResolvedValue(undefined);
     render(<TaskComposer courses={sampleCourses} onAddTask={onAddTask} />);
@@ -53,7 +67,7 @@ describe("calm planner UI components", () => {
     render(<TaskCard task={task} course={sampleCourses[1]} onStatusChange={() => {}} />);
 
     expect(screen.getByText("Finish studio critique")).toBeInTheDocument();
-    expect(screen.getByLabelText("1 of 2 steps complete")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "1 of 2 steps complete" })).toHaveAttribute("aria-expanded", "false");
     expect(screen.getByLabelText("Move Finish studio critique")).toHaveValue("backlog");
     // The calm card keeps XP hidden unless the game layer is enabled.
     expect(screen.queryByText(`${task.xp} XP`)).not.toBeInTheDocument();
@@ -115,5 +129,17 @@ describe("calm planner UI components", () => {
     fireEvent.click(screen.getByRole("button", { name: "Dark" }));
 
     await waitFor(() => expect(onAppearanceChange).toHaveBeenCalledWith({ theme: "dark" }));
+  });
+
+  it("hides the untitled focus launcher by default", () => {
+    render(<FocusTimer />);
+
+    expect(screen.queryByRole("button", { name: /Start focus session/i })).not.toBeInTheDocument();
+  });
+
+  it("offers an untitled focus entry point when docked", () => {
+    render(<FocusTimer launcherMode="desktop-dock" />);
+
+    expect(screen.getByRole("button", { name: /Start focus session/i })).toBeInTheDocument();
   });
 });

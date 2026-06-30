@@ -73,6 +73,65 @@ describe("NotesView", () => {
     expect(screen.getByText("Launch my side project")).toBeInTheDocument();
     expect(screen.getByText("Wire up the landing page")).toBeInTheDocument();
   });
+
+  it("auto-selects the best note on desktop", async () => {
+    const pinned = createNote({ title: "Pinned seminar note", body: "Use this first.", pinned: true });
+    const other = createNote({ title: "Loose idea", body: "Later." });
+
+    render(
+      <NotesView
+        notes={[other, pinned]}
+        tasks={[]}
+        goals={[]}
+        onAddNote={vi.fn().mockResolvedValue(pinned)}
+        onUpdateNote={vi.fn().mockResolvedValue(pinned)}
+        onRemoveNote={asyncNoop}
+        onToggleLink={noop}
+      />
+    );
+
+    await waitFor(() => expect(screen.getByLabelText("Note title")).toHaveValue("Pinned seminar note"));
+  });
+
+  it("uses list-first note navigation on mobile", () => {
+    const originalMatchMedia = window.matchMedia;
+    Object.defineProperty(window, "matchMedia", {
+      writable: true,
+      value: vi.fn().mockImplementation((query: string) => ({
+        matches: query === "(max-width: 720px)",
+        media: query,
+        onchange: null,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        dispatchEvent: vi.fn()
+      }))
+    });
+
+    render(
+      <NotesView
+        notes={sampleNotes}
+        tasks={sampleTasks}
+        goals={sampleGoals}
+        onAddNote={vi.fn().mockResolvedValue(sampleNotes[0])}
+        onUpdateNote={vi.fn().mockResolvedValue(sampleNotes[0])}
+        onRemoveNote={asyncNoop}
+        onToggleLink={noop}
+      />
+    );
+
+    expect(screen.queryByLabelText("Note title")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByText("Landing page ideas"));
+    expect(screen.getByLabelText("Note title")).toHaveValue("Landing page ideas");
+    fireEvent.click(screen.getByRole("button", { name: "Notes" }));
+    expect(screen.queryByLabelText("Note title")).not.toBeInTheDocument();
+
+    Object.defineProperty(window, "matchMedia", {
+      writable: true,
+      value: originalMatchMedia
+    });
+  });
 });
 
 describe("ProjectsManager", () => {

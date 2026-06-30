@@ -26,6 +26,7 @@ type AuthContextValue = {
   signup: (email: string, password: string) => Promise<string>;
   login: (email: string, password: string) => Promise<void>;
   loginWithGoogle: (credential: string) => Promise<void>;
+  rotateRecoveryKey: () => Promise<string>;
   resetPassword: (email: string, recoveryKey: string, newPassword: string) => Promise<void>;
   logout: () => Promise<void>;
 };
@@ -167,6 +168,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await persistSession(data.email, finalDek);
   }, []);
 
+  const rotateRecoveryKey = useCallback(async (): Promise<string> => {
+    const savedDek = localStorage.getItem(DEK_KEY);
+    if (!savedDek) {
+      throw new AuthError("Sign in again before regenerating your recovery key.");
+    }
+
+    const res = await api("/auth/me");
+    if (!res.ok) {
+      throw new AuthError("Sign in again before regenerating your recovery key.");
+    }
+
+    const saltRes = await api("/auth/salt", { email: email ?? (await res.json()).email });
+    if (!saltRes.ok) {
+      throw new AuthError("Could not prepare a new recovery key.");
+    }
+    const { salt } = (await saltRes.json()) as { salt: string };
+    const recoveryKey = generateRecoveryKey();
+    const { kek: recoveryKek, authKey: recoveryAuthKey } = await deriveRecoveryKeys(recoveryKey, salt);
+    const recoveryWrappedDek = await wrapDek(dekFromB64(savedDek), recoveryKek);
+    const updateRes = await api("/auth/update-recovery-key", { recoveryAuthKey, recoveryWrappedDek });
+    if (!updateRes.ok) {
+      throw new AuthError("Could not update your recovery key.");
+    }
+    return recoveryKey;
+  }, [email]);
+
   const resetPassword = useCallback(async (rawEmail: string, recoveryKey: string, newPassword: string) => {
     const userEmail = rawEmail.trim().toLowerCase();
     const saltRes = await api("/auth/salt", { email: userEmail });
@@ -216,8 +243,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ status, email, dekKey, signup, login, loginWithGoogle, resetPassword, logout }),
-    [status, email, dekKey, signup, login, loginWithGoogle, resetPassword, logout]
+    () => ({ status, email, dekKey, signup, login, loginWithGoogle, rotateRecoveryKey, resetPassword, logout }),
+    [status, email, dekKey, signup, login, loginWithGoogle, rotateRecoveryKey, resetPassword, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

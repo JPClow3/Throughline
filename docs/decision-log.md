@@ -10,11 +10,11 @@ Consequence: Native wrapper features are out of scope until the PWA path is vali
 
 ## 002 - Local-First Task Data
 
-Decision: Tasks, courses, and progress live in IndexedDB through Dexie.
+Decision: Tasks, courses, goals, notes, settings, tombstones, and progress live in IndexedDB through Dexie as the UI source of truth.
 
-Reason: Offline reliability is a must-have, and v1 should not require accounts.
+Reason: Offline reliability is a must-have, and the planner should not require network access for core workflows.
 
-Consequence: Any cloud account or sync work must be designed explicitly as a future feature.
+Consequence: Account sync must preserve local-first behavior. With decision 012, synced records may leave the device only as end-to-end-encrypted ciphertext.
 
 ## 003 - Redacted Push Service
 
@@ -41,6 +41,8 @@ Decision: 3D is lazy-loaded and decorative-but-useful.
 Reason: The app should feel alive without slowing task capture or blocking readability.
 
 Consequence: 3D must have fallbacks, capped DPR, reduced-motion support, and tests that prove it renders.
+
+Update: Superseded by decision 011. The current app has no 3D layer.
 
 ## 006 - Calm Planner As The Default Identity
 
@@ -96,4 +98,4 @@ Decision: Add real accounts (email + password) and cross-device sync, while keep
 
 Reason: The owner wanted a presentable landing page and a login, then full accounts with cloud sync. To preserve the privacy stance while syncing, the crypto is zero-knowledge — a DEK (random AES-256 key) encrypts records, wrapped by a KEK derived from the password via PBKDF2; only the wrapped DEK, salt, and a scrypt hash of an authKey reach the server. IndexedDB stays the UI source of truth so the app works offline; the engine reconciles with last-write-wins by `updatedAt` plus deletion tombstones.
 
-Consequence: This deliberately reverses "task data never leaves the device" → "data leaves only as ciphertext the server can't read." A forgotten password is unrecoverable (no key escrow) — surfaced at signup; a recovery-key mechanism is deferred. `Course` gained `createdAt`/`updatedAt` (Dexie v5 + a `tombstones` store). New deps: `react-router-dom`, `@fastify/cookie`. The push API now also serves `/auth/*` and `/sync/*`; SQLite lives on the existing data volume.
+Consequence: This deliberately reverses "task data never leaves the device" -> "data leaves only as ciphertext the server can't read." A forgotten password can be recovered only with the user-held recovery key. Signup must generate and confirm that key; Settings must allow regeneration. If both password and recovery key are lost, encrypted synced content cannot be recovered. `Course` gained `createdAt`/`updatedAt` (Dexie v5 + a `tombstones` store). New deps: `react-router-dom`, `@fastify/cookie`. The push API now also serves `/auth/*` and `/sync/*`; SQLite lives on the existing data volume.

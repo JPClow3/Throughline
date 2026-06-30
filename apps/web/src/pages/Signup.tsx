@@ -5,7 +5,7 @@ import { useAuth } from "../auth/AuthProvider";
 import { AuthShell } from "./AuthShell";
 
 export function Signup() {
-  const { signup, loginWithGoogle, status } = useAuth();
+  const { signup, loginWithGoogle, rotateRecoveryKey, status } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -15,6 +15,7 @@ export function Signup() {
   const [recoveryKey, setRecoveryKey] = useState("");
   const [confirmedSaved, setConfirmedSaved] = useState(false);
   const [partialKey, setPartialKey] = useState("");
+  const [recoveryBusy, setRecoveryBusy] = useState(false);
 
   if (status === "authed" && !recoveryKey) {
     return <Navigate to="/app" replace />;
@@ -46,16 +47,31 @@ export function Signup() {
     const expectedPartial = recoveryKey.slice(-4);
     const canProceed = confirmedSaved && partialKey.toLowerCase() === expectedPartial.toLowerCase();
 
+    async function regenerateRecoveryKey() {
+      setRecoveryBusy(true);
+      setError("");
+      try {
+        const key = await rotateRecoveryKey();
+        setRecoveryKey(key);
+        setConfirmedSaved(false);
+        setPartialKey("");
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Could not generate a new recovery key.");
+      } finally {
+        setRecoveryBusy(false);
+      }
+    }
+
     return (
-      <AuthShell title="Save your Recovery Key" subtitle="This is the only way to recover your account if you forget your password.">
+      <AuthShell title="Save your recovery key" subtitle="Your records are end-to-end encrypted. This key is required if you lose your password.">
         <div className="glass-panel" style={{ padding: "2rem", borderRadius: "var(--radius-card)", textAlign: "center", marginBottom: "2rem" }}>
           <p style={{ fontWeight: "var(--fw-bold)", fontSize: "1.2rem", letterSpacing: "2px", userSelect: "all", fontFamily: "monospace", color: "var(--primary)" }}>
             {recoveryKey}
           </p>
         </div>
         <p className="auth-note" style={{ marginBottom: "2rem" }}>
-          Please save this key in a secure location, like a password manager. 
-          We cannot recover it for you.
+          Save this in a password manager before continuing. The server cannot read your task content, and
+          Throughline cannot recover encrypted data if both your password and recovery key are lost.
         </p>
 
         <div style={{ marginBottom: "2rem", display: "flex", flexDirection: "column", gap: "1rem", textAlign: "left" }}>
@@ -74,13 +90,19 @@ export function Signup() {
               type="text"
               value={partialKey}
               onChange={(e) => setPartialKey(e.target.value)}
-              placeholder={expectedPartial}
+              placeholder="last 4"
               maxLength={4}
               style={{ fontFamily: "monospace", textTransform: "lowercase", width: "6rem", textAlign: "center" }}
             />
           </label>
         </div>
 
+        {error ? <p className="auth-error">{error}</p> : null}
+        <div className="button-row" style={{ justifyContent: "center", marginBottom: "1rem" }}>
+          <button className="secondary-button" type="button" onClick={() => void regenerateRecoveryKey()} disabled={recoveryBusy}>
+            {recoveryBusy ? "Generating..." : "Generate a different key"}
+          </button>
+        </div>
         <button className="primary-button depth-hover glow-halo" disabled={!canProceed} onClick={() => navigate("/app")}>
           Continue to Planner
         </button>
@@ -89,7 +111,7 @@ export function Signup() {
   }
 
   return (
-    <AuthShell title="Create your account" subtitle="Your data is end-to-end encrypted before it ever syncs.">
+    <AuthShell title="Create your account" subtitle="Local-first by default. Optional sync is end-to-end encrypted before records leave this device.">
       <div style={{ display: "flex", justifyContent: "center", marginBottom: "1rem" }}>
         <GoogleLogin
           onSuccess={async (credentialResponse) => {
@@ -147,7 +169,7 @@ export function Signup() {
         </label>
         {error ? <p className="auth-error">{error}</p> : null}
         <p className="auth-note">
-          Your password encrypts your data — we can't reset it or recover your notes if it's lost.
+          Your password encrypts your records. If you lose it, your recovery key is required to unlock synced data.
         </p>
         <button className="primary-button depth-hover glow-halo" type="submit" disabled={busy}>
           {busy ? "Creating…" : "Create account"}

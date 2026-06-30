@@ -9,6 +9,7 @@ type ProjectsManagerProps = {
   tasks: Task[];
   onUpsertCourse: (course: Course) => Promise<void>;
   onDeleteCourse: (courseId: string) => Promise<void>;
+  highlightedProjectId?: string | null;
 };
 
 function ColorPicker({ value, onChange, label }: { value: string; onChange: (color: string) => void; label: string }) {
@@ -29,7 +30,7 @@ function ColorPicker({ value, onChange, label }: { value: string; onChange: (col
   );
 }
 
-export function ProjectsManager({ courses, tasks, onUpsertCourse, onDeleteCourse }: ProjectsManagerProps) {
+export function ProjectsManager({ courses, tasks, onUpsertCourse, onDeleteCourse, highlightedProjectId }: ProjectsManagerProps) {
   const [name, setName] = useState("");
   const [color, setColor] = useState(PROJECT_COLORS[0]);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -119,7 +120,11 @@ export function ProjectsManager({ courses, tasks, onUpsertCourse, onDeleteCourse
                 </button>
               </form>
             ) : (
-              <div key={course.id} className="project-row" style={{ "--project-color": course.color } as CSSProperties}>
+              <div
+                key={course.id}
+                className={`project-row${highlightedProjectId === course.id ? " active" : ""}`}
+                style={{ "--project-color": course.color } as CSSProperties}
+              >
                 <span className="project-dot" aria-hidden="true" />
                 <span className="project-row-name">{course.name}</span>
                 <span className="project-row-count">{counts.get(course.id) ?? 0}</span>

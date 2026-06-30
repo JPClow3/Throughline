@@ -1,6 +1,6 @@
 import {
   ArrowRight,
-  Cube,
+  Kanban,
   Clock,
   CodeBlock,
   Database,
@@ -97,7 +97,7 @@ const SHOWCASE = [
 
 const BENTO_FEATURES = [
   { icon: <ShieldCheck size={28} weight="duotone" />, color: "bg-[var(--tl-surface-tint)]", title: "Local-First Privacy", body: "Your data never leaves your device. Total sovereignty over your academic life powered by IndexedDB." },
-  { icon: <Cube size={28} weight="duotone" />, color: "bg-[var(--tl-surface-tint)]", title: "Spatial Organization", body: "Map your syllabus visually. Connect concepts in a fluid, three-dimensional workspace designed for complex understanding." },
+  { icon: <Kanban size={28} weight="duotone" />, color: "bg-[var(--tl-surface-tint)]", title: "Course and Task Planning", body: "Group coursework, goals, notes, due dates, and Kanban progress in one calm planning hub." },
   { icon: <Clock size={28} weight="duotone" />, color: "bg-[var(--tl-surface-tint)]", title: "Academic Rhythm", body: "Sync with your semesters. Automated scheduling that breathes with your actual energy levels." }
 ];
 
@@ -156,7 +156,7 @@ export function Landing() {
           <section className="flex flex-col items-center text-center mb-32">
             <div className="relative w-full max-w-4xl flex flex-col items-center">
               <div className="absolute inset-0 bg-[var(--tl-surface-glass)] rounded-[100px] blur-[60px] -z-10" />
-              <h1 className="font-display-lg text-[40px] md:text-[64px] font-bold text-[var(--tl-text)] mb-6 drop-shadow-sm flex flex-col items-center gap-2 relative leading-tight" style={{ letterSpacing: '-0.04em' }}>
+              <h1 className="font-display-lg text-[40px] md:text-[64px] font-bold text-[var(--tl-text)] mb-6 drop-shadow-sm flex flex-col items-center gap-2 relative leading-tight" style={{ letterSpacing: 0 }}>
                 <Reveal delay={0} style={{ transform: 'translateZ(20px) scale(1.02)' }}>Academic Flow,</Reveal>
                 <Reveal delay={0.1} style={{ transform: 'translateZ(40px) scale(1.05)' }}>
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--tl-accent-blue)] to-[#7EA7FF]">
@@ -166,7 +166,7 @@ export function Landing() {
               </h1>
               <Reveal delay={0.2} style={{ transform: 'translateZ(10px) scale(1.01)' }}>
                 <p className="text-[18px] text-[var(--tl-text-secondary)] max-w-2xl mx-auto mb-10 leading-relaxed font-light">
-                  A local-first, spatial workspace designed explicitly for students who demand absolute focus, uncompromising privacy, and rhythmic academic progression.
+                  A local-first student planner for courses, tasks, notes, due dates, and calm academic momentum without giving up privacy.
                 </p>
               </Reveal>
               <Reveal delay={0.3} className="flex flex-col sm:flex-row gap-4 justify-center">

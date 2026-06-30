@@ -3,7 +3,7 @@ import { DndContext, KeyboardSensor, PointerSensor, closestCorners, useDroppable
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { DotsSixVertical as GripVertical } from "@phosphor-icons/react";
-import { useMemo, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { FilterBar } from "./FilterBar";
 import { useFilters } from "../hooks/useFilters";
 import { countNotesByTask } from "../lib/noteCounts";
@@ -43,8 +43,15 @@ export function KanbanBoard({
 }: KanbanBoardProps) {
   const courseMap = new Map(courses.map((course) => [course.id, course]));
   const noteCounts = countNotesByTask(notes);
-  const { filters, setFilter, applyFilters } = useFilters();
-  const filteredTasks = useMemo(() => applyFilters(tasks, false, true), [tasks, applyFilters]);
+  const { filters, presets, setFilter, applyFilters, applyPreset, clearFilters, saveCurrentPreset } = useFilters();
+  const [announcement, setAnnouncement] = useState("");
+  const [mobileStatus, setMobileStatus] = useState<TaskStatus>("backlog");
+  const isMobileBoard = useCompactBoard();
+  const filteredTasks = useMemo(() => applyFilters(tasks, false, false), [tasks, applyFilters]);
+  const availableTags = useMemo(
+    () => Array.from(new Set(tasks.flatMap((task) => task.tags ?? []))).sort((a, b) => a.localeCompare(b)),
+    [tasks]
+  );
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -65,6 +72,7 @@ export function KanbanBoard({
 
     if (task && status && task.status !== status) {
       onStatusChange(task.id, status);
+      setAnnouncement(`Moved ${task.title} to ${kanbanColumns[status]}.`);
     }
   }
 
@@ -75,8 +83,75 @@ export function KanbanBoard({
           <span className="eyebrow">Workflow</span>
           <h1>Board</h1>
         </div>
-        <FilterBar courses={courses} goals={goals} filters={filters} setFilter={setFilter} showDateFilter={true} showStatusFilter={false} />
+        <FilterBar
+          courses={courses}
+          goals={goals}
+          filters={filters}
+          setFilter={setFilter}
+          presets={presets}
+          availableTags={availableTags}
+          onApplyPreset={applyPreset}
+          onClearFilters={clearFilters}
+          onSavePreset={saveCurrentPreset}
+          showDateFilter={true}
+          showStatusFilter={false}
+        />
       </header>
+      <div className="sr-only" aria-live="polite">{announcement}</div>
+      {isMobileBoard ? (
+        <section className="kanban-mobile" aria-label="Kanban board">
+          <div className="kanban-mobile-tabs" role="tablist" aria-label="Choose workflow status">
+            {taskStatuses.map((status) => {
+              const count = filteredTasks.filter((task) => task.status === status).length;
+              const active = mobileStatus === status;
+              return (
+                <button
+                  key={status}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  className={active ? "active" : ""}
+                  onClick={() => setMobileStatus(status)}
+                >
+                  <span>{kanbanColumns[status]}</span>
+                  <strong>{count}</strong>
+                </button>
+              );
+            })}
+          </div>
+          <div className="kanban-mobile-list" role="tabpanel" aria-label={`${kanbanColumns[mobileStatus]} tasks`}>
+            <header>
+              <h2>{kanbanColumns[mobileStatus]}</h2>
+              <span>{filteredTasks.filter((task) => task.status === mobileStatus).length}</span>
+            </header>
+            <div className="kanban-stack" role="list">
+              {filteredTasks.filter((task) => task.status === mobileStatus).map((task) => (
+                <div key={task.id} className="kanban-mobile-card" role="listitem">
+                  <TaskCard
+                    task={task}
+                    course={courseMap.get(task.courseId ?? "")}
+                    compact
+                    noteCount={noteCounts.get(task.id) ?? 0}
+                    showGameLayer={showGameLayer}
+                    onComplete={onComplete}
+                    onStatusChange={(taskId, status) => {
+                      onStatusChange(taskId, status);
+                      setAnnouncement(`Moved ${task.title} to ${kanbanColumns[status]}.`);
+                    }}
+                    onEdit={onEdit}
+                    onUpdateTask={onUpdateTask}
+                    onOpenNotes={onOpenNotes}
+                    onStartFocus={onStartFocus}
+                  />
+                </div>
+              ))}
+              {filteredTasks.filter((task) => task.status === mobileStatus).length === 0 ? (
+                <p className="kanban-empty-state">No tasks in {kanbanColumns[mobileStatus].toLowerCase()}.</p>
+              ) : null}
+            </div>
+          </div>
+        </section>
+      ) : (
       <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
         <section className="kanban-board" aria-label="Kanban board">
         {taskStatuses.map((status) => {
@@ -97,6 +172,7 @@ export function KanbanBoard({
                     onUpdateTask={onUpdateTask}
                     onOpenNotes={onOpenNotes}
                     onStartFocus={onStartFocus}
+                    onAnnounce={setAnnouncement}
                   />
                 ))}
               </SortableContext>
@@ -105,20 +181,40 @@ export function KanbanBoard({
         })}
         </section>
       </DndContext>
+      )}
     </div>
   );
+}
+
+function useCompactBoard() {
+  const query = "(max-width: 720px)";
+  const [matches, setMatches] = useState(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return false;
+    return window.matchMedia(query).matches;
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const media = window.matchMedia(query);
+    const update = () => setMatches(media.matches);
+    update();
+    media.addEventListener?.("change", update);
+    return () => media.removeEventListener?.("change", update);
+  }, []);
+
+  return matches;
 }
 
 function KanbanColumn({ status, tasks, children }: { status: TaskStatus; tasks: Task[]; children: ReactNode }) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
 
   return (
-    <div ref={setNodeRef} className={`kanban-column ${isOver ? "is-over" : ""}`}>
+    <div ref={setNodeRef} className={`kanban-column ${isOver ? "is-over" : ""}`} aria-label={`${kanbanColumns[status]} column with ${tasks.length} tasks`}>
       <header>
         <h2>{kanbanColumns[status]}</h2>
         <span>{tasks.length}</span>
       </header>
-      <div className="kanban-stack">{children}</div>
+      <div className="kanban-stack" role="list" aria-label={`${kanbanColumns[status]} tasks`}>{children}</div>
     </div>
   );
 }
@@ -133,7 +229,8 @@ function SortableQuest({
   onEdit,
   onUpdateTask,
   onOpenNotes,
-  onStartFocus
+  onStartFocus,
+  onAnnounce
 }: {
   task: Task;
   course?: Course;
@@ -145,6 +242,7 @@ function SortableQuest({
   onUpdateTask?: (task: Task) => void;
   onOpenNotes?: () => void;
   onStartFocus?: (task: Task) => void;
+  onAnnounce?: (message: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: task.id,
@@ -157,6 +255,8 @@ function SortableQuest({
       id={`task-card-${task.id}`}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={isDragging ? "sortable-quest dragging" : "sortable-quest"}
+      role="listitem"
+      aria-label={`${task.title}, ${kanbanColumns[task.status]}`}
       tabIndex={0}
       onKeyDown={(e) => {
         if (e.target !== e.currentTarget) return;
@@ -176,14 +276,18 @@ function SortableQuest({
             const currentIndex = taskStatuses.indexOf(task.status);
             if (currentIndex > 0) {
               e.preventDefault();
-              onStatusChange(task.id, taskStatuses[currentIndex - 1]);
+              const nextStatus = taskStatuses[currentIndex - 1];
+              onStatusChange(task.id, nextStatus);
+              onAnnounce?.(`Moved ${task.title} to ${kanbanColumns[nextStatus]}.`);
               setTimeout(() => document.getElementById(`task-card-${task.id}`)?.focus(), 0);
             }
           } else if (e.key === "ArrowRight") {
             const currentIndex = taskStatuses.indexOf(task.status);
             if (currentIndex < taskStatuses.length - 1) {
               e.preventDefault();
-              onStatusChange(task.id, taskStatuses[currentIndex + 1]);
+              const nextStatus = taskStatuses[currentIndex + 1];
+              onStatusChange(task.id, nextStatus);
+              onAnnounce?.(`Moved ${task.title} to ${kanbanColumns[nextStatus]}.`);
               setTimeout(() => document.getElementById(`task-card-${task.id}`)?.focus(), 0);
             }
           }

@@ -1,12 +1,19 @@
-import { Course, Goal, taskStatuses, kanbanColumns } from "@throughline/domain";
-import { MagnifyingGlass as Search, Tag } from "@phosphor-icons/react";
+import { Course, Goal, taskStatuses, kanbanColumns, priorities } from "@throughline/domain";
+import { BookmarkSimple, FunnelSimple, MagnifyingGlass as Search, Tag } from "@phosphor-icons/react";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { FilterState } from "../hooks/useFilters";
+import type { SavedFilterPreset } from "../data/types";
 
 type FilterBarProps = {
   courses: Course[];
   goals?: Goal[];
   filters: FilterState;
   setFilter: <K extends keyof FilterState>(key: K, value: FilterState[K]) => void;
+  presets?: SavedFilterPreset[];
+  availableTags?: string[];
+  onApplyPreset?: (preset: SavedFilterPreset) => void;
+  onClearFilters?: () => void;
+  onSavePreset?: (name: string) => void;
   showDateFilter?: boolean;
   showStatusFilter?: boolean;
 };
@@ -16,11 +23,58 @@ export function FilterBar({
   goals = [],
   filters,
   setFilter,
+  presets = [],
+  availableTags = [],
+  onApplyPreset,
+  onClearFilters,
+  onSavePreset,
   showDateFilter = true,
   showStatusFilter = false,
 }: FilterBarProps) {
+  const isCompact = useCompactFilters();
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const showAdvanced = !isCompact || filtersOpen;
+  const activeTagSet = new Set(filters.tags);
+  const hasActiveFilters =
+    Boolean(filters.search) ||
+    Boolean(filters.projectId) ||
+    Boolean(filters.goalId) ||
+    Boolean(filters.status) ||
+    Boolean(filters.priority) ||
+    Boolean(filters.tags.length) ||
+    Boolean(filters.dateRange && filters.dateRange !== "all");
+
+  function toggleTag(tag: string) {
+    const nextTags = activeTagSet.has(tag) ? filters.tags.filter((item) => item !== tag) : [...filters.tags, tag];
+    setFilter("tags", nextTags);
+  }
+
+  function handleSavePreset() {
+    const name = window.prompt("Name this filter preset");
+    if (name?.trim()) {
+      onSavePreset?.(name.trim());
+    }
+  }
+
+  const dateOptions = [
+    ["all", "All"],
+    ["today", "Today"],
+    ["next7", "Next 7"],
+    ["overdue", "Overdue"],
+    ["none", "No date"]
+  ];
+
   return (
     <div className="view-toolbar">
+      {!isCompact && presets.length ? (
+        <div className="filter-chip-row" aria-label="Filter presets">
+          {presets.map((preset) => (
+            <button key={preset.id} type="button" className="filter-chip" onClick={() => onApplyPreset?.(preset)}>
+              {preset.name}
+            </button>
+          ))}
+        </div>
+      ) : null}
       <label className="toolbar-search">
         <Search size={15} />
         <input
@@ -30,74 +84,174 @@ export function FilterBar({
           aria-label="Search tasks"
         />
       </label>
-      <select
-        className="toolbar-filter"
-        value={filters.projectId}
-        onChange={(event) => setFilter("projectId", event.target.value)}
-        aria-label="Filter by project"
-      >
-        <option value="">All projects</option>
-        {courses.map((course) => (
-          <option key={course.id} value={course.id}>
-            {course.name}
-          </option>
-        ))}
-        <option value="__none">No project</option>
-      </select>
-      <label className="toolbar-search" style={{ minWidth: "120px" }}>
-        <Tag size={15} />
-        <input
-          value={filters.tags || ""}
-          onChange={(event) => setFilter("tags", event.target.value)}
-          placeholder="Filter tags (csv)"
-          aria-label="Filter by tags"
-        />
-      </label>
-      {goals && goals.length > 0 ? (
-        <select
-          className="toolbar-filter"
-          value={filters.goalId}
-          onChange={(event) => setFilter("goalId", event.target.value)}
-          aria-label="Filter by goal"
+      {isCompact ? (
+        <button
+          type="button"
+          className="secondary-button toolbar-filter-toggle"
+          aria-expanded={filtersOpen}
+          onClick={() => setFiltersOpen((open) => !open)}
         >
-          <option value="">All goals</option>
-          {goals.map((goal) => (
-            <option key={goal.id} value={goal.id}>
-              {goal.title}
-            </option>
-          ))}
-          <option value="__none">No goal</option>
-        </select>
+          <FunnelSimple size={15} />
+          Filters
+          {hasActiveFilters ? <span className="toolbar-filter-count">{activeFilterCount(filters)}</span> : null}
+        </button>
       ) : null}
-      {showDateFilter && (
-        <select
-          className="toolbar-filter"
-          value={filters.dateRange}
-          onChange={(event) => setFilter("dateRange", event.target.value)}
-          aria-label="Filter by date"
-        >
-          <option value="all">All dates</option>
-          <option value="today">Today</option>
-          <option value="next7">Next 7 days</option>
-          <option value="overdue">Overdue</option>
-          <option value="none">No due date</option>
-        </select>
-      )}
-      {showStatusFilter && (
-        <select
-          className="toolbar-filter"
-          value={filters.status}
-          onChange={(event) => setFilter("status", event.target.value)}
-          aria-label="Filter by status"
-        >
-          <option value="">All statuses</option>
-          {taskStatuses.map((status) => (
-            <option key={status} value={status}>
-              {kanbanColumns[status]}
-            </option>
-          ))}
-        </select>
-      )}
+      {showAdvanced ? (
+        <>
+          <div className="filter-chip-row filter-project-row" aria-label="Filter by project">
+            <FilterChip active={!filters.projectId} onClick={() => setFilter("projectId", "")}>
+              All projects
+            </FilterChip>
+            {courses.map((course) => (
+              <FilterChip
+                key={course.id}
+                active={filters.projectId === course.id}
+                onClick={() => setFilter("projectId", course.id)}
+                style={{ "--project-color": course.color } as CSSProperties}
+              >
+                <span className="project-dot" aria-hidden="true" />
+                {course.code ?? course.name}
+              </FilterChip>
+            ))}
+            <FilterChip active={filters.projectId === "__none"} onClick={() => setFilter("projectId", "__none")}>
+              No project
+            </FilterChip>
+          </div>
+          <div className="filter-chip-row" aria-label="Filter by tags">
+            <Tag size={15} className="text-on-surface-variant" />
+            {availableTags.length ? (
+              availableTags.map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  className={`filter-chip${activeTagSet.has(tag) ? " active" : ""}`}
+                  aria-pressed={activeTagSet.has(tag)}
+                  onClick={() => toggleTag(tag)}
+                >
+                  {tag}
+                </button>
+              ))
+            ) : (
+              <span className="font-label-sm text-label-sm text-on-surface-variant">No tags</span>
+            )}
+          </div>
+          {goals && goals.length > 0 ? (
+            <div className="filter-chip-row" aria-label="Filter by goal">
+              <FilterChip active={!filters.goalId} onClick={() => setFilter("goalId", "")}>
+                All goals
+              </FilterChip>
+              {goals.map((goal) => (
+                <FilterChip key={goal.id} active={filters.goalId === goal.id} onClick={() => setFilter("goalId", goal.id)}>
+                  {goal.title}
+                </FilterChip>
+              ))}
+              <FilterChip active={filters.goalId === "__none"} onClick={() => setFilter("goalId", "__none")}>
+                No goal
+              </FilterChip>
+            </div>
+          ) : null}
+          {showDateFilter && (
+            <div className="filter-segmented" aria-label="Filter by date">
+              {dateOptions.map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  className={filters.dateRange === value ? "active" : ""}
+                  aria-pressed={filters.dateRange === value}
+                  onClick={() => setFilter("dateRange", value)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="filter-chip-row" aria-label="Filter by priority">
+            <FilterChip active={!filters.priority} onClick={() => setFilter("priority", "")}>
+              Any priority
+            </FilterChip>
+            {priorities.map((priority) => (
+              <FilterChip key={priority} active={filters.priority === priority} onClick={() => setFilter("priority", priority)}>
+                {priority}
+              </FilterChip>
+            ))}
+          </div>
+          {showStatusFilter && (
+            <div className="filter-chip-row" aria-label="Filter by status">
+              <FilterChip active={!filters.status} onClick={() => setFilter("status", "")}>
+                All statuses
+              </FilterChip>
+              {taskStatuses.map((status) => (
+                <FilterChip key={status} active={filters.status === status} onClick={() => setFilter("status", status)}>
+                  {kanbanColumns[status]}
+                </FilterChip>
+              ))}
+            </div>
+          )}
+          {hasActiveFilters ? (
+            <div className="active-filter-bar">
+              <span>{activeFilterCount(filters)} active</span>
+              {onSavePreset ? (
+                <button type="button" className="secondary-button" onClick={handleSavePreset}>
+                  <BookmarkSimple size={15} />
+                  Save preset
+                </button>
+              ) : null}
+              <button type="button" className="secondary-button" onClick={onClearFilters}>
+                Clear filters
+              </button>
+            </div>
+          ) : null}
+        </>
+      ) : null}
     </div>
   );
+}
+
+function FilterChip({
+  active,
+  onClick,
+  children,
+  style
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: ReactNode;
+  style?: CSSProperties;
+}) {
+  return (
+    <button type="button" className={`filter-chip${active ? " active" : ""}`} aria-pressed={active} onClick={onClick} style={style}>
+      {children}
+    </button>
+  );
+}
+
+function activeFilterCount(filters: FilterState) {
+  return [
+    filters.search,
+    filters.projectId,
+    filters.goalId,
+    filters.status,
+    filters.priority,
+    filters.dateRange && filters.dateRange !== "all" ? filters.dateRange : "",
+    ...filters.tags
+  ].filter(Boolean).length;
+}
+
+function useCompactFilters() {
+  const query = "(max-width: 720px)";
+  const [matches, setMatches] = useState(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return false;
+    return window.matchMedia(query).matches;
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const media = window.matchMedia(query);
+    const update = () => setMatches(media.matches);
+    update();
+    media.addEventListener?.("change", update);
+    return () => media.removeEventListener?.("change", update);
+  }, []);
+
+  return matches;
 }

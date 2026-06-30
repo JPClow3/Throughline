@@ -141,9 +141,10 @@ export function TaskCard({
   return (
     <motion.article
       className={`task-card${compact ? " task-card-compact" : ""}${done ? " is-done" : ""}${urgentGlow ? " urgent-pulse-glow" : ""} relative`}
+      style={{ "--project-color": course?.color ?? "var(--ink-faint)" } as CSSProperties}
       layout
       initial={{ opacity: 0, y: 6 }}
-      animate={justCompleted ? { opacity: 1, y: [0, -6, 0], scale: [1, 1.02, 1] } : { opacity: 1, y: 0, scale: 1 }}
+      animate={justCompleted ? { opacity: [1, 0.92, 1], y: [0, -3, 0] } : { opacity: 1, y: 0, scale: 1 }}
       whileHover={justCompleted ? undefined : { y: -2 }}
       transition={justCompleted ? { duration: 0.4, ease: "easeOut" } : { type: "spring", stiffness: 300, damping: 28 }}
     >
@@ -170,17 +171,15 @@ export function TaskCard({
         {justCompleted && <RewardAnimation showGameLayer={showGameLayer} />}
       </AnimatePresence>
       <div className="task-card-top">
-        {course ? (
-          <span className="project-chip" style={{ "--project-color": course.color } as CSSProperties}>
-            <span className="project-dot" aria-hidden="true" />
-            {course.code ?? course.name}
-          </span>
-        ) : (
-          <span className="project-chip project-chip-none">
-            <span className="project-dot" aria-hidden="true" />
-            No project
-          </span>
-        )}
+        <h3 className={`task-card-title ${compact ? 'line-clamp-2' : ''}`}>
+          {onEdit ? (
+            <button type="button" className={`task-card-edit ${compact ? 'text-left w-full' : ''}`} onClick={() => onEdit(task)}>
+              {task.title}
+            </button>
+          ) : (
+            task.title
+          )}
+        </h3>
         <button
           className={`complete-button${done ? " is-done" : ""}`}
           type="button"
@@ -198,37 +197,49 @@ export function TaskCard({
         >
           <motion.div
             initial={false}
-            animate={done ? { scale: [1, 1.4, 1], rotate: [0, 15, 0] } : { scale: 1, rotate: 0 }}
-            transition={{ type: "spring", stiffness: 400, damping: 12 }}
+            animate={done ? { scale: [1, 1.2, 1], rotate: [0, 8, 0] } : { scale: 1, rotate: 0 }}
+            transition={{ type: "spring", stiffness: 400, damping: 16 }}
           >
             <Check size={16} />
           </motion.div>
         </button>
       </div>
 
-      <h3 className={`task-card-title ${compact ? 'line-clamp-2' : ''}`}>
-        {onEdit ? (
-          <button type="button" className={`task-card-edit ${compact ? 'text-left w-full' : ''}`} onClick={() => onEdit(task)}>
-            {task.title}
-          </button>
+      <div className="task-card-meta task-card-primary-meta">
+        {course ? (
+          <span className="project-chip">
+            <span className="project-dot" aria-hidden="true" />
+            {course.code ?? course.name}
+          </span>
         ) : (
-          task.title
+          <span className="project-chip project-chip-none">
+            <span className="project-dot" aria-hidden="true" />
+            No project
+          </span>
         )}
-      </h3>
+        {dueInfo ? (
+          <span className={`meta-due meta-due-${dueInfo.tone}`}>
+            <Clock3 size={14} />
+            {dueInfo.text}
+          </span>
+        ) : null}
+      </div>
 
       {!compact && task.description ? <p className="task-card-summary">{task.description}</p> : null}
 
       {totalSubtasks ? (
-        <div
+        <button
+          type="button"
           className={`subtask-progress cursor-pointer hover:opacity-80 transition-opacity ${expanded ? 'mb-2' : ''}`}
           onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
+          aria-expanded={expanded}
           aria-label={`${completedSubtasks} of ${totalSubtasks} steps complete`}
         >
           <div style={{ width: `${Math.round((completedSubtasks / totalSubtasks) * 100)}%` }} />
-        </div>
+        </button>
       ) : null}
 
-      {onUpdateTask && (
+      {onUpdateTask && expanded ? (
         <div 
           className="flex flex-col gap-2 mt-2 mb-3 overflow-hidden"
           onClick={(e) => e.stopPropagation()}
@@ -247,31 +258,24 @@ export function TaskCard({
                     <span className={`truncate flex-1 min-w-0 ${st.completed ? "line-through opacity-60" : ""}`}>{st.title}</span>
                   </label>
                 ))}
+                <div className="flex items-center gap-3 mt-1 text-sm p-1 -mx-1 opacity-70 hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                  <Plus size={16} className="text-outline flex-shrink-0 ml-0.5" />
+                  <input
+                    type="text"
+                    value={newSubtaskTitle}
+                    onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                    onKeyDown={handleAddSubtask}
+                    placeholder="Add subtask..."
+                    className="bg-transparent border-none focus:ring-0 p-0 text-on-surface placeholder-outline-variant w-full"
+                  />
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
-          
-          <div className="flex items-center gap-3 mt-1 text-sm p-1 -mx-1 opacity-60 hover:opacity-100 focus-within:opacity-100 transition-opacity">
-            <Plus size={16} className="text-outline flex-shrink-0 ml-0.5" />
-            <input 
-              type="text" 
-              value={newSubtaskTitle}
-              onChange={(e) => setNewSubtaskTitle(e.target.value)}
-              onKeyDown={handleAddSubtask}
-              placeholder="Add subtask (press Enter)..." 
-              className="bg-transparent border-none focus:ring-0 p-0 text-on-surface placeholder-outline-variant w-full"
-            />
-          </div>
         </div>
-      )}
+      ) : null}
 
-      <div className="task-card-meta">
-        {dueInfo ? (
-          <span className={`meta-due meta-due-${dueInfo.tone}`}>
-            <Clock3 size={14} />
-            {dueInfo.text}
-          </span>
-        ) : null}
+      <div className="task-card-meta task-card-secondary-actions">
         {goalLabel ? (
           <span className="meta-chip">
             <Target size={14} />

@@ -1,5 +1,66 @@
 import { test, expect } from "@playwright/test";
 
+async function seedVisualGoal(page: import("@playwright/test").Page) {
+  await page.evaluate(async () => {
+    const request = indexedDB.open("liquidglass-study-quests");
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result);
+    });
+    const readTx = db.transaction("courses", "readonly");
+    const courseRequest = readTx.objectStore("courses").getAll();
+    const courses = await new Promise<Array<{ id: string }>>((resolve, reject) => {
+      courseRequest.onerror = () => reject(courseRequest.error);
+      courseRequest.onsuccess = () => resolve(courseRequest.result as Array<{ id: string }>);
+    });
+    const projectId = courses[0]?.id;
+    const now = new Date().toISOString();
+    const tx = db.transaction(["goals", "tasks"], "readwrite");
+    tx.objectStore("goals").put({
+      id: "goal_visual_exam",
+      title: "Prepare for biology exam",
+      summary: "Review notes and complete a practice block.",
+      status: "active",
+      targetDate: "2026-12-04T18:00:00.000Z",
+      projectId,
+      color: "#5b73f0",
+      icon: "B",
+      priority: "high",
+      createdAt: now,
+      updatedAt: now
+    });
+    tx.objectStore("tasks").put({
+      id: "task_visual_exam",
+      title: "Practice cell division questions",
+      description: "",
+      status: "done",
+      courseId: projectId,
+      goalId: "goal_visual_exam",
+      order: 0,
+      dueAt: "2026-12-04T18:00:00.000Z",
+      reminderAt: "2026-12-04T18:00:00.000Z",
+      priority: "high",
+      energy: 2,
+      difficulty: 2,
+      estimatedMinutes: 50,
+      xp: 90,
+      attributes: ["focus"],
+      tags: ["study"],
+      subtasks: [],
+      visualSeed: 7,
+      createdAt: now,
+      updatedAt: now,
+      completedAt: now
+    });
+    await new Promise<void>((resolve, reject) => {
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+      tx.onabort = () => reject(tx.error);
+    });
+    db.close();
+  });
+}
+
 test.describe("Visual Regression", () => {
   // Use a fixed viewport for consistent screenshots
   test.use({ viewport: { width: 1280, height: 800 } });
@@ -45,15 +106,18 @@ test.describe("Visual Regression", () => {
 
     await page.goto("/app");
 
-    // Bypass onboarding overlay
-    const skipBtn = page.getByRole("button", { name: "Skip" });
-    await skipBtn.waitFor({ state: "visible", timeout: 10000 });
-    await skipBtn.click();
-    await skipBtn.waitFor({ state: "hidden", timeout: 5000 });
+    const setupHeading = page.getByRole("heading", { name: "Make Today useful" });
+    await setupHeading.waitFor({ state: "visible", timeout: 10000 });
+    await page.getByRole("button", { name: "Next" }).click();
+    await page.getByLabel("Course 1").fill("Biology");
+    await page.getByRole("button", { name: "Next" }).click();
+    await page.getByLabel("First task").fill("Review biology notes");
+    await page.getByRole("button", { name: "Next" }).click();
+    await page.getByRole("button", { name: /Finish setup/i }).click();
+    await setupHeading.waitFor({ state: "hidden", timeout: 5000 });
+    await seedVisualGoal(page);
+    await page.reload();
 
-    // Wait for the app to settle and sample data to appear
-    // Note: If the test DB is empty, .task-card might not exist.
-    // Assuming the app creates a default list or we wait for a reliable element.
     await page.waitForSelector("nav");
   });
 

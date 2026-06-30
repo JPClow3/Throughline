@@ -10,6 +10,7 @@ import {
   Database,
   DownloadSimple as Download,
   GameController as Gamepad2,
+  Key,
   Monitor,
   ShieldCheck as MonitorCheck,
   Moon,
@@ -54,6 +55,7 @@ export function SettingsPanel({
   onAppearanceChange,
   account,
   onSyncNow,
+  onRegenerateRecoveryKey,
   onSignOut
 }: {
   tasks: Task[];
@@ -62,6 +64,7 @@ export function SettingsPanel({
   onAppearanceChange: (patch: Partial<Omit<AppearanceSettings, "id">>) => Promise<AppearanceSettings>;
   account?: AccountInfo;
   onSyncNow?: () => void;
+  onRegenerateRecoveryKey?: () => Promise<string>;
   onSignOut?: () => void;
 }) {
   const support = useMemo(() => (typeof window === "undefined" ? null : notificationSupport()), []);
@@ -74,6 +77,11 @@ export function SettingsPanel({
   const [vapidKey, setVapidKey] = useState(import.meta.env.VITE_VAPID_PUBLIC_KEY ?? "");
   const [status, setStatus] = useState("Ready");
   const [dataStatus, setDataStatus] = useState("");
+  const [recoveryKey, setRecoveryKey] = useState("");
+  const [recoveryKeyStatus, setRecoveryKeyStatus] = useState("");
+  const [recoveryBusy, setRecoveryBusy] = useState(false);
+  const [recoveryConfirmed, setRecoveryConfirmed] = useState(false);
+  const [recoveryPartial, setRecoveryPartial] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pushApi = pushApiDraft ?? syncState?.pushApiUrl ?? import.meta.env.VITE_PUSH_API_URL ?? "http://127.0.0.1:8787";
   const reminders = redactedRemindersForTasks(tasks);
@@ -157,6 +165,25 @@ export function SettingsPanel({
     setDataStatus("Sample data restored");
   }
 
+  async function regenerateRecoveryKey() {
+    if (!onRegenerateRecoveryKey) {
+      return;
+    }
+    setRecoveryBusy(true);
+    setRecoveryKeyStatus("");
+    try {
+      const nextKey = await onRegenerateRecoveryKey();
+      setRecoveryKey(nextKey);
+      setRecoveryConfirmed(false);
+      setRecoveryPartial("");
+      setRecoveryKeyStatus("New recovery key generated. Save it before leaving Settings.");
+    } catch (error) {
+      setRecoveryKeyStatus(error instanceof Error ? error.message : "Could not regenerate recovery key");
+    } finally {
+      setRecoveryBusy(false);
+    }
+  }
+
   const theme = appearanceSettings?.theme ?? "light";
   const themeOptions: Array<{ value: ThemePreference; label: string; icon: ReactNode }> = [
     { value: "light", label: "Light", icon: <Sun size={15} aria-hidden /> },
@@ -200,6 +227,66 @@ export function SettingsPanel({
               </button>
             </div>
             <p>Your data is end-to-end encrypted before it syncs — the server can't read it.</p>
+          </div>
+        ) : null}
+
+        {account ? (
+          <div className="glass-panel settings-card">
+            <header>
+              <Key size={20} />
+              <h2>Recovery key</h2>
+            </header>
+            <p>
+              Your recovery key can reset your password because it unlocks your encrypted records. If both
+              password and recovery key are lost, synced task content cannot be recovered.
+            </p>
+            {recoveryKey ? (
+              <>
+                <p
+                  style={{
+                    fontFamily: "monospace",
+                    letterSpacing: "1px",
+                    userSelect: "all",
+                    color: "var(--primary)",
+                    overflowWrap: "anywhere"
+                  }}
+                >
+                  {recoveryKey}
+                </p>
+                <label className="toggle-row">
+                  <input
+                    type="checkbox"
+                    checked={recoveryConfirmed}
+                    onChange={(event) => setRecoveryConfirmed(event.target.checked)}
+                  />
+                  <span>I saved this recovery key</span>
+                </label>
+                <label>
+                  <span>Confirm last 4 characters</span>
+                  <input
+                    value={recoveryPartial}
+                    onChange={(event) => setRecoveryPartial(event.target.value)}
+                    maxLength={4}
+                    placeholder="last 4"
+                  />
+                </label>
+                <span className="status-pill">
+                  {recoveryConfirmed && recoveryPartial.toLowerCase() === recoveryKey.slice(-4).toLowerCase()
+                    ? "Saved confirmation complete"
+                    : "Save and confirm before closing"}
+                </span>
+              </>
+            ) : null}
+            <button
+              className="secondary-button"
+              type="button"
+              onClick={() => void regenerateRecoveryKey()}
+              disabled={recoveryBusy || !onRegenerateRecoveryKey}
+            >
+              <Key size={16} />
+              {recoveryBusy ? "Generating..." : "Regenerate recovery key"}
+            </button>
+            {recoveryKeyStatus ? <span className="status-pill">{recoveryKeyStatus}</span> : null}
           </div>
         ) : null}
 
@@ -361,7 +448,7 @@ export function SettingsPanel({
           <Database size={20} />
           <h2>Your data</h2>
         </header>
-        <p>Everything lives on this device. Export a JSON backup, or restore one on a new device.</p>
+        <p>Your primary planner data lives on this device. Export a JSON backup, or restore one on a new device.</p>
         <div className="button-row">
           <button className="primary-button" type="button" onClick={() => void exportData()}>
             <Download size={17} />

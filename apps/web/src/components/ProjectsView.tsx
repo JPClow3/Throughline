@@ -6,9 +6,10 @@ type ProjectsViewProps = {
   tasks: Task[];
   onUpsertCourse: (course: Course) => Promise<void>;
   onDeleteCourse: (courseId: string) => Promise<void>;
+  highlightedProjectId?: string | null;
 };
 
-export function ProjectsView({ courses, tasks, onUpsertCourse, onDeleteCourse }: ProjectsViewProps) {
+export function ProjectsView({ courses, tasks, onUpsertCourse, onDeleteCourse, highlightedProjectId }: ProjectsViewProps) {
   return (
     <div className="projects-view">
       <header className="view-head">
@@ -18,7 +19,13 @@ export function ProjectsView({ courses, tasks, onUpsertCourse, onDeleteCourse }:
           <p className="view-head-sub">Group related tasks, goals, and notes. Pick a project when you create them.</p>
         </div>
       </header>
-      <ProjectsManager courses={courses} tasks={tasks} onUpsertCourse={onUpsertCourse} onDeleteCourse={onDeleteCourse} />
+      <ProjectsManager
+        courses={courses}
+        tasks={tasks}
+        highlightedProjectId={highlightedProjectId}
+        onUpsertCourse={onUpsertCourse}
+        onDeleteCourse={onDeleteCourse}
+      />
     </div>
   );
 }
