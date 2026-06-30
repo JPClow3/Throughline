@@ -236,7 +236,7 @@ export function Landing() {
           <section className="mb-32 max-w-[1200px] mx-auto w-full px-6">
             <Reveal delay={0.2}>
               <div className="glass-heavy rounded-[40px] p-12 md:p-20 flex flex-col lg:flex-row gap-16 items-center relative overflow-hidden" style={{ background: 'var(--tl-glass-card-strong)', border: '1px solid var(--tl-glass-border)' }}>
-                <div className="absolute -top-20 -right-20 w-96 h-96 bg-gradient-to-bl from-[var(--tl-accent-blue)]/30 to-transparent rounded-full blur-[60px]" />
+                <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-[var(--tl-accent-blue)]/30 to-transparent rounded-full blur-[60px]" />
                 <div className="flex-1 z-10 relative">
                   <div className="absolute -left-10 -top-10 opacity-20 w-32 h-32 pointer-events-none">
                     <svg viewBox="0 0 1024 1024"><circle cx="512" cy="512" fill="none" r="400" stroke="#7EA7FF" strokeDasharray="100 50" strokeWidth="40" /></svg>

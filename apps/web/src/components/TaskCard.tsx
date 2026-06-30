@@ -29,25 +29,28 @@ type TaskCardProps = {
 type DueTone = "done" | "overdue" | "soon" | "normal";
 
 function RewardAnimation({ showGameLayer }: { showGameLayer: boolean }) {
-  const [particles, setParticles] = useState<{x: number, y: number, scale: number, duration: number, color: string, rotation: number}[]>([]);
+  const [particles, setParticles] = useState<{x: number, y: number, yEnd: number, scale: number, duration: number, color: string, rotation: number}[]>([]);
 
   useEffect(() => {
     // We generate particles anyway, but fewer if not showGameLayer
-    const count = showGameLayer ? 24 : 8;
-    const colors = ['var(--tl-accent-violet)', 'var(--tl-accent-blue)', 'var(--tl-accent-aqua)', 'var(--tl-accent-pink)'];
+    const count = showGameLayer ? 36 : 12;
+    const colors = ['var(--tl-accent-violet)', 'var(--tl-accent-blue)', 'var(--tl-accent-aqua)', 'var(--tl-accent-pink)', '#ffffff'];
     
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setParticles(
       Array.from({ length: count }).map((_, i) => {
-        const angle = (i / count) * Math.PI * 2 + (Math.random() * 0.5 - 0.25);
-        const distance = showGameLayer ? 50 + Math.random() * 60 : 30 + Math.random() * 30;
+        const angle = (i / count) * Math.PI * 2 + (Math.random() * 0.8 - 0.4);
+        const distance = showGameLayer ? 60 + Math.random() * 80 : 40 + Math.random() * 40;
+        const x = Math.cos(angle) * distance;
+        const y = Math.sin(angle) * distance;
         return {
-          x: Math.cos(angle) * distance,
-          y: Math.sin(angle) * distance,
-          scale: Math.random() * 0.6 + 0.4,
-          duration: 0.5 + Math.random() * 0.3,
+          x,
+          y: y - 20, // initial upward bias
+          yEnd: y + 40 + Math.random() * 40, // gravity fall
+          scale: Math.random() * 0.8 + 0.3,
+          duration: 0.6 + Math.random() * 0.4,
           color: colors[Math.floor(Math.random() * colors.length)],
-          rotation: Math.random() * 360
+          rotation: Math.random() * 720 - 360
         };
       })
     );
@@ -57,10 +60,10 @@ function RewardAnimation({ showGameLayer }: { showGameLayer: boolean }) {
     <div className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-visible z-10" aria-hidden="true">
       {showGameLayer && (
         <motion.div
-          initial={{ opacity: 0, scale: 2, rotate: -15 }}
-          animate={{ opacity: [0, 1, 1, 0], scale: [2, 1, 1, 1.1], rotate: [-15, -5, -5, -5] }}
+          initial={{ opacity: 0, scale: 2.5, rotate: -20, filter: "blur(10px)" }}
+          animate={{ opacity: [0, 1, 1, 0], scale: [2.5, 1, 1, 1.2], rotate: [-20, -5, -5, -5], filter: ["blur(10px)", "blur(0px)", "blur(0px)", "blur(4px)"] }}
           transition={{ duration: 1.5, times: [0, 0.15, 0.8, 1], ease: "easeOut" }}
-          className="text-4xl font-black tracking-widest uppercase border-4 border-current px-4 py-2 rounded-lg mix-blend-overlay"
+          className="text-4xl font-black tracking-widest uppercase border-4 border-current px-4 py-2 rounded-lg mix-blend-overlay shadow-[0_0_30px_var(--tl-accent-violet)]"
           style={{ color: 'var(--tl-accent-violet)' }}
         >
           DONE
@@ -72,14 +75,14 @@ function RewardAnimation({ showGameLayer }: { showGameLayer: boolean }) {
           initial={{ x: 0, y: 0, opacity: 1, scale: 0, rotate: 0 }}
           animate={{ 
             x: p.x, 
-            y: p.y,
-            opacity: 0,
-            scale: p.scale,
+            y: [0, p.y, p.yEnd],
+            opacity: [1, 1, 0],
+            scale: [0, p.scale, p.scale * 0.5],
             rotate: p.rotation
           }}
-          transition={{ duration: p.duration, ease: "easeOut" }}
-          className={`absolute w-3 h-3 ${i % 2 === 0 ? 'rounded-full' : 'rounded-sm'}`}
-          style={{ backgroundColor: p.color }}
+          transition={{ duration: p.duration, ease: "easeOut", times: [0, 0.4, 1] }}
+          className={`absolute w-3 h-3 ${i % 2 === 0 ? 'rounded-full' : 'rounded-sm shadow-[0_0_8px_currentColor]'}`}
+          style={{ backgroundColor: p.color, color: p.color }}
         />
       ))}
     </div>

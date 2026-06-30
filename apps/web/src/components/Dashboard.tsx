@@ -120,8 +120,14 @@ export function Dashboard({
               <PressureRow icon={<Clock size={17} />} label="Due today" value={`${stats.dueTodayCount}`} />
               <PressureRow icon={<WarningCircle size={17} />} label="Overdue" value={`${briefing.overdueCount}`} tone={briefing.overdueCount ? "urgent" : undefined} />
               <PressureRow icon={<LockKey size={17} />} label="Blocked" value={`${briefing.blockedCount}`} tone={briefing.blockedCount ? "blocked" : undefined} />
-              <PressureRow icon={<Timer size={17} />} label="Focus logged" value={formatMinutes(stats.focusMinutesToday)} />
-              <PressureRow icon={<CheckCircle size={17} />} label="Today progress" value={`${stats.completedTasksToday}/${stats.todayTaskTotal}`} />
+              <PressureRow icon={<Timer size={17} />} label="Focus logged" value={formatMinutes(stats.focusMinutesToday)} progress={Math.min(100, (stats.focusMinutesToday / 120) * 100)} />
+              <PressureRow 
+                icon={<CheckCircle size={17} />} 
+                label="Today progress" 
+                value={`${stats.completedTasksToday}/${stats.todayTaskTotal}`} 
+                progress={stats.todayTaskTotal > 0 ? (stats.completedTasksToday / stats.todayTaskTotal) * 100 : 0}
+                tone={stats.completedTasksToday === stats.todayTaskTotal && stats.todayTaskTotal > 0 ? "success" : undefined}
+              />
             </div>
             {stats.nextStudyBlock ? (
               <button type="button" onClick={() => onEdit(stats.nextStudyBlock!.task)} className="today-next-block">
@@ -141,15 +147,20 @@ function PressureRow({
   icon,
   label,
   value,
-  tone
+  tone,
+  progress = 0
 }: {
   icon: ReactNode;
   label: string;
   value: string;
-  tone?: "urgent" | "blocked";
+  tone?: "urgent" | "blocked" | "success";
+  progress?: number;
 }) {
   return (
-    <div className={`today-pressure-row${tone ? ` pressure-${tone}` : ""}`}>
+    <div 
+      className={`today-pressure-row${tone ? ` pressure-${tone}` : ""}`}
+      style={progress > 0 ? { background: `linear-gradient(to right, color-mix(in srgb, var(--color-primary) 12%, transparent) ${progress}%, color-mix(in srgb, var(--surface) 72%, var(--surface-2)) ${progress}%)` } : undefined}
+    >
       <span className="today-pressure-icon">{icon}</span>
       <span>{label}</span>
       <strong>{value}</strong>

@@ -128,7 +128,7 @@ export function deriveTodayStats({
       todayTaskIds.add(task.id);
     }
 
-    if (!legacyFocus && task.status === "done" && completedDay === today) {
+    if (!legacyFocus && task.status === "done" && (completedDay === today || dueDay === today)) {
       completedTasksToday += 1;
     }
 
