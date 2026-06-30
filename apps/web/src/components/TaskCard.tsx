@@ -111,6 +111,7 @@ export function TaskCard({
   const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
   const [justCompleted, setJustCompleted] = useState(false);
   const wasDoneRef = useRef(task.status === "done");
+  const showSubtaskEditor = Boolean(onUpdateTask && (expanded || totalSubtasks === 0));
 
   useEffect(() => {
     if (task.status === "done" && !wasDoneRef.current) {
@@ -239,13 +240,13 @@ export function TaskCard({
         </button>
       ) : null}
 
-      {onUpdateTask && expanded ? (
+      {showSubtaskEditor ? (
         <div 
           className="flex flex-col gap-2 mt-2 mb-3 overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           <AnimatePresence>
-            {expanded && (
+            {showSubtaskEditor && (
               <motion.div 
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}

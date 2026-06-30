@@ -73,6 +73,14 @@ describe("calm planner UI components", () => {
     expect(screen.queryByText(`${task.xp} XP`)).not.toBeInTheDocument();
   });
 
+  it("shows an inline subtask input for tasks that do not have steps yet", () => {
+    const task = createTask({ title: "Break down essay prompt", subtasks: [] });
+
+    render(<TaskCard task={task} onUpdateTask={vi.fn()} />);
+
+    expect(screen.getByPlaceholderText("Add subtask...")).toBeInTheDocument();
+  });
+
   it("reveals XP only when the game layer is enabled", () => {
     const task = createTask({ title: "Read chapter six", priority: "medium" });
 

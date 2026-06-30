@@ -1,6 +1,6 @@
 import { Course, FocusSession, Task, deriveTodayBriefing } from "@throughline/domain";
 import { CheckCircle, Clock, LockKey, Plus, Timer, WarningCircle } from "@phosphor-icons/react";
-import type { ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import { TaskCard } from "./TaskCard";
 
 type DashboardProps = {
@@ -15,10 +15,12 @@ type DashboardProps = {
   onStartFocus?: (task: Task) => void;
 };
 
+const EMPTY_FOCUS_SESSIONS: FocusSession[] = [];
+
 export function Dashboard({
   tasks,
   courses,
-  focusSessions = [],
+  focusSessions = EMPTY_FOCUS_SESSIONS,
   showGameLayer = false,
   onComplete,
   onUpdateTask,
@@ -26,7 +28,7 @@ export function Dashboard({
   onEdit,
   onStartFocus
 }: DashboardProps) {
-  const briefing = deriveTodayBriefing({ tasks, focusSessions });
+  const briefing = useMemo(() => deriveTodayBriefing({ tasks, focusSessions }), [tasks, focusSessions]);
   const stats = briefing.stats;
   const courseMap = new Map(courses.map((course) => [course.id, course]));
   const dateLabel = new Date().toLocaleDateString(undefined, {

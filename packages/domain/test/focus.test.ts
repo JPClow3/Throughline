@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createCourse, createFocusSession, createTask, deriveCoachingInsights, deriveTodayBriefing, deriveTodayStats } from "../src";
+import { createCourse, createFocusSession, createTask, deriveCoachingInsights, deriveTodayBriefing, deriveTodayStats, type Task } from "../src";
 
 describe("focus sessions and Today metrics", () => {
   it("creates a first-class focus session with task context", () => {
@@ -77,6 +77,39 @@ describe("focus sessions and Today metrics", () => {
     expect(stats.completedByDay.at(-1)).toMatchObject({ count: 1, focusMinutes: 55 });
   });
 
+  it("keeps Today metrics finite for legacy tasks without estimated minutes", () => {
+    const now = new Date("2026-06-28T15:00:00.000Z");
+    const legacyDueTask = {
+      ...createTask({
+        id: "task_due_legacy",
+        title: "Legacy due task",
+        status: "ready",
+        dueAt: "2026-06-28T18:00:00.000Z"
+      }),
+      estimatedMinutes: undefined
+    } as unknown as Task;
+    const legacyFocusTask = {
+      ...createTask({
+        id: "task_focus_legacy",
+        title: "Focus Session",
+        status: "done",
+        tags: ["focus"],
+        completedAt: "2026-06-28T12:00:00.000Z"
+      }),
+      estimatedMinutes: undefined
+    } as unknown as Task;
+
+    const stats = deriveTodayStats({
+      tasks: [legacyDueTask, legacyFocusTask],
+      focusSessions: [],
+      now
+    });
+
+    expect(stats.plannedStudyMinutesToday).toBe(0);
+    expect(stats.nextStudyBlock?.minutes).toBe(0);
+    expect(stats.completedByDay.at(-1)?.focusMinutes).toBe(0);
+  });
+
   it("derives calm coaching prompts from project load, completion timing, and orphaned overdue work", () => {
     const biology = createCourse({ id: "course_bio", name: "Biology", color: "#2fa980", icon: "B" });
     const literature = createCourse({ id: "course_lit", name: "Literature", color: "#5b73f0", icon: "L" });
@@ -104,6 +137,28 @@ describe("focus sessions and Today metrics", () => {
     expect(insights.map((insight) => insight.message)).toContain("Biology is carrying most of this week.");
     expect(insights.map((insight) => insight.message)).toContain("You complete more tasks before noon.");
     expect(insights.map((insight) => insight.message)).toContain("Three overdue tasks have no project.");
+  });
+
+  it("keeps coaching effort finite for legacy completions without estimated minutes", () => {
+    const biology = createCourse({ id: "course_bio", name: "Biology", color: "#2fa980", icon: "B" });
+    const legacyCompleted = {
+      ...createTask({
+        title: "Legacy completion",
+        status: "done",
+        courseId: biology.id,
+        completedAt: "2026-06-28T09:00:00.000Z"
+      }),
+      estimatedMinutes: undefined
+    } as unknown as Task;
+
+    const insights = deriveCoachingInsights({
+      tasks: [legacyCompleted],
+      courses: [biology],
+      focusSessions: [],
+      now: new Date("2026-06-28T15:00:00.000Z")
+    });
+
+    expect(insights).toEqual([]);
   });
 
   it("builds a calm Today briefing with prioritized tasks and human guidance", () => {

@@ -116,7 +116,7 @@ export function deriveTodayStats({
     const dueDay = task.dueAt ? localDayKey(new Date(task.dueAt)) : "";
 
     if (task.dueAt && dueDay === today && task.status !== "done" && !legacyFocus) {
-      plannedStudyMinutesToday += task.estimatedMinutes;
+      plannedStudyMinutesToday += task.estimatedMinutes ?? 0;
       dueTodayCount += 1;
     }
 
@@ -135,7 +135,7 @@ export function deriveTodayStats({
     const activity = dayMap.get(completedDay);
     if (activity) {
       if (legacyFocus) {
-        activity.focusMinutes += task.estimatedMinutes;
+        activity.focusMinutes += task.estimatedMinutes ?? 0;
       } else if (task.status === "done") {
         activity.count += 1;
       }
@@ -165,7 +165,7 @@ export function deriveTodayStats({
       ? {
           task: nextStudyBlockTask,
           startsAt: nextStudyBlockTask.dueAt as string,
-          minutes: nextStudyBlockTask.estimatedMinutes
+          minutes: nextStudyBlockTask.estimatedMinutes ?? 0
         }
       : undefined,
     completedByDay
@@ -267,7 +267,7 @@ export function deriveCoachingInsights({
     if (task.completedAt) {
       const completedAt = new Date(task.completedAt);
       if (completedAt >= sevenDaysAgo && !isLegacyFocusTask(task)) {
-        const effort = task.estimatedMinutes;
+        const effort = task.estimatedMinutes ?? 0;
         totalEffort += effort;
         if (task.courseId) {
           effortByCourse.set(task.courseId, (effortByCourse.get(task.courseId) ?? 0) + effort);
