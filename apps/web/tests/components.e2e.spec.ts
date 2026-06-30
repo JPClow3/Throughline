@@ -9,19 +9,29 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
+async function completeOnboarding(page: import("@playwright/test").Page) {
+  const heading = page.getByRole("heading", { name: "Make Today useful" });
+  if (!(await heading.waitFor({ state: "visible", timeout: 10000 }).then(() => true).catch(() => false))) {
+    return;
+  }
+
+  await page.getByRole("button", { name: "Next" }).click();
+  await page.getByLabel("Course 1").fill("Biology");
+  await page.getByRole("button", { name: "Next" }).click();
+  await page.getByLabel("First task").fill("Review biology notes");
+  await page.getByRole("button", { name: "Next" }).click();
+  await page.getByRole("button", { name: /Finish setup/i }).click();
+  await heading.waitFor({ state: "hidden", timeout: 5000 });
+}
+
 test.describe("Component Interactions & Buttons", () => {
   
   test.beforeEach(async ({ page }) => {
     await page.goto("/app");
-    
-    // Bypass onboarding overlay
-    const skipBtn = page.getByRole("button", { name: "Skip" });
-    await skipBtn.waitFor({ state: "visible", timeout: 10000 });
-    await skipBtn.click();
-    await skipBtn.waitFor({ state: "hidden", timeout: 5000 });
+    await completeOnboarding(page);
   });
 
-  test("TaskCard and TaskComposer buttons (create, subtasks, complete)", async ({ page }) => {
+  test("TaskCard and TaskComposer buttons (create, subtasks, complete)", async ({ page, isMobile }) => {
     const title = `Component Task ${Date.now()}`;
     
     // 1. Task Composer button
@@ -70,10 +80,15 @@ test.describe("Component Interactions & Buttons", () => {
     const completeBtn = taskCard.locator("button.complete-button");
     await expect(completeBtn).toBeEnabled();
     await completeBtn.click();
-    
+
+    if (isMobile) {
+      await page.getByRole("tab", { name: /Done/i }).click();
+    }
+
     // It should have the is-done class now
-    await expect(taskCard).toHaveClass(/is-done/);
-    await expect(completeBtn).toBeDisabled();
+    const completedTaskCard = page.locator(".task-card", { hasText: title });
+    await expect(completedTaskCard).toHaveClass(/is-done/);
+    await expect(completedTaskCard.locator("button.complete-button")).toBeDisabled();
   });
 
   test("Global nav and settings interactions", async ({ page }) => {

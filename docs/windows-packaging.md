@@ -14,6 +14,12 @@ Because official offline command-line tools for PWA-to-Windows generation have b
 
 When you need to update the core Windows wrapper (e.g., changing the app name, icons, or primary URL), you must regenerate the `.msixbundle`.
 
+Before running PWABuilder, confirm the checked-in PWA asset set is current:
+- `apps/web/public/pwa-192x192.png`, `pwa-512x512.png`, and maskable variants are generated from the Throughline app icon.
+- `apps/web/public/store-assets/microsoft-store/manifest-icon-192.maskable.png` and `manifest-icon-512.maskable.png` are square PNGs referenced by the web manifest.
+- `apps/web/public/store-assets/windows-icons/` contains the Windows tile images used during Store packaging.
+- `apps/web/public/screenshot-1.png` is a 1366x768 wide manifest screenshot, and `screenshot-2.png` is a 720x1280 narrow screenshot.
+
 1. Navigate to [PWABuilder](https://www.pwabuilder.com/).
 2. Enter the production URL of the Throughline PWA (e.g., `https://throughline.app`) and click **Start**.
 3. PWABuilder will analyze the site and grade the manifest. Ensure all checks pass.

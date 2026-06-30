@@ -145,6 +145,7 @@ export function registerAuthRoutes(app: FastifyInstance, userStore: UserStore, c
   });
 
   const UpdatePasswordSchema = z.object({ authKey: blob, wrappedDek: blob });
+  const UpdateRecoveryKeySchema = z.object({ recoveryAuthKey: blob, recoveryWrappedDek: blob });
 
   app.post("/auth/update-password", authRateLimit, async (request, reply) => {
     const user = userFromRequest(request, userStore);
@@ -153,6 +154,16 @@ export function registerAuthRoutes(app: FastifyInstance, userStore: UserStore, c
     }
     const { authKey, wrappedDek } = UpdatePasswordSchema.parse(request.body);
     userStore.updatePassword(user.userId, authKey, wrappedDek);
+    return reply.code(204).send();
+  });
+
+  app.post("/auth/update-recovery-key", authRateLimit, async (request, reply) => {
+    const user = userFromRequest(request, userStore);
+    if (!user) {
+      return reply.code(401).send({ error: "unauthenticated" });
+    }
+    const { recoveryAuthKey, recoveryWrappedDek } = UpdateRecoveryKeySchema.parse(request.body);
+    userStore.updateRecoveryKey(user.userId, recoveryAuthKey, recoveryWrappedDek);
     return reply.code(204).send();
   });
 }

@@ -23,8 +23,8 @@ export function showLocalQuestNotification() {
 
   new Notification("Quest reminder", {
     body: "A study quest needs your attention.",
-    icon: "/pwa-icon.svg",
-    badge: "/pwa-icon.svg"
+    icon: "/pwa-192x192.png",
+    badge: "/favicon-48x48.png"
   });
 
   return true;

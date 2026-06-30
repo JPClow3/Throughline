@@ -148,6 +148,7 @@ export async function createServer(options: CreateServerOptions = {}) {
     for (const reminder of due) {
       const subscription = await store.subscriptionFor(reminder.endpointHash);
       if (!subscription) {
+        await store.removeSubscription(reminder.endpointHash);
         continue;
       }
 
@@ -167,9 +168,15 @@ export async function createServer(options: CreateServerOptions = {}) {
         await store.markDispatched(reminder.endpointHash, reminder.reminderId);
         sent += 1;
         dispatchMetrics.sent += 1;
-      } catch (err) {
+      } catch (err: unknown) {
         dispatchMetrics.failed += 1;
         app.log.error(err, "Failed to send notification");
+        const errStatusCode = (err as { statusCode?: number })?.statusCode;
+        if (errStatusCode === 404 || errStatusCode === 410) {
+          await store.removeSubscription(reminder.endpointHash);
+        } else {
+          await store.markDispatched(reminder.endpointHash, reminder.reminderId);
+        }
       }
     }
 

@@ -1,13 +1,13 @@
 # UI/UX Constitution
 
-This document defines the interface and interaction guidelines for Throughline, built upon the **LiquidGlass** and **Spatial UI** design systems.
+This document defines the interface and interaction guidelines for Throughline, built upon the **LiquidGlass** visual system.
 
 ## 1. Core Principles & Mindset
 
 - **First Screen Efficiency:** The initial screen is the fully usable application.
 - **Student-Life Focus:** Optimize for frictionless action and reduced cognitive load to help manage classes, assignments, and study stress.
 - **Calm, High-Contrast Planner:** Lead with typographic clarity and functional whitespace. Gamification is visually clean and easily toggled.
-- **Spatial Canvas Concept:** The UI acts as a spatial layout where depth, clarity, and organic movement dictate hierarchy. Elements sit on floatable planes along the Z-axis.
+- **Layered Glass Depth:** The UI uses glass, elevation, blur, and motion to clarify hierarchy without adding a separate 3D workspace layer.
 - **Glassmorphic Legibility:** Visual depth must never compromise accessibility. Text colors maintain high contrast against translucent layers.
 
 ## 2. Theme, Light & Colour
@@ -57,7 +57,16 @@ Depth is the primary navigator. There is no 3D layer—depth comes from layering
 4. **Workflow Movement:** Process tasks naturally from Backlog to Done.
 5. **Calendar Export:** Export due dates via `.ics`.
 
-## 8. Optional Gamification (Momentum Layer)
+## 8. First-Run, Search, Filters & Focus
+
+- **Setup Onboarding:** First run helps the user choose a school/work/personal workspace, create 1-3 projects or courses, add one real task, and then arrive in a useful Today view. Sync remains a Settings handoff; notification permission is optional.
+- **Command/Search:** The global search control opens the command palette and shows a desktop `Ctrl K` hint. Search results cover tasks, notes, goals, and projects, and selecting one jumps directly to the matching surface.
+- **Mobile Filters:** Board and task filters collapse on small screens into visible search plus a Filters disclosure, preserving project, goal, date, tag, status, and priority behavior.
+- **Filter Presets:** Filters use native chips for built-in presets, tag chips for existing tags, saved custom presets in IndexedDB settings, and a visible Clear filters command.
+- **Focus Sessions:** A single focus system supports untitled focus and task-attached focus. Completed sessions are stored as first-class focus records and feed Today/Insights instead of synthetic completed tasks.
+- **Board Accessibility:** Kanban cards support keyboard movement, focus restoration, clear labels, and live announcements when a task changes columns.
+
+## 9. Optional Gamification (Momentum Layer)
 
 - **Disabled by Default:** XP, levels, and attributes are hidden unless `showGameLayer` is enabled.
 - **Positive Streaks:** Celebrate momentum without penalizing missed days.

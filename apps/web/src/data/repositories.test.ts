@@ -8,10 +8,16 @@ import {
   listTasks,
   saveReminderSyncState,
   updateTaskStatus,
+  syncRecurringTasks,
   recordFocusSession,
+  listFocusSessions,
   upsertCourse,
   deleteCourse,
-  listCourses
+  listCourses,
+  exportBackup,
+  importBackup,
+  getFilterSettings,
+  saveFilterSettings
 } from "./repositories";
 
 beforeEach(async () => {
@@ -106,15 +112,73 @@ describe("web data repositories", () => {
     );
   });
 
-  it("records a focus session task", async () => {
-    const task = await recordFocusSession(30);
-    expect(task.title).toBe("Focus Session");
-    expect(task.status).toBe("done");
-    expect(task.estimatedMinutes).toBe(30);
-    expect(task.energy).toBe(3);
+  it("records a first-class focus session without creating a completed task", async () => {
+    const session = await recordFocusSession({
+      durationMinutes: 30,
+      taskId: "task_123",
+      courseId: "course_123"
+    });
+
+    expect(session).toMatchObject({
+      title: "Focus Session",
+      durationMinutes: 30,
+      taskId: "task_123",
+      courseId: "course_123"
+    });
+    expect(await listFocusSessions()).toHaveLength(1);
     const tasks = await listTasks();
-    expect(tasks).toHaveLength(1);
-    expect(tasks[0].id).toBe(task.id);
+    expect(tasks).toHaveLength(0);
+  });
+
+  it("includes focus sessions in local backup import and export", async () => {
+    const session = await recordFocusSession({ durationMinutes: 25 });
+    const backup = await exportBackup();
+
+    expect(backup.focusSessions).toEqual([session]);
+
+    await db.focusSessions.clear();
+    expect(await listFocusSessions()).toHaveLength(0);
+
+    await importBackup(backup);
+
+    expect(await listFocusSessions()).toEqual([session]);
+  });
+
+  it("persists task filter settings locally", async () => {
+    await saveFilterSettings({
+      current: {
+        search: "biology",
+        projectId: "",
+        goalId: "",
+        dateRange: "today",
+        status: "",
+        priority: "high",
+        tags: ["lab"]
+      },
+      presets: [
+        {
+          id: "preset_biology",
+          name: "Biology labs",
+          filters: {
+            search: "biology",
+            projectId: "",
+            goalId: "",
+            dateRange: "all",
+            status: "",
+            priority: "",
+            tags: ["lab"]
+          }
+        }
+      ]
+    });
+
+    await db.close();
+    await db.open();
+
+    expect(await getFilterSettings()).toMatchObject({
+      current: { search: "biology", dateRange: "today", priority: "high", tags: ["lab"] },
+      presets: [{ id: "preset_biology", name: "Biology labs" }]
+    });
   });
 
   it("seeds daily quests when empty", async () => {
@@ -128,6 +192,52 @@ describe("web data repositories", () => {
     const tasksAfter = await listTasks();
     const habitTasksAfter = tasksAfter.filter(t => t?.tags?.includes("habit"));
     expect(habitTasksAfter).toHaveLength(2);
+  });
+
+  it("does not seed daily quests when bundled sample habits already exist", async () => {
+    const { seedIfEmpty, seedDailyQuests } = await import("./db");
+    await seedIfEmpty();
+    const before = (await listTasks()).filter(t => t?.tags?.includes("habit"));
+
+    await seedDailyQuests();
+
+    const after = (await listTasks()).filter(t => t?.tags?.includes("habit"));
+    expect(after.map(t => t.title).sort()).toEqual(before.map(t => t.title).sort());
+    expect(after).toHaveLength(2);
+  });
+
+  it("does not create duplicate recurring instances for the same next due date", async () => {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    yesterday.setHours(19, 0, 0, 0);
+    const today = new Date(yesterday);
+    today.setDate(today.getDate() + 1);
+
+    await addTask({
+      title: "Review notes for 15 mins",
+      priority: "low",
+      energy: 2,
+      difficulty: 1,
+      attributes: ["memory"],
+      tags: ["habit"],
+      dueAt: yesterday.toISOString(),
+      recurrence: { pattern: "daily" }
+    });
+    await addTask({
+      title: "Review notes for 15 mins",
+      priority: "low",
+      energy: 2,
+      difficulty: 1,
+      attributes: ["memory"],
+      tags: ["habit"],
+      dueAt: today.toISOString(),
+      recurrence: { pattern: "daily" }
+    });
+
+    await syncRecurringTasks();
+
+    const matching = (await listTasks()).filter(t => t.title === "Review notes for 15 mins" && t.dueAt === today.toISOString());
+    expect(matching).toHaveLength(1);
   });
 
   it("upserts and deletes courses correctly", async () => {

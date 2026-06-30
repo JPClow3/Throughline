@@ -16,7 +16,7 @@
     </filter>
   </defs>
   <rect x="40" y="40" width="944" height="944" rx="224" fill="url(#bg)" filter="url(#softShadow)"/>
-  <rect x="54" y="54" width="916" height="916" rx="210" fill="none" stroke="rgba(255,255,255,0.74)" stroke-width="14"/>
+  <rect x="54" y="54" width="916" height="916" rx="210" fill="none" stroke="#FFFFFF" stroke-opacity="0.74" stroke-width="14"/>
   <path d="M260 260 C260 330 260 350 330 352 C405 352 395 351 455 352 C515 352 500 435 565 435 C650 435 654 510 654 565 C654 640 704 654 748 724" fill="none" stroke="#fff" stroke-width="74" stroke-linecap="round" stroke-linejoin="round" opacity="0.95"/>
   <path d="M260 260 C260 330 260 350 330 352 C405 352 395 351 455 352 C515 352 500 435 565 435 C650 435 654 510 654 565 C654 640 704 654 748 724" fill="none" stroke="url(#thread)" stroke-width="32" stroke-linecap="round" stroke-linejoin="round" opacity="0.45"/>
   <g>

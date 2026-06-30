@@ -6,18 +6,18 @@ Use this file first, then `docs/README.md`. The docs in `docs/` are the source o
 
 - Any task: `docs/README.md`, `docs/product.md`, `docs/development.md`.
 - UI task: `docs/ui-ux.md`, `docs/product.md`.
-- 3D task: `docs/3d-visual-constitution.md`.
 - Data/storage task: `docs/architecture.md`.
 - Notification task: `docs/notifications.md`.
 - Release task: `docs/deployment.md`, `docs/development.md`.
 
 ## Product Rules
 
-- Keep v1 local-first. Task titles, descriptions, tags, subtasks, and course details stay in IndexedDB unless a future sync plan is explicitly approved.
+- Keep the default behavior local-first and offline-capable. Optional accounts may sync planner records only as end-to-end-encrypted ciphertext; the server must not be able to read task titles, descriptions, notes, tags, subtasks, goals, or course details.
 - Preserve the LiquidGlass visual system.
 - Preserve the student-life UX priority: fast capture, course grouping, due dates, Kanban, timeline pressure, calendar export.
-- Use 3D only where it supports progress, state, ambience, or delight without reducing task readability.
+- Do not add a 3D layer unless the product direction explicitly changes; current LiquidGlass depth comes from layered surfaces on a solid base.
 - Keep push payloads redacted. The push API may store subscriptions, due times, generic copy, urgency, reminder IDs, and opaque task IDs only.
+- Treat recovery keys as a first-class trust step. Signup and Settings must explain that password loss requires the recovery key and that encrypted data cannot be recovered if both are lost.
 - Windows support means installable/store-ready PWA unless the user explicitly changes the target.
 
 ## Engineering Rules
@@ -30,5 +30,5 @@ Use this file first, then `docs/README.md`. The docs in `docs/` are the source o
 
 ## Current Caveats
 
-- `@react-three/drei` is installed for future helpers, but the current 3D scene uses direct React Three Fiber primitives.
+- Legacy `lowPower3d` settings may exist for back-compat, but the current app has no 3D UI layer.
 - Generated folders and caches must stay untracked: `dist`, `dev-dist`, `test-results`, `playwright-report`, `*.tsbuildinfo`, `apps/push-api/data`.

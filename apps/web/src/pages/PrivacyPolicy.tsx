@@ -41,17 +41,27 @@ export function PrivacyPolicy() {
               <h2 style={{ fontSize: "1.4rem", marginBottom: "0.75rem", fontWeight: "600" }}>Local-First</h2>
               <p style={{ color: "var(--ink-faint)" }}>
                 Throughline is built on a local-first architecture. This means your data (goals, tasks, notes) 
-                is stored primarily on your own device within your browser's local database.
+                is stored primarily on your own device within your browser's local database. Core planner
+                workflows continue to work offline.
               </p>
             </section>
 
             <section>
-              <h2 style={{ fontSize: "1.4rem", marginBottom: "0.75rem", fontWeight: "600" }}>End-to-End Encryption</h2>
+              <h2 style={{ fontSize: "1.4rem", marginBottom: "0.75rem", fontWeight: "600" }}>Optional Encrypted Sync</h2>
               <p style={{ color: "var(--ink-faint)" }}>
-                When you create an account, an encryption key is generated on your device. All your data is 
-                encrypted locally before it ever leaves your device to be synced. Our servers only store and 
-                transmit encrypted blobs of data. We do not have the keys, meaning we cannot read, mine, 
-                or access your tasks or goals.
+                When you create an account, an encryption key is generated on your device. Planner records are
+                encrypted locally before they ever leave your device for sync. Our servers store and transmit
+                ciphertext only; we do not have the keys and cannot read, mine, or access your tasks, notes,
+                goals, project details, tags, or subtasks.
+              </p>
+            </section>
+
+            <section>
+              <h2 style={{ fontSize: "1.4rem", marginBottom: "0.75rem", fontWeight: "600" }}>Recovery Keys</h2>
+              <p style={{ color: "var(--ink-faint)" }}>
+                Your recovery key is required to reset a forgotten password and unlock encrypted synced records.
+                If both your password and recovery key are lost, Throughline cannot recover your encrypted task
+                content because the server cannot decrypt it.
               </p>
             </section>
 

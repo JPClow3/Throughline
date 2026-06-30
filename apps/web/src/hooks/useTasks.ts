@@ -1,7 +1,6 @@
 import { useLiveQuery } from "dexie-react-hooks";
-import { useCallback, useEffect, useOptimistic, startTransition } from "react";
+import { useCallback, useOptimistic, startTransition } from "react";
 import { Task, TaskStatus } from "@throughline/domain";
-import { seedIfEmpty, seedDailyQuests } from "../data/db";
 import { syncRedactedRemindersFromLocalState } from "../data/reminderSync";
 import { registerBackgroundSync } from "../lib/syncRegistration";
 import {
@@ -23,11 +22,6 @@ type TaskOptimisticAction =
   | { type: 'delete'; payload: string };
 
 export function useTasks() {
-  useEffect(() => {
-    void seedIfEmpty();
-    void seedDailyQuests();
-  }, []);
-
   const baseTasks = useLiveQuery(() => listTasks(), [], []);
   const courses = useLiveQuery(() => listCourses(), [], []);
   const progress = useLiveQuery(() => getProgress(), []);

@@ -1,8 +1,9 @@
 /// <reference lib="webworker" />
 declare const self: ServiceWorkerGlobalScope;
 
-import { precacheAndRoute } from "workbox-precaching";
+import { createHandlerBoundToURL, precacheAndRoute } from "workbox-precaching";
 import { clientsClaim } from "workbox-core";
+import { NavigationRoute, registerRoute } from "workbox-routing";
 import { syncRedactedRemindersFromLocalState } from "./data/reminderSync";
 import { listTasks } from "./data/repositories";
 
@@ -12,6 +13,12 @@ clientsClaim();
 
 // Precache the manifest injected by vite-plugin-pwa
 precacheAndRoute(self.__WB_MANIFEST);
+
+registerRoute(
+  new NavigationRoute(createHandlerBoundToURL("/index.html"), {
+    denylist: [/^\/api\//, /^\/widgets\//]
+  })
+);
 
 // Intercept widget data requests
 self.addEventListener("fetch", (event) => {
@@ -55,7 +62,7 @@ self.addEventListener("push", (event) => {
     const options: NotificationOptions = {
       body: data.body || "",
       icon: "/pwa-192x192.png",
-      badge: "/pwa-icon.svg",
+      badge: "/favicon-48x48.png",
       data: data.data || {},
     };
 

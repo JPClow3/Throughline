@@ -1,22 +1,33 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { OnboardingOverlay } from "../components/OnboardingOverlay";
 
 describe("OnboardingOverlay", () => {
-  it("renders when active and allows skipping", () => {
+  it("creates a first useful setup", () => {
+    const onSetup = vi.fn();
     const onComplete = vi.fn();
-    render(<OnboardingOverlay onComplete={onComplete} />);
-    
-    // Should render the overlay initially
-    expect(screen.getByText("Welcome to Throughline")).toBeInTheDocument();
-    
-    // Find skip button
-    const skipButton = screen.getByRole("button", { name: /skip/i });
-    expect(skipButton).toBeInTheDocument();
-    
-    // Click skip
-    fireEvent.click(skipButton);
-    
+    render(<OnboardingOverlay onSetup={onSetup} onComplete={onComplete} />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Work" }));
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+
+    const projectInput = screen.getByLabelText("Project 1");
+    fireEvent.change(projectInput, { target: { value: "Client launch" } });
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+
+    fireEvent.change(screen.getByLabelText("First task"), { target: { value: "Draft kickoff notes" } });
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    fireEvent.click(screen.getByLabelText("Open Settings next so I can enable encrypted sync"));
+    fireEvent.click(screen.getByRole("button", { name: /Finish setup/i }));
+
+    expect(onSetup).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: "work",
+        projectNames: ["Client launch"],
+        taskTitle: "Draft kickoff notes",
+        openSyncSettings: true
+      })
+    );
     expect(onComplete).toHaveBeenCalled();
   });
 });

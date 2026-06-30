@@ -25,8 +25,10 @@ COPY apps/web ./apps/web
 # image is domain-agnostic. VAPID public key is optional (also settable in UI).
 ARG VITE_PUSH_API_URL=/api
 ARG VITE_VAPID_PUBLIC_KEY=
+ARG VITE_GOOGLE_CLIENT_ID=
 ENV VITE_PUSH_API_URL=$VITE_PUSH_API_URL \
-    VITE_VAPID_PUBLIC_KEY=$VITE_VAPID_PUBLIC_KEY
+    VITE_VAPID_PUBLIC_KEY=$VITE_VAPID_PUBLIC_KEY \
+    VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
 
 RUN npm run build -w apps/web
 

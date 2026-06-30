@@ -3,6 +3,8 @@ import {
   Goal,
   GoalSchema,
   GoalStatus,
+  FocusSession,
+  FocusSessionSchema,
   Note,
   NoteSchema,
   Priority,
@@ -15,6 +17,7 @@ import {
   CourseSchema,
   calculateNextRecurrence,
   calculateTaskXp,
+  createFocusSession,
   createGoal,
   createNote,
   createTask,
@@ -26,9 +29,13 @@ import { db, refreshProgress, type SyncEntity } from "./db";
 import {
   AppearanceSettings,
   CloudSyncState,
+  FilterSettings,
+  PersistedFilterState,
   ReminderSyncState,
+  SavedFilterPreset,
   appearanceSettingsId,
   cloudSyncStateId,
+  filterSettingsId,
   reminderSyncStateId
 } from "./types";
 
@@ -59,6 +66,25 @@ export type GoalInput = {
   priority?: Priority;
 };
 
+export const defaultFilterState: PersistedFilterState = {
+  search: "",
+  projectId: "",
+  goalId: "",
+  dateRange: "all",
+  status: "",
+  priority: "",
+  tags: []
+};
+
+export const defaultFilterPresets: SavedFilterPreset[] = [
+  { id: "preset_overdue", name: "Overdue", filters: { ...defaultFilterState, dateRange: "overdue" } },
+  { id: "preset_due_today", name: "Due today", filters: { ...defaultFilterState, dateRange: "today" } },
+  { id: "preset_this_week", name: "This week", filters: { ...defaultFilterState, dateRange: "next7" } },
+  { id: "preset_no_project", name: "No project", filters: { ...defaultFilterState, projectId: "__none" } },
+  { id: "preset_blocked", name: "Blocked", filters: { ...defaultFilterState, status: "blocked" } },
+  { id: "preset_high_priority", name: "High priority", filters: { ...defaultFilterState, priority: "high" } }
+];
+
 export function defaultPushApiUrl() {
   return import.meta.env.VITE_PUSH_API_URL ?? "http://127.0.0.1:8787";
 }
@@ -69,6 +95,24 @@ function now() {
 
 function recordTombstone(entity: SyncEntity, id: string) {
   return db.tombstones.put({ key: `${entity}:${id}`, entity, id, deletedAt: now() });
+}
+
+function recurringInstanceKey(task: Pick<Task, "title" | "courseId" | "goalId" | "tags">, dueAt?: string) {
+  return [
+    task.title.trim().toLowerCase(),
+    task.courseId ?? "",
+    task.goalId ?? "",
+    dueAt ?? "",
+    [...(task.tags ?? [])].sort().join(",")
+  ].join("|");
+}
+
+function existingRecurringKeys(tasks: Task[], excludeId?: string) {
+  return new Set(
+    tasks
+      .filter((task) => task.id !== excludeId && task.recurrence && task.dueAt)
+      .map((task) => recurringInstanceKey(task, task.dueAt))
+  );
 }
 
 export async function getCloudSyncState(): Promise<CloudSyncState> {
@@ -88,6 +132,10 @@ export async function saveCloudSyncState(patch: Partial<Omit<CloudSyncState, "id
 
 export async function listTasks() {
   return db.tasks.orderBy("updatedAt").reverse().toArray();
+}
+
+export async function listFocusSessions() {
+  return db.focusSessions.orderBy("startedAt").reverse().toArray();
 }
 
 export async function listCourses() {
@@ -132,6 +180,7 @@ export async function updateTaskStatus(taskId: string, status: TaskStatus) {
     });
 
     if (status === "done" && task.recurrence) {
+      const keys = existingRecurringKeys(await db.tasks.toArray(), task.id);
       const subtasks = task.subtasks.map(st => ({ ...st, completed: false }));
       let nextDueAt: string | undefined = undefined;
       let nextReminderAt: string | undefined = undefined;
@@ -149,15 +198,17 @@ export async function updateTaskStatus(taskId: string, status: TaskStatus) {
 
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { id, createdAt, completedAt, updatedAt, ...restTask } = task;
-      const newTask = createTask({
-        ...restTask,
-        subtasks,
-        status: "backlog",
-        dueAt: nextDueAt,
-        reminderAt: nextReminderAt
-      });
+      if (!keys.has(recurringInstanceKey(task, nextDueAt))) {
+        const newTask = createTask({
+          ...restTask,
+          subtasks,
+          status: "backlog",
+          dueAt: nextDueAt,
+          reminderAt: nextReminderAt
+        });
 
-      await db.tasks.put(newTask);
+        await db.tasks.put(newTask);
+      }
     }
   });
 
@@ -165,7 +216,9 @@ export async function updateTaskStatus(taskId: string, status: TaskStatus) {
 }
 
 export async function syncRecurringTasks() {
-  const activeTasks = (await db.tasks.toArray()).filter(t => t.status !== "done" && t.recurrence && t.dueAt);
+  const allTasks = await db.tasks.toArray();
+  const activeTasks = allTasks.filter(t => t.status !== "done" && t.recurrence && t.dueAt);
+  const keys = existingRecurringKeys(allTasks);
   const nowTime = new Date().getTime();
   
   await db.transaction("rw", db.tasks, async () => {
@@ -188,18 +241,22 @@ export async function syncRecurringTasks() {
           nextReminderAt = new Date(nextDueTime - diff).toISOString();
         }
         
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { id, createdAt, completedAt, updatedAt, ...restTask } = task;
-        const newTask = createTask({
-          ...restTask,
-          subtasks: task.subtasks.map(st => ({ ...st, completed: false })),
-          status: "backlog",
-          dueAt: nextDueStr,
-          reminderAt: nextReminderAt,
-          recurrence: task.recurrence
-        });
-        
-        await db.tasks.put(newTask);
+        const nextKey = recurringInstanceKey(task, nextDueStr);
+        if (!keys.has(nextKey)) {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { id, createdAt, completedAt, updatedAt, ...restTask } = task;
+          const newTask = createTask({
+            ...restTask,
+            subtasks: task.subtasks.map(st => ({ ...st, completed: false })),
+            status: "backlog",
+            dueAt: nextDueStr,
+            reminderAt: nextReminderAt,
+            recurrence: task.recurrence
+          });
+
+          await db.tasks.put(newTask);
+          keys.add(nextKey);
+        }
       }
     }
   });
@@ -223,23 +280,34 @@ export async function deleteTask(taskId: string) {
   await refreshProgress();
 }
 
-export async function recordFocusSession(durationMinutes: number = 25) {
-  const task = createTask({
-    title: "Focus Session",
-    description: `Completed a ${durationMinutes} minute deep focus session.`,
-    status: "done",
-    priority: "high",
-    energy: Math.max(1, Math.min(5, Math.ceil(durationMinutes / 10))),
-    difficulty: 3,
-    estimatedMinutes: durationMinutes,
-    attributes: ["focus", "discipline"],
-    tags: ["focus"],
-    completedAt: now()
-  });
+export type FocusSessionInput =
+  | number
+  | {
+      title?: string;
+      taskId?: string;
+      courseId?: string;
+      goalId?: string;
+      startedAt?: string;
+      endedAt?: string;
+      durationMinutes?: number;
+    };
 
-  await db.tasks.put(task);
-  await refreshProgress();
-  return task;
+export async function recordFocusSession(input: FocusSessionInput = 25) {
+  const draft = typeof input === "number" ? { durationMinutes: input } : input;
+  const session = createFocusSession(draft);
+  await db.focusSessions.put(session);
+  return session;
+}
+
+export async function updateFocusSession(session: FocusSession) {
+  const next = { ...session, updatedAt: now() };
+  await db.focusSessions.put(next);
+  return next;
+}
+
+export async function deleteFocusSession(sessionId: string) {
+  await db.focusSessions.delete(sessionId);
+  await recordTombstone("focusSession", sessionId);
 }
 
 export async function upsertCourse(course: Course) {
@@ -420,6 +488,42 @@ export async function saveAppearanceSettings(patch: Partial<Omit<AppearanceSetti
   return next;
 }
 
+export async function getFilterSettings(): Promise<FilterSettings> {
+  const defaults: FilterSettings = {
+    id: filterSettingsId,
+    current: defaultFilterState,
+    presets: defaultFilterPresets,
+    updatedAt: now()
+  };
+
+  const stored = await db.settings.get(filterSettingsId);
+  if (stored?.id === filterSettingsId) {
+    return {
+      ...defaults,
+      ...stored,
+      current: { ...defaultFilterState, ...stored.current, tags: stored.current.tags ?? [] },
+      presets: stored.presets.length ? stored.presets : defaultFilterPresets
+    };
+  }
+
+  return defaults;
+}
+
+export async function saveFilterSettings(patch: Partial<Omit<FilterSettings, "id" | "updatedAt">>) {
+  const current = await getFilterSettings();
+  const next: FilterSettings = {
+    ...current,
+    ...patch,
+    id: filterSettingsId,
+    current: patch.current ? { ...defaultFilterState, ...patch.current, tags: patch.current.tags ?? [] } : current.current,
+    presets: patch.presets ?? current.presets,
+    updatedAt: now()
+  };
+
+  await db.settings.put(next);
+  return next;
+}
+
 // ---------------------------------------------------------------------------
 // Backup (local JSON export / import)
 // ---------------------------------------------------------------------------
@@ -433,6 +537,7 @@ export const BackupSchema = z.object({
   courses: z.array(CourseSchema),
   goals: z.array(GoalSchema),
   notes: z.array(NoteSchema),
+  focusSessions: z.array(FocusSessionSchema).default([]),
   tasks: z.array(TaskSchema)
 });
 
@@ -440,10 +545,11 @@ export type Backup = z.infer<typeof BackupSchema>;
 
 /** Serialise all planner content (no device settings) into a portable object. */
 export async function exportBackup(): Promise<Backup> {
-  const [courses, goals, notes, tasks] = await Promise.all([
+  const [courses, goals, notes, focusSessions, tasks] = await Promise.all([
     db.courses.toArray(),
     db.goals.toArray(),
     db.notes.toArray(),
+    db.focusSessions.toArray(),
     db.tasks.toArray()
   ]);
 
@@ -454,19 +560,28 @@ export async function exportBackup(): Promise<Backup> {
     courses,
     goals,
     notes,
+    focusSessions,
     tasks
   };
 }
 
 /** Validate and replace all planner content from a backup payload. */
-export async function importBackup(raw: unknown): Promise<{ tasks: number; goals: number; notes: number; courses: number }> {
+export async function importBackup(raw: unknown): Promise<{ tasks: number; goals: number; notes: number; courses: number; focusSessions: number }> {
   const backup = BackupSchema.parse(raw);
 
-  await db.transaction("rw", [db.tasks, db.courses, db.goals, db.notes, db.progress], async () => {
-    await Promise.all([db.tasks.clear(), db.courses.clear(), db.goals.clear(), db.notes.clear(), db.progress.clear()]);
+  await db.transaction("rw", [db.tasks, db.courses, db.goals, db.notes, db.focusSessions, db.progress], async () => {
+    await Promise.all([
+      db.tasks.clear(),
+      db.courses.clear(),
+      db.goals.clear(),
+      db.notes.clear(),
+      db.focusSessions.clear(),
+      db.progress.clear()
+    ]);
     await db.courses.bulkPut(backup.courses);
     await db.goals.bulkPut(backup.goals);
     await db.notes.bulkPut(backup.notes);
+    await db.focusSessions.bulkPut(backup.focusSessions);
     await db.tasks.bulkPut(backup.tasks);
     await db.progress.put(deriveUserProgress(backup.tasks));
   });
@@ -475,7 +590,8 @@ export async function importBackup(raw: unknown): Promise<{ tasks: number; goals
     tasks: backup.tasks.length,
     goals: backup.goals.length,
     notes: backup.notes.length,
-    courses: backup.courses.length
+    courses: backup.courses.length,
+    focusSessions: backup.focusSessions.length
   };
 }
 

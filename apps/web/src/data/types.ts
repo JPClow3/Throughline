@@ -1,6 +1,7 @@
 export const reminderSyncStateId = "reminder-sync" as const;
 export const appearanceSettingsId = "appearance-settings" as const;
 export const cloudSyncStateId = "cloud-sync" as const;
+export const filterSettingsId = "filter-settings" as const;
 
 export type ReminderSyncState = {
   id: typeof reminderSyncStateId;
@@ -37,4 +38,27 @@ export type CloudSyncState = {
   updatedAt: string;
 };
 
-export type AppSetting = ReminderSyncState | AppearanceSettings | CloudSyncState;
+export type PersistedFilterState = {
+  search: string;
+  projectId: string;
+  goalId: string;
+  dateRange: string;
+  status: string;
+  priority: string;
+  tags: string[];
+};
+
+export type SavedFilterPreset = {
+  id: string;
+  name: string;
+  filters: PersistedFilterState;
+};
+
+export type FilterSettings = {
+  id: typeof filterSettingsId;
+  current: PersistedFilterState;
+  presets: SavedFilterPreset[];
+  updatedAt: string;
+};
+
+export type AppSetting = ReminderSyncState | AppearanceSettings | CloudSyncState | FilterSettings;

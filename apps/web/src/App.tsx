@@ -1,6 +1,6 @@
-import { Goal, Task } from "@throughline/domain";
+import { Goal, Task, createCourse } from "@throughline/domain";
 import { IconContext } from "@phosphor-icons/react";
-import { X, DownloadSimple } from "@phosphor-icons/react";
+import { X, DownloadSimple, Plus } from "@phosphor-icons/react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { MotionConfig, motion } from "motion/react";
 import React from "react";
@@ -12,17 +12,19 @@ import { ViewSkeleton } from "./components/Skeleton";
 import { TaskComposer } from "./components/TaskComposer";
 import { TaskEditor } from "./components/TaskEditor";
 import { FocusTimer } from "./components/FocusTimer";
-import { FocusOverlay } from "./components/FocusOverlay";
-import { OnboardingOverlay } from "./components/OnboardingOverlay";
+import { OnboardingOverlay, type OnboardingSetupInput } from "./components/OnboardingOverlay";
 import { CommandPalette } from "./components/CommandPalette";
 import { DynamicBackground } from "./components/DynamicBackground";
 import { useAuth } from "./auth/AuthProvider";
-import { getAppearanceSettings, saveAppearanceSettings, syncRecurringTasks } from "./data/repositories";
+import { clearAllData, getAppearanceSettings, saveAppearanceSettings, syncRecurringTasks } from "./data/repositories";
+import type { GlobalSearchResult } from "./hooks/useGlobalSearch";
+import { useFocusSessions } from "./hooks/useFocusSessions";
 import { useGoals } from "./hooks/useGoals";
 import { useNotes } from "./hooks/useNotes";
 import { useTasks } from "./hooks/useTasks";
 import { useTheme } from "./hooks/useTheme";
 import { usePwaInstall } from "./hooks/usePwaInstall";
+import { requestNotificationPermission } from "./lib/notifications";
 import { useSync } from "./sync/useSync";
 
 const KanbanBoard = React.lazy(() => import("./components/KanbanBoard").then((module) => ({ default: module.KanbanBoard })));
@@ -57,6 +59,8 @@ export function App() {
   const [editingTask, setEditingTask] = React.useState<Task | null>(null);
   const [editingGoal, setEditingGoal] = React.useState<Goal | null>(null);
   const [selectedGoalId, setSelectedGoalId] = React.useState<string | null>(null);
+  const [selectedNoteId, setSelectedNoteId] = React.useState<string | null>(null);
+  const [highlightedProjectId, setHighlightedProjectId] = React.useState<string | null>(null);
   const [focusTask, setFocusTask] = React.useState<Task | null>(null);
   const {
     tasks = [],
@@ -70,9 +74,10 @@ export function App() {
     upsertCourse,
     deleteCourse
   } = useTasks();
+  const { focusSessions, recordFocusSession } = useFocusSessions();
   const { goals, addGoal, updateGoal, setGoalStatus, removeGoal } = useGoals();
   const { notes, addNote, updateNote, removeNote, toggleNoteLink } = useNotes();
-  const { email, dekKey, logout } = useAuth();
+  const { email, dekKey, rotateRecoveryKey, logout } = useAuth();
   const sync = useSync(dekKey);
   const appearanceSettings = useLiveQuery(() => getAppearanceSettings(), []);
   useTheme(appearanceSettings?.theme);
@@ -103,10 +108,103 @@ export function App() {
     }
   };
 
+  const openSearchResult = (result: GlobalSearchResult) => {
+    if (result.type === "task") {
+      setView(result.view);
+      openTaskById(result.id);
+      return;
+    }
+    if (result.type === "note") {
+      setSelectedNoteId(result.id);
+      setView("notes");
+      return;
+    }
+    if (result.type === "goal") {
+      setSelectedGoalId(result.id);
+      setView("goals");
+      return;
+    }
+    setHighlightedProjectId(result.id);
+    setView("courses");
+  };
+
+  const openTaskComposer = React.useCallback((date?: Date) => {
+    setComposerDate(date);
+    setComposerOpen(true);
+  }, []);
+
+  const createNoteFromShell = React.useCallback(async () => {
+    const note = await addNote({});
+    setSelectedNoteId(note.id);
+    setView("notes");
+  }, [addNote, setView]);
+
+  const primaryAction = React.useMemo(() => {
+    if (view === "notes") {
+      return {
+        label: "New note",
+        icon: <Plus size={24} weight="bold" />,
+        onClick: () => {
+          void createNoteFromShell();
+        }
+      };
+    }
+
+    if (view === "dashboard" || view === "kanban" || view === "timeline" || view === "courses") {
+      return {
+        label: "New task",
+        icon: <Plus size={24} weight="bold" />,
+        onClick: () => openTaskComposer()
+      };
+    }
+
+    return undefined;
+  }, [createNoteFromShell, openTaskComposer, view]);
+
   const toggleTheme = () => {
     const current = appearanceSettings?.theme;
     const next = current === "dark" ? "light" : current === "system" ? "dark" : "dark";
     void saveAppearanceSettings({ theme: next });
+  };
+
+  const completeOnboardingSetup = async (input: OnboardingSetupInput) => {
+    await clearAllData();
+
+    const palette = ["#5b73f0", "#2fa980", "#f3b95f"];
+    const icons = input.kind === "school" ? ["B", "M", "H"] : input.kind === "work" ? ["W", "S", "P"] : ["P", "H", "A"];
+    const createdCourses = input.projectNames.map((name, index) =>
+      createCourse({
+        name,
+        color: palette[index % palette.length],
+        icon: icons[index % icons.length]
+      })
+    );
+
+    for (const course of createdCourses) {
+      await upsertCourse(course);
+    }
+
+    const taskCourse = createdCourses[input.taskProjectIndex] ?? createdCourses[0];
+    await addTask({
+      title: input.taskTitle,
+      courseId: taskCourse?.id,
+      dueAt: input.dueAt,
+      priority: "medium",
+      energy: 1,
+      difficulty: 1,
+      attributes: ["focus"],
+      tags: input.kind === "school" ? ["study"] : []
+    });
+
+    if (input.enableNotifications) {
+      try {
+        await requestNotificationPermission();
+      } catch {
+        // Permission prompts can be blocked by browsers; setup should still finish.
+      }
+    }
+
+    setView(input.openSyncSettings ? "settings" : "dashboard");
   };
 
   return (
@@ -148,7 +246,13 @@ export function App() {
           </div>
         )}
 
-        <AppShell view={view} onViewChange={setView} onNewTask={(date) => { setComposerDate(date); setComposerOpen(true); }}>
+        <AppShell
+          view={view}
+          onViewChange={setView}
+          onNewTask={openTaskComposer}
+          onOpenCommandPalette={() => setCommandPaletteOpen(true)}
+          primaryAction={primaryAction}
+        >
           <motion.div
             key={view}
             initial={{ opacity: 0, y: 8 }}
@@ -164,9 +268,10 @@ export function App() {
                   <Dashboard
                     tasks={tasks}
                     courses={courses}
+                    focusSessions={focusSessions}
                     onComplete={completeTask}
                     onUpdateTask={updateTask}
-                    onNewTask={(date) => { setComposerDate(date); setComposerOpen(true); }}
+                    onNewTask={openTaskComposer}
                     onEdit={setEditingTask}
                     onStartFocus={setFocusTask}
                   />
@@ -208,6 +313,7 @@ export function App() {
                       onEdit={setEditingTask}
                       onUpdateTask={updateTask}
                       onOpenNotes={() => setView("notes")}
+                      onStartFocus={setFocusTask}
                     />
                   </React.Suspense>
                 ) : null}
@@ -217,7 +323,9 @@ export function App() {
                       tasks={tasks} 
                       courses={courses} 
                       goals={goals} 
-                      onNewTask={(date) => { setComposerDate(date); setComposerOpen(true); }}
+                      onNewTask={openTaskComposer}
+                      onStartFocus={setFocusTask}
+                      onUpdateTask={updateTask}
                     />
                   </React.Suspense>
                 ) : null}
@@ -233,6 +341,8 @@ export function App() {
                       onToggleLink={toggleNoteLink}
                       onOpenTask={openTaskById}
                       onOpenGoal={openGoal}
+                      selectedId={selectedNoteId}
+                      onSelectedIdChange={setSelectedNoteId}
                     />
                   </React.Suspense>
                 ) : null}
@@ -243,6 +353,7 @@ export function App() {
                       tasks={tasks}
                       onUpsertCourse={upsertCourse}
                       onDeleteCourse={deleteCourse}
+                      highlightedProjectId={highlightedProjectId}
                     />
                   </React.Suspense>
                 ) : null}
@@ -260,6 +371,7 @@ export function App() {
                       onAppearanceChange={saveAppearanceSettings}
                       account={{ email, syncStatus: sync.status, lastSyncAt: sync.lastSyncAt }}
                       onSyncNow={sync.syncNow}
+                      onRegenerateRecoveryKey={rotateRecoveryKey}
                       onSignOut={logout}
                     />
                   </React.Suspense>
@@ -275,6 +387,11 @@ export function App() {
           onNavigate={setView}
           onNewTask={() => setComposerOpen(true)}
           onToggleTheme={toggleTheme}
+          tasks={tasks}
+          notes={notes}
+          goals={goals}
+          courses={courses}
+          onOpenResult={openSearchResult}
         />
 
         <Sheet 
@@ -346,11 +463,20 @@ export function App() {
           ) : null}
         </Sheet>
         
-        <FocusOverlay task={focusTask} onClose={() => setFocusTask(null)} />
-        <FocusTimer />
+        <FocusTimer
+          task={focusTask}
+          launcherMode={view === "dashboard" || view === "timeline" ? "desktop-dock" : "hidden"}
+          onTaskClose={() => setFocusTask(null)}
+          onRecordFocusSession={recordFocusSession}
+        />
         
         {showOnboarding ? (
-          <OnboardingOverlay onComplete={() => saveAppearanceSettings({ hasCompletedOnboarding: true })} />
+          <OnboardingOverlay
+            onSetup={completeOnboardingSetup}
+            onComplete={async () => {
+              await saveAppearanceSettings({ hasCompletedOnboarding: true });
+            }}
+          />
         ) : null}
       </IconContext.Provider>
     </MotionConfig>

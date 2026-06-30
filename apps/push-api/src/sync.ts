@@ -3,7 +3,7 @@ import { z } from "zod";
 import { userFromRequest } from "./auth";
 import type { UserStore } from "./userStore";
 
-const EntitySchema = z.enum(["task", "course", "goal", "note"]);
+const EntitySchema = z.enum(["task", "course", "goal", "note", "focusSession"]);
 
 // The server only ever stores opaque ciphertext + IV; it cannot read content.
 const ChangeSchema = z.object({
