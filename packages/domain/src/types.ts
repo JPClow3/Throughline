@@ -118,6 +118,19 @@ export const RedactedReminderSchema = z.object({
   createdAt: z.string().datetime()
 });
 
+export const FocusSessionSchema = z.object({
+  id: z.string().min(1),
+  title: z.string().min(1).max(140).default("Focus Session"),
+  taskId: z.string().min(1).optional(),
+  courseId: z.string().min(1).optional(),
+  goalId: z.string().min(1).optional(),
+  startedAt: z.string().datetime(),
+  endedAt: z.string().datetime().optional(),
+  durationMinutes: z.number().int().min(1).max(720),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime()
+});
+
 export type Subtask = z.infer<typeof SubtaskSchema>;
 export type Course = z.infer<typeof CourseSchema>;
 export type Task = z.infer<typeof TaskSchema>;
@@ -125,3 +138,4 @@ export type Goal = z.infer<typeof GoalSchema>;
 export type Note = z.infer<typeof NoteSchema>;
 export type UserProgress = z.infer<typeof UserProgressSchema>;
 export type RedactedReminder = z.infer<typeof RedactedReminderSchema>;
+export type FocusSession = z.infer<typeof FocusSessionSchema>;

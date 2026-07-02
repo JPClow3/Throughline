@@ -10,9 +10,10 @@ test-results/
 *.log
 *.tsbuildinfo
 apps/push-api/data/
+.codex-audit/
 
-# Secrets — never commit real env files (the example is tracked)
+# Secrets - never commit real env files (the example is tracked)
 .env
 .env.*
 !.env.example
-_shot_*.png  
+_shot_*.png

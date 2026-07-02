@@ -1,6 +1,6 @@
 import {
   ArrowRight,
-  Cube,
+  Kanban,
   Clock,
   CodeBlock,
   Database,
@@ -43,9 +43,9 @@ function BrowserFrame({ src, alt, className }: { src: string; alt: string; class
 function AmbientBackground() {
   return (
     <div className="fixed inset-0 z-[-2] pointer-events-none overflow-hidden">
-      <div className="absolute top-[-10%] left-[-10%] w-[60vw] h-[60vw] bg-gradient-to-br from-[var(--tl-accent-blue)]/30 to-[var(--tl-accent-violet)]/10 rounded-full blur-[100px] animate-pulse-bio" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[70vw] h-[70vw] bg-gradient-to-tl from-[var(--tl-accent-aqua)]/20 to-[var(--tl-accent-blue)]/10 rounded-full blur-[120px] animate-pulse-bio" style={{ animationDelay: '-4s' }} />
-      <div className="absolute top-[40%] left-[60%] w-[40vw] h-[40vw] bg-[var(--tl-accent-aqua)]/10 rounded-full blur-[150px] animate-pulse-bio" style={{ animationDelay: '-2s' }} />
+      <div className="absolute top-[-10%] left-0 -translate-x-1/2 w-[60vw] h-[60vw] bg-gradient-to-br from-[var(--tl-accent-blue)]/30 to-[var(--tl-accent-violet)]/10 rounded-full blur-[100px] animate-pulse-bio" />
+      <div className="absolute bottom-[-10%] right-0 translate-x-1/2 w-[70vw] h-[70vw] bg-gradient-to-tl from-[var(--tl-accent-aqua)]/20 to-[var(--tl-accent-blue)]/10 rounded-full blur-[120px] animate-pulse-bio" style={{ animationDelay: '-4s' }} />
+      <div className="absolute top-[40%] right-0 w-[40vw] h-[40vw] bg-[var(--tl-accent-aqua)]/10 rounded-full blur-[150px] animate-pulse-bio" style={{ animationDelay: '-2s' }} />
       
       <div className="fixed inset-0 z-[-1] pointer-events-none opacity-25 flex items-center justify-center scale-150">
         <svg className="w-full h-full animate-float-slow" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
@@ -97,7 +97,7 @@ const SHOWCASE = [
 
 const BENTO_FEATURES = [
   { icon: <ShieldCheck size={28} weight="duotone" />, color: "bg-[var(--tl-surface-tint)]", title: "Local-First Privacy", body: "Your data never leaves your device. Total sovereignty over your academic life powered by IndexedDB." },
-  { icon: <Cube size={28} weight="duotone" />, color: "bg-[var(--tl-surface-tint)]", title: "Spatial Organization", body: "Map your syllabus visually. Connect concepts in a fluid, three-dimensional workspace designed for complex understanding." },
+  { icon: <Kanban size={28} weight="duotone" />, color: "bg-[var(--tl-surface-tint)]", title: "Course and Task Planning", body: "Group coursework, goals, notes, due dates, and Kanban progress in one calm planning hub." },
   { icon: <Clock size={28} weight="duotone" />, color: "bg-[var(--tl-surface-tint)]", title: "Academic Rhythm", body: "Sync with your semesters. Automated scheduling that breathes with your actual energy levels." }
 ];
 
@@ -154,9 +154,9 @@ export function Landing() {
         <main id="top" className="landing-main" style={{ paddingTop: '160px' }}>
           {/* Hero Section */}
           <section className="flex flex-col items-center text-center mb-32">
-            <div className="relative w-full max-w-4xl flex flex-col items-center">
+            <div className="relative w-full max-w-4xl min-w-0 flex flex-col items-center">
               <div className="absolute inset-0 bg-[var(--tl-surface-glass)] rounded-[100px] blur-[60px] -z-10" />
-              <h1 className="font-display-lg text-[40px] md:text-[64px] font-bold text-[var(--tl-text)] mb-6 drop-shadow-sm flex flex-col items-center gap-2 relative leading-tight" style={{ letterSpacing: '-0.04em' }}>
+              <h1 className="font-display-lg text-[40px] md:text-[64px] font-bold text-[var(--tl-text)] mb-6 drop-shadow-sm flex flex-col items-center gap-2 relative leading-tight" style={{ letterSpacing: 0 }}>
                 <Reveal delay={0} style={{ transform: 'translateZ(20px) scale(1.02)' }}>Academic Flow,</Reveal>
                 <Reveal delay={0.1} style={{ transform: 'translateZ(40px) scale(1.05)' }}>
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--tl-accent-blue)] to-[#7EA7FF]">
@@ -166,7 +166,7 @@ export function Landing() {
               </h1>
               <Reveal delay={0.2} style={{ transform: 'translateZ(10px) scale(1.01)' }}>
                 <p className="text-[18px] text-[var(--tl-text-secondary)] max-w-2xl mx-auto mb-10 leading-relaxed font-light">
-                  A local-first, spatial workspace designed explicitly for students who demand absolute focus, uncompromising privacy, and rhythmic academic progression.
+                  A local-first student planner for courses, tasks, notes, due dates, and calm academic momentum without giving up privacy.
                 </p>
               </Reveal>
               <Reveal delay={0.3} className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -220,8 +220,8 @@ export function Landing() {
                   </Reveal>
                   <motion.div
                     className="landing-showcase-shot"
-                    initial={{ opacity: 0, x: index % 2 ? -44 : 44 }}
-                    whileInView={{ opacity: 1, x: 0 }}
+                    initial={{ opacity: 0, y: 24 }}
+                    whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true, margin: "-80px" }}
                     transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
                   >
@@ -236,7 +236,7 @@ export function Landing() {
           <section className="mb-32 max-w-[1200px] mx-auto w-full px-6">
             <Reveal delay={0.2}>
               <div className="glass-heavy rounded-[40px] p-12 md:p-20 flex flex-col lg:flex-row gap-16 items-center relative overflow-hidden" style={{ background: 'var(--tl-glass-card-strong)', border: '1px solid var(--tl-glass-border)' }}>
-                <div className="absolute -top-20 -right-20 w-96 h-96 bg-gradient-to-bl from-[var(--tl-accent-blue)]/30 to-transparent rounded-full blur-[60px]" />
+                <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-[var(--tl-accent-blue)]/30 to-transparent rounded-full blur-[60px]" />
                 <div className="flex-1 z-10 relative">
                   <div className="absolute -left-10 -top-10 opacity-20 w-32 h-32 pointer-events-none">
                     <svg viewBox="0 0 1024 1024"><circle cx="512" cy="512" fill="none" r="400" stroke="#7EA7FF" strokeDasharray="100 50" strokeWidth="40" /></svg>

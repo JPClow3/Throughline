@@ -256,15 +256,21 @@ describe("auth", () => {
       (await push([{ entity: "task", id: "t1", changedAt: "2026-02-01T00:00:00.000Z", deleted: false, ciphertext: "CT2", iv: "IV2" }])).json()
         .applied
     ).toBe(1);
+    // focus sessions are first-class encrypted planner records too
+    expect(
+      (await push([{ entity: "focusSession", id: "f1", changedAt: "2026-02-02T00:00:00.000Z", deleted: false, ciphertext: "FCT1", iv: "FIV1" }])).json()
+        .applied
+    ).toBe(1);
 
     const pull = (await pullSince("2020-01-01T00:00:00.000Z")).json();
-    expect(pull.changes).toHaveLength(1);
+    expect(pull.changes).toHaveLength(2);
     expect(pull.changes[0]).toMatchObject({ entity: "task", id: "t1", deleted: false, ciphertext: "CT2" });
+    expect(pull.changes[1]).toMatchObject({ entity: "focusSession", id: "f1", deleted: false, ciphertext: "FCT1" });
 
     // tombstone
     expect((await push([{ entity: "task", id: "t1", changedAt: "2026-03-01T00:00:00.000Z", deleted: true }])).json().applied).toBe(1);
     const afterDelete = (await pullSince("2020-01-01T00:00:00.000Z")).json();
-    expect(afterDelete.changes[0]).toMatchObject({ id: "t1", deleted: true });
+    expect(afterDelete.changes).toContainEqual(expect.objectContaining({ entity: "task", id: "t1", deleted: true }));
 
     // nothing new past the cursor
     expect((await pullSince(afterDelete.cursor)).json().changes).toHaveLength(0);
@@ -333,6 +339,44 @@ describe("auth", () => {
       payload: { authKey: "new-auth", wrappedDek: "new-wrapped" }
     });
     expect(updateAnon.statusCode).toBe(401);
+    await app.close();
+  });
+
+  it("rotates the recovery key for an authenticated user", async () => {
+    const app = await createServer({ config, store, configureWebPush: false });
+    const signup = await app.inject({ method: "POST", url: "/auth/signup", payload: account });
+    const token = cookieFrom(signup);
+
+    const update = await app.inject({
+      method: "POST",
+      url: "/auth/update-recovery-key",
+      payload: { recoveryAuthKey: "new-rec-auth", recoveryWrappedDek: "new-rec-wrapped" },
+      cookies: { tl_session: token! }
+    });
+    expect(update.statusCode).toBe(204);
+
+    const oldRecoveryLogin = await app.inject({
+      method: "POST",
+      url: "/auth/login",
+      payload: { email: account.email, authKey: account.recoveryAuthKey }
+    });
+    expect(oldRecoveryLogin.statusCode).toBe(401);
+
+    const newRecoveryLogin = await app.inject({
+      method: "POST",
+      url: "/auth/login",
+      payload: { email: account.email, authKey: "new-rec-auth" }
+    });
+    expect(newRecoveryLogin.statusCode).toBe(200);
+    expect(newRecoveryLogin.json()).toMatchObject({ wrappedDek: "new-rec-wrapped" });
+
+    const updateAnon = await app.inject({
+      method: "POST",
+      url: "/auth/update-recovery-key",
+      payload: { recoveryAuthKey: "anon-rec-auth", recoveryWrappedDek: "anon-rec-wrapped" }
+    });
+    expect(updateAnon.statusCode).toBe(401);
+
     await app.close();
   });
 });

@@ -1,6 +1,6 @@
 import { Goal, Note, Task, noteDisplayTitle, noteExcerpt } from "@throughline/domain";
-import { Note as FileText, PushPin as Pin, Plus, MagnifyingGlass as Search } from "@phosphor-icons/react";
-import { useState, useMemo } from "react";
+import { ArrowLeft, Note as FileText, PushPin as Pin, Plus, MagnifyingGlass as Search } from "@phosphor-icons/react";
+import { useEffect, useMemo, useState } from "react";
 import type { NoteInput } from "../data/repositories";
 import { EmptyState } from "./EmptyState";
 import { NoteEditor } from "./NoteEditor";
@@ -16,6 +16,8 @@ type NotesViewProps = {
   onToggleLink: (noteId: string, kind: "task" | "goal", refId: string, linked: boolean) => void;
   onOpenTask?: (taskId: string) => void;
   onOpenGoal?: (goalId: string) => void;
+  selectedId?: string | null;
+  onSelectedIdChange?: (noteId: string | null) => void;
 };
 
 function HighlightedText({ text, terms }: { text: string; terms: string[] }) {
@@ -44,10 +46,15 @@ export function NotesView({
   onRemoveNote,
   onToggleLink,
   onOpenTask,
-  onOpenGoal
+  onOpenGoal,
+  selectedId: controlledSelectedId,
+  onSelectedIdChange
 }: NotesViewProps) {
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [localSelectedId, setLocalSelectedId] = useState<string | null>(null);
+  const selectedId = controlledSelectedId ?? localSelectedId;
+  const setSelectedId = onSelectedIdChange ?? setLocalSelectedId;
   const [query, setQuery] = useState("");
+  const isMobileNotes = useCompactNotes();
 
   const { filteredNotes, searchResults } = useNotesSearch(notes, query);
 
@@ -63,6 +70,28 @@ export function NotesView({
   }, [filteredNotes, query]);
 
   const selected = selectedId ? notes.find((note) => note.id === selectedId) ?? null : null;
+
+  useEffect(() => {
+    const visibleSelected = selectedId ? sorted.some((note) => note.id === selectedId) : false;
+
+    if (isMobileNotes) {
+      if (selectedId && !notes.some((note) => note.id === selectedId)) {
+        setSelectedId(null);
+      }
+      return;
+    }
+
+    if (!sorted.length) {
+      if (selectedId) {
+        setSelectedId(null);
+      }
+      return;
+    }
+
+    if (!selectedId || !visibleSelected) {
+      setSelectedId(sorted[0].id);
+    }
+  }, [isMobileNotes, notes, selectedId, setSelectedId, sorted]);
 
   async function createNote() {
     const note = await onAddNote({});
@@ -83,11 +112,12 @@ export function NotesView({
           <span className="eyebrow">Notebook</span>
           <h1>Notes</h1>
         </div>
-        <button className="primary-button" type="button" onClick={createNote}>
+        <button className="primary-button notes-page-action" type="button" onClick={createNote}>
           <Plus size={17} /> New note
         </button>
       </header>
-      <section className="notes-view">
+      <section className={`notes-view${isMobileNotes && selected ? " notes-view-detailing" : ""}`}>
+        {(!isMobileNotes || !selected) ? (
         <div className="notes-list glass-panel">
           <label className="note-search">
           <Search size={15} />
@@ -134,19 +164,28 @@ export function NotesView({
           )}
         </div>
       </div>
+        ) : null}
+      {(!isMobileNotes || selected) ? (
       <div className="notes-detail">
         {selected ? (
-          <NoteEditor
-            key={selected.id}
-            note={selected}
-            tasks={tasks}
-            goals={goals}
-            onSave={onUpdateNote}
-            onDelete={removeNote}
-            onToggleLink={onToggleLink}
-            onOpenTask={onOpenTask}
-            onOpenGoal={onOpenGoal}
-          />
+          <>
+            {isMobileNotes ? (
+              <button type="button" className="secondary-button notes-back-button" onClick={() => setSelectedId(null)}>
+                <ArrowLeft size={17} /> Notes
+              </button>
+            ) : null}
+            <NoteEditor
+              key={selected.id}
+              note={selected}
+              tasks={tasks}
+              goals={goals}
+              onSave={onUpdateNote}
+              onDelete={removeNote}
+              onToggleLink={onToggleLink}
+              onOpenTask={onOpenTask}
+              onOpenGoal={onOpenGoal}
+            />
+          </>
         ) : (
           <EmptyState
             icon={<FileText size={26} />}
@@ -160,7 +199,27 @@ export function NotesView({
           />
         )}
       </div>
+      ) : null}
       </section>
     </div>
   );
+}
+
+function useCompactNotes() {
+  const query = "(max-width: 720px)";
+  const [matches, setMatches] = useState(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return false;
+    return window.matchMedia(query).matches;
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    const media = window.matchMedia(query);
+    const update = () => setMatches(media.matches);
+    update();
+    media.addEventListener?.("change", update);
+    return () => media.removeEventListener?.("change", update);
+  }, []);
+
+  return matches;
 }

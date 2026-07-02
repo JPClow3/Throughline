@@ -14,6 +14,11 @@ type TaskEditorProps = {
   onDelete: (taskId: string) => Promise<void>;
 };
 
+type DndDragEndEvent = {
+  active: { id: string | number };
+  over: { id: string | number } | null;
+};
+
 function toLocalInput(iso?: string) {
   if (!iso) {
     return "";
@@ -55,8 +60,7 @@ export function TaskEditor({ task, courses, goals = [], onSave, onDelete }: Task
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function handleDragEnd(event: any) {
+  function handleDragEnd(event: DndDragEndEvent) {
     const { active, over } = event;
     if (over && active.id !== over.id) {
       setSubtasks((items) => {

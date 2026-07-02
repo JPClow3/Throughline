@@ -142,8 +142,12 @@ export function CalendarTimeline({
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const [selectedKey, setSelectedKey] = useState(() => localDayKey(today));
-  const { filters, setFilter, applyFilters } = useFilters();
+  const { filters, presets, setFilter, applyFilters, applyPreset, clearFilters, saveCurrentPreset } = useFilters();
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+  const availableTags = useMemo(
+    () => Array.from(new Set(tasks.flatMap((task) => task.tags ?? []))).sort((a, b) => a.localeCompare(b)),
+    [tasks]
+  );
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -222,7 +226,19 @@ export function CalendarTimeline({
             <span className="eyebrow">Agenda</span>
             <h1>Timeline</h1>
           </div>
-          <FilterBar courses={courses} goals={goals} filters={filters} setFilter={setFilter} showDateFilter={false} showStatusFilter={true} />
+          <FilterBar
+            courses={courses}
+            goals={goals}
+            filters={filters}
+            setFilter={setFilter}
+            presets={presets}
+            availableTags={availableTags}
+            onApplyPreset={applyPreset}
+            onClearFilters={clearFilters}
+            onSavePreset={saveCurrentPreset}
+            showDateFilter={false}
+            showStatusFilter={true}
+          />
         </header>
 
         <div className="day-strip" role="tablist" aria-label="Select a day">

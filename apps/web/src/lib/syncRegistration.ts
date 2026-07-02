@@ -27,11 +27,15 @@ export async function registerBackgroundSync(tag: string = "sync-tasks") {
     const registration = await navigator.serviceWorker.ready;
     if (registration.sync) {
       await registration.sync.register(tag);
-      console.log(`[PWA] Background sync registered for tag: ${tag}`);
+      console.debug(`[PWA] Background sync registered for tag: ${tag}`);
     } else {
-      console.log("[PWA] Background sync is not supported in this browser.");
+      console.debug("[PWA] Background sync is not supported in this browser.");
     }
   } catch (error) {
+    if (isBackgroundSyncUnavailable(error)) {
+      console.debug("[PWA] Background sync is unavailable in this browser context.");
+      return;
+    }
     console.error("[PWA] Failed to register background sync:", error);
   }
 }
@@ -55,14 +59,23 @@ export async function registerPeriodicSync(
 
       if (status.state === "granted") {
         await registration.periodicSync.register(tag, { minInterval });
-        console.log(`[PWA] Periodic sync registered for tag: ${tag}`);
+        console.debug(`[PWA] Periodic sync registered for tag: ${tag}`);
       } else {
-        console.log("[PWA] Periodic sync permission denied by the browser.");
+        console.debug("[PWA] Periodic sync permission denied by the browser.");
       }
     } else {
-      console.log("[PWA] Periodic sync is not supported in this browser.");
+      console.debug("[PWA] Periodic sync is not supported in this browser.");
     }
   } catch (error) {
+    if (isBackgroundSyncUnavailable(error)) {
+      console.debug("[PWA] Periodic sync is unavailable in this browser context.");
+      return;
+    }
     console.error("[PWA] Failed to register periodic sync:", error);
   }
+}
+
+function isBackgroundSyncUnavailable(error: unknown) {
+  if (!(error instanceof DOMException)) return false;
+  return error.name === "NotAllowedError" || error.name === "NotSupportedError" || error.name === "UnknownError";
 }

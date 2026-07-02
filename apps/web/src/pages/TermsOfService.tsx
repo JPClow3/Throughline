@@ -41,9 +41,10 @@ export function TermsOfService() {
               <h2 style={{ fontSize: "1.4rem", marginBottom: "0.75rem", fontWeight: "600" }}>Beta Software</h2>
               <p style={{ color: "var(--ink-faint)" }}>
                 Throughline is currently provided as beta software. While we strive to ensure 
-                all data is safely synced and preserved, we cannot be held responsible for 
-                unintentional data loss. The nature of local-first means that your device holds 
-                the primary copy of your data; if you lose your encryption key, the data cannot be recovered.
+                local data, encrypted sync, and exports are reliable, we cannot be held responsible for
+                unintentional data loss. The app is local-first by default; optional account sync stores
+                end-to-end encrypted records that our server cannot read. If you lose both your password
+                and recovery key, encrypted synced content cannot be recovered.
               </p>
             </section>
 

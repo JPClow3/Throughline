@@ -1,4 +1,4 @@
-import { Course, Goal, Note, Task } from "@throughline/domain";
+import { Course, FocusSession, Goal, Note, Task } from "@throughline/domain";
 import { decryptJson, encryptJson } from "../auth/crypto";
 import { db, type SyncEntity } from "../data/db";
 import { refreshProgress } from "../data/db";
@@ -15,7 +15,7 @@ type Change = {
   iv?: string;
 };
 
-type SyncRecord = (Task | Course | Goal | Note) & { id: string; updatedAt: string };
+type SyncRecord = (Task | Course | Goal | Note | FocusSession) & { id: string; updatedAt: string };
 
 function tableFor(entity: SyncEntity) {
   switch (entity) {
@@ -27,6 +27,8 @@ function tableFor(entity: SyncEntity) {
       return db.goals;
     case "note":
       return db.notes;
+    case "focusSession":
+      return db.focusSessions;
   }
 }
 
@@ -36,6 +38,7 @@ async function collectLocalChanges(since: string, dekKey: CryptoKey): Promise<Ch
     ["task", (await db.tasks.where("updatedAt").above(since).toArray()) as SyncRecord[]],
     ["goal", (await db.goals.where("updatedAt").above(since).toArray()) as SyncRecord[]],
     ["note", (await db.notes.where("updatedAt").above(since).toArray()) as SyncRecord[]],
+    ["focusSession", (await db.focusSessions.where("updatedAt").above(since).toArray()) as SyncRecord[]],
     ["course", (await db.courses.where("updatedAt").above(since).toArray()) as SyncRecord[]]
   ];
   for (const [entity, rows] of groups) {

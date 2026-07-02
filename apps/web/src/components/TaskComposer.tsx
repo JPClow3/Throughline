@@ -1,6 +1,6 @@
 import { Course, Goal, Priority, RpgAttribute, priorities, rpgAttributes } from "@throughline/domain";
 import { CaretDown as ChevronDown, Plus, Trash as Trash2 } from "@phosphor-icons/react";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import type { TaskInput } from "../data/repositories";
 
 function toLocalInput(date?: Date) {
@@ -32,6 +32,10 @@ export function TaskComposer({ courses, goals = [], showGameLayer = false, initi
   const [subtasks, setSubtasks] = useState<{id: string, title: string, completed: boolean}[]>([]);
   const [recurrence, setRecurrence] = useState<"daily" | "weekly" | "biweekly" | "monthly" | "custom" | "">("");
   const [expanded, setExpanded] = useState(false);
+  const [attemptedSubmit, setAttemptedSubmit] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const submittingRef = useRef(false);
+  const canSubmit = title.trim().length > 0 && !isSubmitting;
 
   useEffect(() => {
     if (initialDate) {
@@ -42,44 +46,72 @@ export function TaskComposer({ courses, goals = [], showGameLayer = false, initi
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!title.trim()) {
+    setAttemptedSubmit(true);
+    if (!canSubmit) {
       return;
     }
 
-    await onAddTask({
-      title: title.trim(),
-      description: description.trim() || undefined,
-      courseId: courseId || undefined,
-      goalId: goalId || undefined,
-      dueAt: dueAt || undefined,
-      reminderAt: reminderAt || undefined,
-      priority,
-      energy,
-      difficulty,
-      attributes: [attribute],
-      tags: parseTags(tags),
-      subtasks: subtasks.map(st => ({ ...st, title: st.title.trim() })).filter(st => st.title),
-      recurrence: recurrence ? { pattern: recurrence } : undefined
-    });
+    if (submittingRef.current) {
+      return;
+    }
+    submittingRef.current = true;
+    setIsSubmitting(true);
+    try {
+      await onAddTask({
+        title: title.trim(),
+        description: description.trim() || undefined,
+        courseId: courseId || undefined,
+        goalId: goalId || undefined,
+        dueAt: dueAt || undefined,
+        reminderAt: reminderAt || undefined,
+        priority,
+        energy,
+        difficulty,
+        attributes: [attribute],
+        tags: parseTags(tags),
+        subtasks: subtasks.map(st => ({ ...st, title: st.title.trim() })).filter(st => st.title),
+        recurrence: recurrence ? { pattern: recurrence } : undefined
+      });
 
-    setTitle("");
-    setDescription("");
-    setCourseId("");
-    setGoalId("");
-    setDueAt("");
-    setReminderAt("");
-    setTags("");
-    setSubtasks([]);
-    setPriority("medium");
-    setRecurrence("");
+      setTitle("");
+      setDescription("");
+      setCourseId("");
+      setGoalId("");
+      setDueAt("");
+      setReminderAt("");
+      setTags("");
+      setSubtasks([]);
+      setPriority("medium");
+      setRecurrence("");
+      setAttemptedSubmit(false);
+    } finally {
+      submittingRef.current = false;
+      setIsSubmitting(false);
+    }
   }
 
   return (
     <form className="composer-form" onSubmit={submit}>
       <label>
         <span>Title</span>
-        <input autoFocus value={title} onChange={(event) => setTitle(event.target.value)} placeholder="What needs doing?" maxLength={140} />
+        <input
+          autoFocus
+          required
+          value={title}
+          onChange={(event) => {
+            setTitle(event.target.value);
+            if (event.target.value.trim()) setAttemptedSubmit(false);
+          }}
+          placeholder="What needs doing?"
+          maxLength={140}
+          aria-describedby={attemptedSubmit && !canSubmit ? "task-title-error" : undefined}
+        />
       </label>
+      {attemptedSubmit && !canSubmit ? (
+        <p id="task-title-error" className="composer-error" role="alert">
+          Add a title before saving this task.
+        </p>
+      ) : null}
       <div className="composer-grid">
         <label>
           <span>Project</span>
@@ -238,9 +270,9 @@ export function TaskComposer({ courses, goals = [], showGameLayer = false, initi
         </div>
       ) : null}
 
-      <button className="primary-button" type="submit">
+      <button className="primary-button" type="submit" disabled={!canSubmit}>
         <Plus size={18} />
-        Add task
+        {isSubmitting ? "Adding..." : "Add task"}
       </button>
     </form>
   );
@@ -252,5 +284,3 @@ function parseTags(value: string) {
     .map((tag) => tag.trim())
     .filter(Boolean);
 }
-
-

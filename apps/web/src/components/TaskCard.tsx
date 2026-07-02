@@ -29,25 +29,28 @@ type TaskCardProps = {
 type DueTone = "done" | "overdue" | "soon" | "normal";
 
 function RewardAnimation({ showGameLayer }: { showGameLayer: boolean }) {
-  const [particles, setParticles] = useState<{x: number, y: number, scale: number, duration: number, color: string, rotation: number}[]>([]);
+  const [particles, setParticles] = useState<{x: number, y: number, yEnd: number, scale: number, duration: number, color: string, rotation: number}[]>([]);
 
   useEffect(() => {
     // We generate particles anyway, but fewer if not showGameLayer
-    const count = showGameLayer ? 24 : 8;
-    const colors = ['var(--tl-accent-violet)', 'var(--tl-accent-blue)', 'var(--tl-accent-aqua)', 'var(--tl-accent-pink)'];
+    const count = showGameLayer ? 36 : 12;
+    const colors = ['var(--tl-accent-violet)', 'var(--tl-accent-blue)', 'var(--tl-accent-aqua)', 'var(--tl-accent-pink)', '#ffffff'];
     
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setParticles(
       Array.from({ length: count }).map((_, i) => {
-        const angle = (i / count) * Math.PI * 2 + (Math.random() * 0.5 - 0.25);
-        const distance = showGameLayer ? 50 + Math.random() * 60 : 30 + Math.random() * 30;
+        const angle = (i / count) * Math.PI * 2 + (Math.random() * 0.8 - 0.4);
+        const distance = showGameLayer ? 60 + Math.random() * 80 : 40 + Math.random() * 40;
+        const x = Math.cos(angle) * distance;
+        const y = Math.sin(angle) * distance;
         return {
-          x: Math.cos(angle) * distance,
-          y: Math.sin(angle) * distance,
-          scale: Math.random() * 0.6 + 0.4,
-          duration: 0.5 + Math.random() * 0.3,
+          x,
+          y: y - 20, // initial upward bias
+          yEnd: y + 40 + Math.random() * 40, // gravity fall
+          scale: Math.random() * 0.8 + 0.3,
+          duration: 0.6 + Math.random() * 0.4,
           color: colors[Math.floor(Math.random() * colors.length)],
-          rotation: Math.random() * 360
+          rotation: Math.random() * 720 - 360
         };
       })
     );
@@ -57,10 +60,10 @@ function RewardAnimation({ showGameLayer }: { showGameLayer: boolean }) {
     <div className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-visible z-10" aria-hidden="true">
       {showGameLayer && (
         <motion.div
-          initial={{ opacity: 0, scale: 2, rotate: -15 }}
-          animate={{ opacity: [0, 1, 1, 0], scale: [2, 1, 1, 1.1], rotate: [-15, -5, -5, -5] }}
+          initial={{ opacity: 0, scale: 2.5, rotate: -20, filter: "blur(10px)" }}
+          animate={{ opacity: [0, 1, 1, 0], scale: [2.5, 1, 1, 1.2], rotate: [-20, -5, -5, -5], filter: ["blur(10px)", "blur(0px)", "blur(0px)", "blur(4px)"] }}
           transition={{ duration: 1.5, times: [0, 0.15, 0.8, 1], ease: "easeOut" }}
-          className="text-4xl font-black tracking-widest uppercase border-4 border-current px-4 py-2 rounded-lg mix-blend-overlay"
+          className="text-4xl font-black tracking-widest uppercase border-4 border-current px-4 py-2 rounded-lg mix-blend-overlay shadow-[0_0_30px_var(--tl-accent-violet)]"
           style={{ color: 'var(--tl-accent-violet)' }}
         >
           DONE
@@ -72,14 +75,14 @@ function RewardAnimation({ showGameLayer }: { showGameLayer: boolean }) {
           initial={{ x: 0, y: 0, opacity: 1, scale: 0, rotate: 0 }}
           animate={{ 
             x: p.x, 
-            y: p.y,
-            opacity: 0,
-            scale: p.scale,
+            y: [0, p.y, p.yEnd],
+            opacity: [1, 1, 0],
+            scale: [0, p.scale, p.scale * 0.5],
             rotate: p.rotation
           }}
-          transition={{ duration: p.duration, ease: "easeOut" }}
-          className={`absolute w-3 h-3 ${i % 2 === 0 ? 'rounded-full' : 'rounded-sm'}`}
-          style={{ backgroundColor: p.color }}
+          transition={{ duration: p.duration, ease: "easeOut", times: [0, 0.4, 1] }}
+          className={`absolute w-3 h-3 ${i % 2 === 0 ? 'rounded-full' : 'rounded-sm shadow-[0_0_8px_currentColor]'}`}
+          style={{ backgroundColor: p.color, color: p.color }}
         />
       ))}
     </div>
@@ -111,6 +114,7 @@ export function TaskCard({
   const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
   const [justCompleted, setJustCompleted] = useState(false);
   const wasDoneRef = useRef(task.status === "done");
+  const showSubtaskEditor = Boolean(onUpdateTask && (expanded || totalSubtasks === 0));
 
   useEffect(() => {
     if (task.status === "done" && !wasDoneRef.current) {
@@ -141,9 +145,10 @@ export function TaskCard({
   return (
     <motion.article
       className={`task-card${compact ? " task-card-compact" : ""}${done ? " is-done" : ""}${urgentGlow ? " urgent-pulse-glow" : ""} relative`}
+      style={{ "--project-color": course?.color ?? "var(--ink-faint)" } as CSSProperties}
       layout
       initial={{ opacity: 0, y: 6 }}
-      animate={justCompleted ? { opacity: 1, y: [0, -6, 0], scale: [1, 1.02, 1] } : { opacity: 1, y: 0, scale: 1 }}
+      animate={justCompleted ? { opacity: [1, 0.92, 1], y: [0, -3, 0] } : { opacity: 1, y: 0, scale: 1 }}
       whileHover={justCompleted ? undefined : { y: -2 }}
       transition={justCompleted ? { duration: 0.4, ease: "easeOut" } : { type: "spring", stiffness: 300, damping: 28 }}
     >
@@ -170,17 +175,15 @@ export function TaskCard({
         {justCompleted && <RewardAnimation showGameLayer={showGameLayer} />}
       </AnimatePresence>
       <div className="task-card-top">
-        {course ? (
-          <span className="project-chip" style={{ "--project-color": course.color } as CSSProperties}>
-            <span className="project-dot" aria-hidden="true" />
-            {course.code ?? course.name}
-          </span>
-        ) : (
-          <span className="project-chip project-chip-none">
-            <span className="project-dot" aria-hidden="true" />
-            No project
-          </span>
-        )}
+        <h3 className={`task-card-title ${compact ? 'line-clamp-2' : ''}`}>
+          {onEdit ? (
+            <button type="button" className={`task-card-edit ${compact ? 'text-left w-full' : ''}`} onClick={() => onEdit(task)}>
+              {task.title}
+            </button>
+          ) : (
+            task.title
+          )}
+        </h3>
         <button
           className={`complete-button${done ? " is-done" : ""}`}
           type="button"
@@ -198,43 +201,55 @@ export function TaskCard({
         >
           <motion.div
             initial={false}
-            animate={done ? { scale: [1, 1.4, 1], rotate: [0, 15, 0] } : { scale: 1, rotate: 0 }}
-            transition={{ type: "spring", stiffness: 400, damping: 12 }}
+            animate={done ? { scale: [1, 1.2, 1], rotate: [0, 8, 0] } : { scale: 1, rotate: 0 }}
+            transition={{ type: "spring", stiffness: 400, damping: 16 }}
           >
             <Check size={16} />
           </motion.div>
         </button>
       </div>
 
-      <h3 className={`task-card-title ${compact ? 'line-clamp-2' : ''}`}>
-        {onEdit ? (
-          <button type="button" className={`task-card-edit ${compact ? 'text-left w-full' : ''}`} onClick={() => onEdit(task)}>
-            {task.title}
-          </button>
+      <div className="task-card-meta task-card-primary-meta">
+        {course ? (
+          <span className="project-chip">
+            <span className="project-dot" aria-hidden="true" />
+            {course.code ?? course.name}
+          </span>
         ) : (
-          task.title
+          <span className="project-chip project-chip-none">
+            <span className="project-dot" aria-hidden="true" />
+            No project
+          </span>
         )}
-      </h3>
+        {dueInfo ? (
+          <span className={`meta-due meta-due-${dueInfo.tone}`}>
+            <Clock3 size={14} />
+            {dueInfo.text}
+          </span>
+        ) : null}
+      </div>
 
       {!compact && task.description ? <p className="task-card-summary">{task.description}</p> : null}
 
       {totalSubtasks ? (
-        <div
+        <button
+          type="button"
           className={`subtask-progress cursor-pointer hover:opacity-80 transition-opacity ${expanded ? 'mb-2' : ''}`}
           onClick={(e) => { e.stopPropagation(); setExpanded(!expanded); }}
+          aria-expanded={expanded}
           aria-label={`${completedSubtasks} of ${totalSubtasks} steps complete`}
         >
           <div style={{ width: `${Math.round((completedSubtasks / totalSubtasks) * 100)}%` }} />
-        </div>
+        </button>
       ) : null}
 
-      {onUpdateTask && (
+      {showSubtaskEditor ? (
         <div 
           className="flex flex-col gap-2 mt-2 mb-3 overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           <AnimatePresence>
-            {expanded && (
+            {showSubtaskEditor && (
               <motion.div 
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
@@ -247,31 +262,24 @@ export function TaskCard({
                     <span className={`truncate flex-1 min-w-0 ${st.completed ? "line-through opacity-60" : ""}`}>{st.title}</span>
                   </label>
                 ))}
+                <div className="flex items-center gap-3 mt-1 text-sm p-1 -mx-1 opacity-70 hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                  <Plus size={16} className="text-outline flex-shrink-0 ml-0.5" />
+                  <input
+                    type="text"
+                    value={newSubtaskTitle}
+                    onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                    onKeyDown={handleAddSubtask}
+                    placeholder="Add subtask..."
+                    className="bg-transparent border-none focus:ring-0 p-0 text-on-surface placeholder-outline-variant w-full"
+                  />
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
-          
-          <div className="flex items-center gap-3 mt-1 text-sm p-1 -mx-1 opacity-60 hover:opacity-100 focus-within:opacity-100 transition-opacity">
-            <Plus size={16} className="text-outline flex-shrink-0 ml-0.5" />
-            <input 
-              type="text" 
-              value={newSubtaskTitle}
-              onChange={(e) => setNewSubtaskTitle(e.target.value)}
-              onKeyDown={handleAddSubtask}
-              placeholder="Add subtask (press Enter)..." 
-              className="bg-transparent border-none focus:ring-0 p-0 text-on-surface placeholder-outline-variant w-full"
-            />
-          </div>
         </div>
-      )}
+      ) : null}
 
-      <div className="task-card-meta">
-        {dueInfo ? (
-          <span className={`meta-due meta-due-${dueInfo.tone}`}>
-            <Clock3 size={14} />
-            {dueInfo.text}
-          </span>
-        ) : null}
+      <div className="task-card-meta task-card-secondary-actions">
         {goalLabel ? (
           <span className="meta-chip">
             <Target size={14} />

@@ -13,7 +13,9 @@ This document outlines the product requirements, features, current roadmap, and 
 
 **Must Have**:
 - Installable PWA with offline app shell.
-- Local-first task data stored in IndexedDB.
+- Local-first task data stored in IndexedDB, with optional account sync across devices.
+- End-to-end-encrypted cloud sync: planner records are encrypted on-device, and the server stores ciphertext it cannot read.
+- Recovery key generation and confirmation during signup, plus regeneration from Settings.
 - LiquidGlass visual system with translucent depth, strong contrast, suave colors, and responsive layout.
 - Visual task representation through quest cards, XP, urgency, energy, difficulty, RPG attributes, and completion state.
 - Kanban visualization with Backlog, Ready, Doing, Blocked, and Done.
@@ -23,20 +25,22 @@ This document outlines the product requirements, features, current roadmap, and 
 - Local JSON backup export/import so device-local data is portable and recoverable.
 
 **V1 Boundaries**:
-- No user accounts in production behavior.
-- No full cloud sync.
-- No server storage of full task records.
+- Core planner workflows must remain usable offline, with IndexedDB as the UI source of truth.
+- Accounts and sync are optional, not required for capture, planning, export, or local backup.
+- No server storage of readable task records. Synced planner content may leave the device only as end-to-end-encrypted ciphertext.
+- Recovery keys are required for password-loss recovery. If both password and recovery key are lost, encrypted synced content cannot be recovered.
 - Push payloads must not include task titles, descriptions, course names, or tags.
-- 3D is supportive ambience, not the primary management surface.
+- There is no 3D layer in the current product direction; LiquidGlass depth comes from layered surfaces on a solid base.
 
 ## 2. Feature Specs
 
 ### Today Dashboard
-A calm cockpit for the day. Shows greeting, date, and a progress hero ("X of Y tasks done"). Includes daily progress (grid of per-project cards) and a "Due soon" list.
+A calm cockpit for the day. Shows greeting, date, and a progress hero ("X of Y tasks done") backed only by real task data. Focus time, planned study time, completed-by-day activity, overdue count, and the next study block are derived from local tasks and focus sessions.
 
 ### Task Composer & Cards
 - **Composer**: Fast capture via a floating glass sheet. Up-front fields are minimal (Title, Project, Due).
 - **Cards**: Calm, scannable task representation. Show project colour, title, due date (quietly), and quiet glyphs. Clicking the card title opens the task in an Edit task sheet.
+- **Focus**: Focus sessions can start from a task or as untitled focus. Completed sessions are stored as focus-session records, not as fake completed tasks.
 
 ### Goals & Notes
 - **Goals**: End goals decomposed into real tasks with roll-up progress. Goal detail view shows a progress ring and child tasks.
@@ -46,6 +50,10 @@ A calm cockpit for the day. Shows greeting, date, and a progress hero ("X of Y t
 - **Kanban**: Primary workflow surface (Backlog, Ready, Doing, Blocked, Done). Drag/drop is implemented with `@dnd-kit`.
 - **Timeline**: A time-of-day agenda for a single day. Time-blocked agenda cards.
 - **Projects / Areas**: Optional organiser for tasks, goals, and notes.
+- **Command/Search**: `Ctrl K` opens the command palette, searches tasks, notes, goals, and projects, and jumps directly to the right view or editor.
+- **Filters**: Board and Timeline use native preset chips, tag chips, saved custom presets, and a visible clear action.
+- **Insights**: Coaching cards answer what to adjust next using deterministic rules from tasks, projects, and focus sessions.
+- **Onboarding**: First run is a setup wizard: choose school/work/personal, create 1-3 projects or courses, add a real task, optionally enable notifications or open Settings for sync, then land in Today.
 
 ### Notifications & ICS Export
 - **Notifications**: Reminders without compromising local-first privacy. Syncs redacted reminders to the push API.
@@ -61,12 +69,10 @@ A calm cockpit for the day. Shows greeting, date, and a progress hero ("X of Y t
 - End-to-end-encrypted cloud sync (beta).
 
 **Next product milestones**:
-1. Recovery key at signup & email verification/password reset.
+1. Email verification.
 2. Inline subtask editing inside the task editor.
-3. Richer Board/Timeline filters.
-4. Keyboard-only Kanban alternative and accessibility pass.
-5. PWA install polish (Microsoft Store packaging).
-6. Lightweight observability on the API.
+3. PWA install polish (Microsoft Store packaging).
+4. Lightweight observability on the API.
 
 ## 4. Project Map
 

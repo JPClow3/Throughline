@@ -22,8 +22,17 @@ Throughline is a **Docker-first deployment app** designed for Dokploy (Traefik i
 ### Steps to Deploy
 1. **Provision EC2**: Ubuntu LTS, t3.medium recommended. Allocate Elastic IP, open ports 22, 80, 443. Point domain to it.
 2. **Install Dokploy**: `curl -sSL https://dokploy.com/install.sh | sh`
-3. **Compose Application**: In Dokploy, create a Compose service pointing to this Git repo. Set variables (`APP_HOST`, `VAPID_*`, `SESSION_SECRET`, `DISPATCH_TOKEN`).
+3. **Compose Application**: In Dokploy, create a Compose service pointing to this Git repo. The only required variable for the basic stack is `APP_HOST`.
 4. **Deploy**: Dokploy builds the images and starts `web` + `push-api` + `ofelia`.
+
+### Optional Environment Variables
+- `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `VITE_VAPID_PUBLIC_KEY`: enable Web Push.
+- `SESSION_SECRET`: recommended for production account/auth deployments.
+- `DISPATCH_TOKEN`: recommended so `/dispatch-due` is not callable without a bearer token.
+- `GOOGLE_CLIENT_ID`, `VITE_GOOGLE_CLIENT_ID`: enable Google sign-in.
+- `CORS_ORIGIN`: restrict CORS instead of allowing all origins.
+- `RATE_LIMIT_MAX`: override the default API rate limit.
+- `TRAEFIK_ENTRYPOINT`, `TRAEFIK_CERTRESOLVER`: override Dokploy/Traefik defaults only if your setup differs.
 
 ### Scaling Notes
 - The push store currently uses a single JSON file on a volume. Run only one `push-api` replica. A migration to SQLite/Redis is required to scale out.
