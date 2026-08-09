@@ -1,0 +1,34 @@
+sources:
+  architecture: []
+  domain:
+    - AGENTS.md
+    - CHANGELOG.md
+    - README.md
+    - audit-report.md
+    - docs/README.md
+    - docs/architecture.md
+    - docs/decision-log.md
+    - docs/deployment.md
+    - docs/development.md
+    - docs/notifications.md
+    - docs/product.md
+    - docs/ui-ux.md
+    - docs/windows-packaging.md
+  product: []
+  coding_conventions: []
+  testing: []
+  deployment: []
+  security: []
+  database: []
+  ui_design: []
+  historical_notes: []
+exclude:
+  - .git/**
+  - build/**
+  - dist/**
+  - docs/archive/**
+  - generated/**
+  - node_modules/**
+  - vendor/**
+conflicts: []
+generatedAt: 2026-08-08T03:45:15.382Z
