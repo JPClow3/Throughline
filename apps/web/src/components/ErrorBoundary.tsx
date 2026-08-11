@@ -28,7 +28,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     if (this.state.error) {
       return (
         <div className="crash-screen view-layout" role="alert">
-          <div className="crash-card glass-panel" style={{ textAlign: "center", padding: "var(--space-10) var(--space-6)", borderRadius: "var(--radius-card)", maxWidth: "400px" }}>
+          <div className="crash-card clay-panel" style={{ textAlign: "center", padding: "var(--space-10) var(--space-6)", borderRadius: "var(--radius-card)", maxWidth: "400px" }}>
             <span className="empty-state-icon" style={{ margin: "0 auto var(--space-4)" }}>
               <Warning size={32} color="var(--danger)" />
             </span>

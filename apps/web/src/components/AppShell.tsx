@@ -63,7 +63,7 @@ export function AppShell({
   return (
     <div className="flex h-screen w-full relative">
       <a href="#main-content" className="skip-link">Skip to main content</a>
-      <nav className="shell-sidebar hidden lg:flex fixed left-6 top-6 bottom-6 w-56 rounded-xl bg-[var(--chrome-bg)] border-[var(--glass-border)] shadow-sm flex-col py-base px-3 z-50" style={{ backdropFilter: 'var(--chrome-blur)', WebkitBackdropFilter: 'var(--chrome-blur)' }}>
+      <nav className="shell-sidebar hidden lg:flex fixed left-6 top-6 bottom-6 w-56 rounded-xl clay-panel flex-col py-base px-3 z-50" >
         <div className="shell-brand">
           <span className="shell-brand-mark">
             <ThroughlineMark size={22} />
@@ -90,7 +90,7 @@ export function AppShell({
                 className={`shell-nav-link h-11 rounded-lg flex items-center gap-3 px-3 transition-all duration-200 group relative
                   ${isActive
                     ? "text-primary bg-[var(--accent-soft)] shadow-sm"
-                    : "text-on-surface-variant interactive-scale hover:bg-[var(--accent-soft)]"}`}
+                    : "text-on-surface-variant clay-btn hover:bg-[var(--accent-soft)]"}`}
               >
                 <span className="shell-nav-icon">{item.icon}</span>
                 <span className="shell-nav-label font-label-md text-label-md">{item.label}</span>
@@ -116,7 +116,7 @@ export function AppShell({
           className={`shell-nav-link h-11 rounded-lg flex items-center gap-3 px-3 mt-auto transition-all duration-200 group
             ${view === "settings"
               ? "text-primary bg-[var(--accent-soft)]"
-              : "text-on-surface-variant interactive-scale hover:bg-[var(--accent-soft)]"}`}
+              : "text-on-surface-variant clay-btn hover:bg-[var(--accent-soft)]"}`}
         >
           <span className="shell-nav-icon"><Settings size={24} /></span>
           <span className="shell-nav-label font-label-md text-label-md">Settings</span>
@@ -128,7 +128,7 @@ export function AppShell({
         <div className="flex lg:hidden justify-between items-center w-full h-12 mb-6 flex-shrink-0">
           <span className="mobile-brand">Throughline</span>
           <div className="flex items-center gap-3">
-            <button type="button" className="shell-icon-button text-on-surface-variant hover:bg-[var(--accent-soft)] rounded-full p-2 transition-all" aria-label="Notifications">
+            <button type="button" className="shell-icon-button clay-btn text-on-surface-variant hover:bg-[var(--accent-soft)] rounded-full p-2 transition-all" aria-label="Notifications">
               <Bell size={20} />
             </button>
             <div className="shell-avatar w-8 h-8 rounded-full flex items-center justify-center text-white font-bold shadow-sm border-2 border-white" style={{ background: 'var(--tl-gradient-thread)' }}>
@@ -142,7 +142,7 @@ export function AppShell({
             <button
               type="button"
               onClick={onOpenCommandPalette}
-              className="shell-search-trigger relative bg-[var(--surface-2)] rounded-full flex items-center px-4 py-2 shadow-sm border border-[var(--border)] text-left"
+              className="shell-search-trigger clay-btn relative rounded-full flex items-center px-4 py-2 text-left"
               aria-label="Open global search"
             >
               <span className="shell-search-icon"><MagnifyingGlass size={18} /></span>
@@ -157,7 +157,7 @@ export function AppShell({
               <button
                 key={action.label}
                 type="button"
-                className={`shell-quiet-action${action.mobileOnly ? " hidden lg:inline-flex" : ""}`}
+                className={`shell-quiet-action clay-btn${action.mobileOnly ? " hidden lg:inline-flex" : ""}`}
                 onClick={action.onClick}
                 aria-label={action.label}
               >
@@ -165,16 +165,16 @@ export function AppShell({
                 <span className="font-label-md text-label-md hidden lg:inline">{action.label}</span>
               </button>
             ))}
-            <button type="button" className="shell-quiet-action" aria-label="View sync status">
+            <button type="button" className="shell-quiet-action clay-btn" aria-label="View sync status">
               <span className="shell-inline-icon"><ArrowsClockwise size={18} /></span>
               <span className="font-label-md text-label-md hidden lg:inline">Sync Status</span>
             </button>
             <div className="flex items-center gap-4">
-              <button type="button" className="shell-icon-button" aria-label="Notifications">
+              <button type="button" className="shell-icon-button clay-btn" aria-label="Notifications">
                 <Bell size={20} />
               </button>
             </div>
-            <button onClick={() => onNewTask?.()} className="shell-primary-action">
+            <button onClick={() => onNewTask?.()} className="shell-primary-action clay-btn">
               <Plus size={16} weight="bold" />
               New Task
             </button>
@@ -189,7 +189,7 @@ export function AppShell({
           <button
             type="button"
             onClick={primaryAction.onClick}
-            className="shell-mobile-primary-action lg:hidden"
+            className="shell-mobile-primary-action clay-btn lg:hidden"
             aria-label={primaryAction.label}
           >
             <span aria-hidden="true">{primaryAction.icon}</span>
@@ -197,7 +197,7 @@ export function AppShell({
         ) : null}
 
         {/* Mobile Bottom Navigation */}
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-20 bg-[var(--chrome-bg)] border-t border-[var(--glass-border)] shadow-[0_-4px_24px_rgba(0,0,0,0.04)] flex justify-around items-center px-2 pb-safe z-50" style={{ backdropFilter: 'var(--chrome-blur)', WebkitBackdropFilter: 'var(--chrome-blur)' }}>
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-20 clay-panel flex justify-around items-center px-2 pb-safe z-50" >
           {mobilePrimaryItems.map((item) => {
             const isActive = view === item.view;
             return (
@@ -214,7 +214,7 @@ export function AppShell({
                 className={`shell-mobile-nav-link flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-all
                   ${isActive 
                     ? "text-primary bg-[var(--accent-soft)]" 
-                    : "text-on-surface-variant"}`}
+                    : "text-on-surface-variant clay-btn"}`}
                 title={item.label}
                 aria-label={item.label}
               >
@@ -229,7 +229,7 @@ export function AppShell({
             className={`shell-mobile-nav-link flex flex-col items-center justify-center w-14 h-14 rounded-xl transition-all ${
               mobileMoreOpen || mobileMoreItems.some((item) => item.view === view)
                 ? "text-primary bg-[var(--accent-soft)]"
-                : "text-on-surface-variant"
+                : "text-on-surface-variant clay-btn"
             }`}
             aria-label="More"
             aria-expanded={mobileMoreOpen}
@@ -239,13 +239,13 @@ export function AppShell({
           </button>
         </nav>
         {mobileMoreOpen ? (
-          <div className="lg:hidden fixed bottom-24 left-4 right-4 z-50 rounded-xl bg-[var(--chrome-bg)] border border-[var(--glass-border)] shadow-lg p-2 grid grid-cols-2 gap-2" style={{ backdropFilter: 'var(--chrome-blur)', WebkitBackdropFilter: 'var(--chrome-blur)' }}>
+          <div className="lg:hidden fixed bottom-24 left-4 right-4 z-50 rounded-xl clay-panel p-2 grid grid-cols-2 gap-2" >
             {mobileMoreItems.map((item) => (
               <button
                 key={item.view}
                 type="button"
                 onClick={() => navigate(item.view)}
-                className={`shell-more-link h-12 rounded-lg flex items-center gap-2 px-3 text-left ${view === item.view ? "text-primary bg-[var(--accent-soft)]" : "text-on-surface-variant"}`}
+                className={`shell-more-link h-12 rounded-lg flex items-center gap-2 px-3 text-left ${view === item.view ? "text-primary bg-[var(--accent-soft)]" : "text-on-surface-variant clay-btn"}`}
               >
                 <span className="shell-nav-icon">{item.icon}</span>
                 <span className="font-label-md text-label-md">{item.label}</span>

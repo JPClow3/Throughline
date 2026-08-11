@@ -36,7 +36,7 @@ export function TermsOfService() {
 
           <h1 style={{ fontSize: "var(--text-display-lg)", marginBottom: "2rem" }}>Terms of Service</h1>
           
-          <div className="glass-panel" style={{ padding: "2.5rem", display: "grid", gap: "2rem", fontSize: "1.05rem", lineHeight: "1.6" }}>
+          <div className="clay-panel" style={{ padding: "2.5rem", display: "grid", gap: "2rem", fontSize: "1.05rem", lineHeight: "1.6" }}>
             <section>
               <h2 style={{ fontSize: "1.4rem", marginBottom: "0.75rem", fontWeight: "600" }}>Beta Software</h2>
               <p style={{ color: "var(--ink-faint)" }}>

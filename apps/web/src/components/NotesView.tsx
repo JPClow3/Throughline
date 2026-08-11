@@ -118,7 +118,7 @@ export function NotesView({
       </header>
       <section className={`notes-view${isMobileNotes && selected ? " notes-view-detailing" : ""}`}>
         {(!isMobileNotes || !selected) ? (
-        <div className="notes-list glass-panel">
+        <div className="notes-list clay-panel">
           <label className="note-search">
           <Search size={15} />
           <input

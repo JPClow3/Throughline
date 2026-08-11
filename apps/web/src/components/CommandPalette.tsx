@@ -61,7 +61,7 @@ export function CommandPalette({
       onOpenChange={setOpen} 
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/20 backdrop-blur-[4px] p-4 sm:p-0"
     >
-      <div className="w-full max-w-[600px] overflow-hidden rounded-2xl glass-panel shadow-[0px_12px_40px_rgba(0,0,0,0.1)] border-white/20 transform-gpu animate-in fade-in zoom-in-95 duration-200">
+      <div className="w-full max-w-[600px] overflow-hidden rounded-2xl clay-panel shadow-[0px_12px_40px_rgba(0,0,0,0.1)] border-white/20 transform-gpu animate-in fade-in zoom-in-95 duration-200">
         <Command.Input 
           autoFocus
           value={query}

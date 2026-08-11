@@ -83,7 +83,7 @@ export function ProjectsManager({ courses, tasks, onUpsertCourse, onDeleteCourse
   }
 
   return (
-    <div className="glass-panel settings-card">
+    <div className="clay-panel settings-card">
       <div className="project-rows">
         {courses.length ? (
           courses.map((course) =>

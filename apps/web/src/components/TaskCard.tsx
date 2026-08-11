@@ -144,12 +144,13 @@ export function TaskCard({
 
   return (
     <motion.article
-      className={`task-card${compact ? " task-card-compact" : ""}${done ? " is-done" : ""}${urgentGlow ? " urgent-pulse-glow" : ""} relative`}
-      style={{ "--project-color": course?.color ?? "var(--ink-faint)" } as CSSProperties}
+      className={`task-card clay-panel${compact ? " task-card-compact" : ""}${done ? " is-done" : ""}${urgentGlow ? " urgent-pulse-glow" : ""} relative cursor-pointer`}
+      style={{ "--project-color": course?.color ?? "var(--ink-faint)", borderRadius: "24px" } as CSSProperties}
       layout
       initial={{ opacity: 0, y: 6 }}
       animate={justCompleted ? { opacity: [1, 0.92, 1], y: [0, -3, 0] } : { opacity: 1, y: 0, scale: 1 }}
-      whileHover={justCompleted ? undefined : { y: -2 }}
+      whileHover={justCompleted ? undefined : { y: -4, scale: 1.015, boxShadow: "0 20px 40px -12px rgba(0,0,0,0.15)" }}
+      whileTap={{ scale: 0.95 }}
       transition={justCompleted ? { duration: 0.4, ease: "easeOut" } : { type: "spring", stiffness: 300, damping: 28 }}
     >
       <AnimatePresence>

@@ -210,7 +210,7 @@ export function App() {
   return (
     <MotionConfig reducedMotion="user">
       <IconContext.Provider value={{ weight: "regular" }}>
-        <DynamicBackground tasks={tasks} />
+        <DynamicBackground />
         
         {isInstallable && !bannerDismissed && (
           <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] bg-surface-2 border border-border rounded-xl shadow-lg px-4 py-3 flex items-center gap-4 max-w-[90vw] md:max-w-md">

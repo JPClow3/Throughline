@@ -1,53 +1,53 @@
 # UI/UX Constitution
 
-This document defines the interface and interaction guidelines for Throughline, built upon the **LiquidGlass** visual system.
+This document defines the interface and interaction guidelines for Throughline, built upon the **Claymorphism** visual system.
 
 ## 1. Core Principles & Mindset
 
 - **First Screen Efficiency:** The initial screen is the fully usable application.
 - **Student-Life Focus:** Optimize for frictionless action and reduced cognitive load to help manage classes, assignments, and study stress.
 - **Calm, High-Contrast Planner:** Lead with typographic clarity and functional whitespace. Gamification is visually clean and easily toggled.
-- **Layered Glass Depth:** The UI uses glass, elevation, blur, and motion to clarify hierarchy without adding a separate 3D workspace layer.
-- **Glassmorphic Legibility:** Visual depth must never compromise accessibility. Text colors maintain high contrast against translucent layers.
+- **Tactile Clay Depth:** The UI uses soft 3D inflated shapes, double inner shadows, and soft drop shadows to clarify hierarchy without relying on blurs or translucency.
+- **Solid Legibility:** Visual depth must never compromise accessibility. Text colors maintain high contrast against solid pastel or matte backgrounds.
 
 ## 2. Theme, Light & Colour
 
-- **Themes:** Light mode leverages ambient "light leaks" (a mesh of Lavender, Mint, Soft Blue). Soft dark mode supported.
+- **Themes:** Light mode leverages soft pastel backgrounds. Soft dark mode uses matte grays and deep blues.
 - **Palette:**
   - **Primary:** Refined Indigo (sparingly for high intent).
-  - **Surface:** Semi-translucent whites and neutrals (glass substrate).
+  - **Surface:** Solid off-whites and pastels (clay base).
   - **Accents:** Mint (Secondary) and Blue (Tertiary) for semantic feedback.
-  - **Refraction:** Pure White (#FFFFFF) at 20% opacity for "inner-glow" borders.
+  - **Inner Shadows:** A bright top-left inner shadow (highlight) and a darker bottom-right inner shadow (depth) to create the "inflated" 3D look.
 
-## 3. Glassmorphism & Elevation Z-Axis
+## 3. Claymorphism & Elevation Z-Axis
 
-Depth is the primary navigator. There is no 3D layer—depth comes from layering on a solid background.
-- **Level 0 (Background):** Ambient mesh gradient.
-- **Level 1 (Substrate):** Main content panels (40px blur, 60% white fill, 1px White/20 border).
-- **Level 2 (Interactive):** Hovered states, cards (60px blur, 80% white fill, pronounced shadow).
-- **Level 3 (Modals/Overlays):** Quick-add sheets, dialogs (80px blur, deepest shadow).
-*Rule:* Every glass element must have a 1px solid refracting border to define edges.
+Depth is the primary navigator. There is no separate 3D canvas—depth comes from inflated surfaces on a solid background.
+- **Level 0 (Background):** Solid soft color (e.g., off-white or soft pastel).
+- **Level 1 (Substrate):** Main content panels (solid fill, double inner shadows, larger border radius).
+- **Level 2 (Interactive):** Hovered states, cards (slightly lighter fill, pronounced drop shadow).
+- **Level 3 (Modals/Overlays):** Quick-add sheets, dialogs (deepest outer shadow, prominent inflation).
+*Rule:* Every clay element must have inner highlights and inner shadows to define its 3D volume, with larger, bubbly corner radii.
 
 ## 4. Typography & Layout
 
-- **Typography:** Self-hosted **Geist Variable**. Weights are reduced (300 for display) to emphasize lightness. Use tabular numerals for stats and dates.
+- **Typography:** Self-hosted **Geist Variable**. Weights are standard to anchor the fluffy UI elements. Use tabular numerals for stats and dates.
 - **Layout:** 12-column fixed grid (1440px max-width) on desktop with 24px gutters. 8pt spatial system.
 - **Whitespace:** Emphasize "Functional Whitespace" (48px+ gaps) to let the background breathe.
-- **Glass Modules:** Floating glass panels must have consistent 24px internal padding.
+- **Clay Modules:** Solid clay panels must have consistent 24px internal padding and bubbly radii (e.g., 24px+).
 
 ## 5. Interaction & Motion
 
-- **Hover Micro-Animations:** Interactive elements scale up slightly (`1.015x`) and elevate their shadows.
-- **Tactile Click Feedback:** Clicks trigger a quick compression effect (`0.98x`).
-- **Z-Axis Sheet Transitions:** Sheets (like task composer) use smooth spring transitions to zoom and slide in over a blurred backdrop (Level 3).
-- **Navigation Dock:** The primary navigation is a high-blur floating dock.
+- **Hover Micro-Animations:** Interactive elements scale up slightly (`1.015x`), increase their drop shadow, and slightly lighten their inner shadow to feel more "inflated".
+- **Tactile Click Feedback:** Clicks trigger a deep compression effect (`0.95x`) and increased inner darkness to simulate pressing a soft button.
+- **Z-Axis Sheet Transitions:** Sheets (like task composer) use smooth spring transitions to zoom and slide in over a dimmed solid backdrop.
+- **Navigation Dock:** The primary navigation is a soft, solid floating dock.
 
 ## 6. Component Specifics
 
-- **Buttons:** Primary uses Indigo fill/white text. Secondary uses glass with a refraction border.
-- **Input Fields:** Semi-translucent (10% white). Focus increases border opacity and backdrop blur.
-- **Lists & Selectors:** Transparent background by default, frosted on hover.
-- **Cards & Modules:** Strict 24px internal padding; avoid inner borders.
+- **Buttons:** Primary uses Indigo fill/white text with clay inner shadows. Secondary uses a lighter clay surface.
+- **Input Fields:** Inset clay surfaces (reversing the inner shadows so they look pressed-in).
+- **Lists & Selectors:** Solid background by default, elevated on hover.
+- **Cards & Modules:** Strict 24px internal padding; bubbly borders.
 
 ## 7. Core Workflows
 

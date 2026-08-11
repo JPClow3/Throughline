@@ -203,7 +203,7 @@ export function SettingsPanel({
       </header>
       <section className="settings-grid">
         {account ? (
-          <div className="glass-panel settings-card">
+          <div className="clay-panel settings-card">
             <header>
               <CloudCheck size={20} />
               <h2>Account</h2>
@@ -231,7 +231,7 @@ export function SettingsPanel({
         ) : null}
 
         {account ? (
-          <div className="glass-panel settings-card">
+          <div className="clay-panel settings-card">
             <header>
               <Key size={20} />
               <h2>Recovery key</h2>
@@ -290,7 +290,7 @@ export function SettingsPanel({
           </div>
         ) : null}
 
-        <div className="glass-panel settings-card">
+        <div className="clay-panel settings-card">
           <header>
             <Palette size={20} />
             <h2>Appearance</h2>
@@ -331,7 +331,7 @@ export function SettingsPanel({
         </div>
       </div>
 
-      <div className="glass-panel settings-card">
+      <div className="clay-panel settings-card">
         <header>
           <MonitorCheck size={20} />
           <h2>App readiness</h2>
@@ -364,7 +364,7 @@ export function SettingsPanel({
         <p>Throughline is designed to work fully offline once the shell is cached.</p>
       </div>
 
-      <div className="glass-panel settings-card">
+      <div className="clay-panel settings-card">
         <header>
           <Bell size={20} />
           <h2>Notifications</h2>
@@ -395,7 +395,7 @@ export function SettingsPanel({
         </div>
       </div>
 
-      <div className="glass-panel settings-card">
+      <div className="clay-panel settings-card">
         <header>
           <RadioTower size={20} />
           <h2>Redacted push</h2>
@@ -431,7 +431,7 @@ export function SettingsPanel({
         <span className="status-pill">{status}</span>
       </div>
 
-      <div className="glass-panel settings-card">
+      <div className="clay-panel settings-card">
         <header>
           <CalendarPlus size={20} />
           <h2>Calendar export</h2>
@@ -443,7 +443,7 @@ export function SettingsPanel({
         </button>
       </div>
 
-      <div className="glass-panel settings-card">
+      <div className="clay-panel settings-card">
         <header>
           <Database size={20} />
           <h2>Your data</h2>

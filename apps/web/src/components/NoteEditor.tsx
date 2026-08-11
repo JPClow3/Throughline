@@ -44,10 +44,10 @@ export function NoteEditor({ note, tasks, goals, onSave, onDelete, onToggleLink,
   }
 
   return (
-    <div className="note-editor glass-panel">
+    <div className="note-editor clay-panel">
       <div className="note-editor-head">
         <input
-          className="note-editor-title"
+          className="note-editor-title clay-input"
           value={title}
           placeholder="Title"
           aria-label="Note title"
@@ -94,7 +94,7 @@ export function NoteEditor({ note, tasks, goals, onSave, onDelete, onToggleLink,
 
       {mode === "write" ? (
         <textarea
-          className="note-editor-body"
+          className="note-editor-body clay-input"
           value={body}
           placeholder="Start writing… markdown is welcome."
           aria-label="Note body"
@@ -159,7 +159,7 @@ export function NoteEditor({ note, tasks, goals, onSave, onDelete, onToggleLink,
         </div>
         {unlinkedTasks.length || unlinkedGoals.length ? (
           <select
-            className="note-link-add"
+            className="note-link-add clay-input"
             value=""
             aria-label="Link a task or goal"
             onChange={(event) => {

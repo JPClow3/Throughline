@@ -117,7 +117,7 @@ export function GoalDetail({
 
   return (
     <section className="goal-detail" style={{ "--project-color": accent } as CSSProperties}>
-      <div className="goal-detail-head glass-panel">
+      <div className="goal-detail-head clay-panel">
         <button className="goal-back" type="button" onClick={onBack}>
           <ArrowLeft size={16} /> All goals
         </button>
@@ -240,7 +240,7 @@ export function GoalDetail({
         <div className="goal-note-list">
           {linkedNotes.length ? (
             linkedNotes.map((note) => (
-              <div key={note.id} className="goal-note-card glass-panel">
+              <div key={note.id} className="goal-note-card clay-panel">
                 <strong>{noteDisplayTitle(note)}</strong>
                 <p>{noteExcerpt(note.body, 100) || "Empty note — open Notes to write it."}</p>
               </div>

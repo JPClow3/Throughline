@@ -40,6 +40,7 @@ export function GoalComposer({ courses, goal, onSubmit }: GoalComposerProps) {
       <label>
         <span>Goal</span>
         <input
+          className="clay-input"
           autoFocus
           value={title}
           onChange={(event) => setTitle(event.target.value)}
@@ -49,6 +50,7 @@ export function GoalComposer({ courses, goal, onSubmit }: GoalComposerProps) {
       <label>
         <span>Summary</span>
         <input
+          className="clay-input"
           value={summary}
           onChange={(event) => setSummary(event.target.value)}
           placeholder="A short why (optional)"
@@ -57,7 +59,7 @@ export function GoalComposer({ courses, goal, onSubmit }: GoalComposerProps) {
       <div className="composer-grid">
         <label>
           <span>Project</span>
-          <select value={projectId} onChange={(event) => setProjectId(event.target.value)}>
+          <select className="clay-input" value={projectId} onChange={(event) => setProjectId(event.target.value)}>
             <option value="">None</option>
             {courses.map((course) => (
               <option key={course.id} value={course.id}>
@@ -68,10 +70,10 @@ export function GoalComposer({ courses, goal, onSubmit }: GoalComposerProps) {
         </label>
         <label>
           <span>Target date</span>
-          <input type="date" value={targetDate} onChange={(event) => setTargetDate(event.target.value)} />
+          <input className="clay-input" type="date" value={targetDate} onChange={(event) => setTargetDate(event.target.value)} />
         </label>
       </div>
-      <button className="primary-button" type="submit">
+      <button className="primary-button clay-btn" type="submit">
         <Plus size={17} /> {goal ? "Save changes" : "Create goal"}
       </button>
     </form>

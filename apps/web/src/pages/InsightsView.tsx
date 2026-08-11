@@ -97,7 +97,7 @@ export function InsightsView() {
         </div>
       </header>
 
-      <section className="insights-coaching glass-panel" aria-labelledby="insights-coaching-title">
+      <section className="insights-coaching clay-panel" aria-labelledby="insights-coaching-title">
         <div>
           <span className="eyebrow">What to adjust this week</span>
           <h2 id="insights-coaching-title">Keep pressure visible before it turns noisy.</h2>
@@ -134,7 +134,7 @@ export function InsightsView() {
       </section>
 
       <section className="insights-grid">
-        <article className="glass-panel insights-module">
+        <article className="clay-panel insights-module">
           <div className="insights-module-head">
             <div>
               <span className="eyebrow">Rhythm</span>
@@ -158,7 +158,7 @@ export function InsightsView() {
           </ol>
         </article>
 
-        <article className="glass-panel insights-module">
+        <article className="clay-panel insights-module">
           <div className="insights-module-head">
             <div>
               <span className="eyebrow">Course load</span>
@@ -198,7 +198,7 @@ function InsightStat({
   value: string;
 }) {
   return (
-    <article className={`glass-panel insights-stat insights-stat-${tone}`}>
+    <article className={`clay-panel insights-stat insights-stat-${tone}`}>
       <div className="insights-stat-icon" aria-hidden="true">{icon}</div>
       <span>{label}</span>
       <strong>{value}</strong>

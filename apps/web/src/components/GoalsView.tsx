@@ -100,7 +100,7 @@ export function GoalsView({
             return (
               <button
                 key={goal.id}
-                className="goal-card glass-panel"
+                className="goal-card clay-panel"
                 type="button"
                 onClick={() => onSelectGoal(goal.id)}
                 style={{ "--project-color": accent } as CSSProperties}

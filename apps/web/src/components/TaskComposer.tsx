@@ -95,6 +95,7 @@ export function TaskComposer({ courses, goals = [], showGameLayer = false, initi
       <label>
         <span>Title</span>
         <input
+          className="clay-input"
           autoFocus
           required
           value={title}
@@ -115,7 +116,7 @@ export function TaskComposer({ courses, goals = [], showGameLayer = false, initi
       <div className="composer-grid">
         <label>
           <span>Project</span>
-          <select value={courseId} onChange={(event) => {
+          <select className="clay-input" value={courseId} onChange={(event) => {
             const nextCourseId = event.target.value;
             setCourseId(nextCourseId);
             const course = courses.find(c => c.id === nextCourseId);
@@ -133,14 +134,14 @@ export function TaskComposer({ courses, goals = [], showGameLayer = false, initi
         </label>
         <label>
           <span>Due</span>
-          <input type="datetime-local" value={dueAt} onChange={(event) => setDueAt(event.target.value)} />
+          <input className="clay-input" type="datetime-local" value={dueAt} onChange={(event) => setDueAt(event.target.value)} />
         </label>
       </div>
 
       {goals.length ? (
         <label>
           <span>Goal</span>
-          <select value={goalId} onChange={(event) => setGoalId(event.target.value)}>
+          <select className="clay-input" value={goalId} onChange={(event) => setGoalId(event.target.value)}>
             <option value="">No goal</option>
             {goals.map((goal) => (
               <option key={goal.id} value={goal.id}>
@@ -166,6 +167,7 @@ export function TaskComposer({ courses, goals = [], showGameLayer = false, initi
           <label>
             <span>Description</span>
             <textarea
+              className="clay-input"
               value={description}
               onChange={(event) => setDescription(event.target.value)}
               placeholder="A short note about what done looks like"
@@ -174,7 +176,7 @@ export function TaskComposer({ courses, goals = [], showGameLayer = false, initi
           <div className="composer-grid">
             <label>
               <span>Priority</span>
-              <select value={priority} onChange={(event) => setPriority(event.target.value as Priority)}>
+              <select className="clay-input" value={priority} onChange={(event) => setPriority(event.target.value as Priority)}>
                 {priorities.map((item) => (
                   <option key={item} value={item}>
                     {item}
@@ -184,12 +186,12 @@ export function TaskComposer({ courses, goals = [], showGameLayer = false, initi
             </label>
             <label>
               <span>Reminder</span>
-              <input type="datetime-local" value={reminderAt} onChange={(event) => setReminderAt(event.target.value)} />
+              <input className="clay-input" type="datetime-local" value={reminderAt} onChange={(event) => setReminderAt(event.target.value)} />
             </label>
           </div>
           <label>
             <span>Recurrence</span>
-            <select value={recurrence} onChange={(event) => setRecurrence(event.target.value as "daily" | "weekly" | "biweekly" | "monthly" | "custom" | "")}>
+            <select className="clay-input" value={recurrence} onChange={(event) => setRecurrence(event.target.value as "daily" | "weekly" | "biweekly" | "monthly" | "custom" | "")}>
               <option value="">None</option>
               <option value="daily">Daily</option>
               <option value="weekly">Weekly</option>
@@ -199,7 +201,7 @@ export function TaskComposer({ courses, goals = [], showGameLayer = false, initi
           </label>
           <label>
             <span>Tags</span>
-            <input value={tags} onChange={(event) => setTags(event.target.value)} placeholder="reading, errand" />
+            <input className="clay-input" value={tags} onChange={(event) => setTags(event.target.value)} placeholder="reading, errand" />
           </label>
           <div className="subtasks-editor" style={{ marginBottom: "1rem" }}>
             <span style={{ fontSize: "var(--text-sm)", fontWeight: "var(--fw-medium)", color: "var(--ink-muted)", marginBottom: "0.4rem", display: "block" }}>Subtasks</span>
@@ -211,7 +213,7 @@ export function TaskComposer({ courses, goals = [], showGameLayer = false, initi
                     next[index] = { ...next[index], completed: e.target.checked };
                     setSubtasks(next);
                   }} style={{ width: "auto" }} />
-                  <input value={st.title} onChange={(e) => {
+                  <input className="clay-input" value={st.title} onChange={(e) => {
                     const next = [...subtasks];
                     next[index] = { ...next[index], title: e.target.value };
                     setSubtasks(next);
@@ -257,7 +259,7 @@ export function TaskComposer({ courses, goals = [], showGameLayer = false, initi
               </div>
               <label>
                 <span>Attribute</span>
-                <select value={attribute} onChange={(event) => setAttribute(event.target.value as RpgAttribute)}>
+                <select className="clay-input" value={attribute} onChange={(event) => setAttribute(event.target.value as RpgAttribute)}>
                   {rpgAttributes.map((item) => (
                     <option key={item} value={item}>
                       {item}
@@ -270,7 +272,7 @@ export function TaskComposer({ courses, goals = [], showGameLayer = false, initi
         </div>
       ) : null}
 
-      <button className="primary-button" type="submit" disabled={!canSubmit}>
+      <button className="primary-button clay-btn" type="submit" disabled={!canSubmit}>
         <Plus size={18} />
         {isSubmitting ? "Adding..." : "Add task"}
       </button>
