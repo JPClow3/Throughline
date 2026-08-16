@@ -72,19 +72,25 @@ npm run deploy:worker
 #### Step 4: Deploy Frontend to Cloudflare Pages
 
 **Option A: Cloudflare Dashboard GitHub Integration (Automatic Git Builds)**
-1. In Cloudflare Dashboard, navigate to **Compute (Workers) > Pages > Connect to Git**.
+1. In Cloudflare Dashboard, navigate to **Compute (Workers) > Pages > Connect to Git** (or create an application connected to your repository).
 2. Select your GitHub repository.
-3. Configure Build Settings:
-   - **Framework preset**: `None` / `Vite`
-   - **Build command**: `npm run build:pages`
-   - **Build output directory**: `apps/web/dist`
-   - **Root directory**: `/`
+3. Configure Build Settings for **Frontend (Pages)**:
+   - **Framework preset**: `Vite` (or `None`)
+   - **Root directory**: `apps/web` (important in monorepo workspaces so Wrangler targets the web project)
+   - **Build command**: `npm run build`
+   - **Build output directory**: `dist`
 4. Add Environment Variables:
    - `NODE_VERSION`: `24`
    - `VITE_PUSH_API_URL`: `/api` (if using custom domain route or proxy) or `https://throughline-api.<your-account>.workers.dev`
    - `VITE_VAPID_PUBLIC_KEY`: your VAPID public key
    - `VITE_GOOGLE_CLIENT_ID`: (optional) your Google OAuth client ID
 5. Click **Save and Deploy**. Cloudflare Pages will automatically deploy every push to `main` and generate preview deployments for Pull Requests.
+
+> [!NOTE]
+> If deploying the **Backend API Worker (`apps/push-api`)** as a Git-connected Worker project in Cloudflare Dashboard:
+> - **Root directory**: `apps/push-api`
+> - **Build command**: `npm run build`
+> - **Deploy command**: `npx wrangler deploy`
 
 **Option B: GitHub Actions Automated CI/CD Workflow**
 The repository includes `.github/workflows/deploy-cloudflare.yml`.
