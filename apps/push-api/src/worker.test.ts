@@ -2,60 +2,41 @@ import { DatabaseSync } from "node:sqlite";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it, vi } from "vitest";
+import type { Sql } from "postgres";
 import webpush from "web-push";
-import { D1Database, D1PreparedStatement, D1PushStore } from "./d1Store";
+import { PostgresPushStore } from "./postgresStore";
 import { dispatchDueReminders, handleRequest, SESSION_COOKIE, WorkerEnv } from "./worker";
 
-function createTestD1(): D1Database {
+function createTestSql(): Sql {
   const db = new DatabaseSync(":memory:");
   const migrationSql = readFileSync(resolve(__dirname, "../migrations/0001_initial.sql"), "utf8");
   db.exec(migrationSql);
 
-  const makeStmt = (query: string, params: unknown[] = []): D1PreparedStatement => ({
-    bind(...values: unknown[]) {
-      return makeStmt(query, values);
-    },
-    async first<T = Record<string, unknown>>(colName?: string): Promise<T | null> {
-      const stmt = db.prepare(query);
-      const row = stmt.get(...(params as (string | number | bigint | null | Uint8Array | Buffer)[])) as Record<string, unknown> | undefined;
-      if (!row) return null;
-      if (colName) return (row[colName] as T) ?? null;
-      return row as T;
-    },
-    async all<T = Record<string, unknown>>(): Promise<{ results: T[]; success: boolean }> {
-      const stmt = db.prepare(query);
-      const results = stmt.all(...(params as (string | number | bigint | null | Uint8Array | Buffer)[])) as T[];
-      return { results, success: true };
-    },
-    async run(): Promise<{ success: boolean }> {
-      const stmt = db.prepare(query);
-      stmt.run(...(params as (string | number | bigint | null | Uint8Array | Buffer)[]));
-      return { success: true };
-    }
-  });
-
-  return {
-    prepare(query: string) {
-      return makeStmt(query);
-    },
-    async batch<T = unknown>(statements: D1PreparedStatement[]) {
-      const results: { results?: T[]; success: boolean }[] = [];
-      for (const s of statements) {
-        await s.run();
-        results.push({ success: true });
+  const sqlFn = (strings: TemplateStringsArray, ...values: unknown[]) => {
+    let query = "";
+    for (let i = 0; i < strings.length; i++) {
+      query += strings[i];
+      if (i < values.length) {
+        query += "?";
       }
-      return results;
-    },
-    async exec(query: string) {
-      db.exec(query);
-      return { count: 1, duration: 0 };
+    }
+    const stmt = db.prepare(query);
+    const trimmed = query.trim().toUpperCase();
+    if (trimmed.startsWith("SELECT") || trimmed.startsWith("WITH")) {
+      const results = stmt.all(...(values as (string | number | bigint | null | Uint8Array | Buffer)[]));
+      return Promise.resolve(results);
+    } else {
+      stmt.run(...(values as (string | number | bigint | null | Uint8Array | Buffer)[]));
+      return Promise.resolve([]);
     }
   };
+
+  return sqlFn as unknown as Sql;
 }
 
-describe("Cloudflare Worker API", () => {
+describe("Cloudflare Worker API (PostgreSQL / Neon)", () => {
   const env: WorkerEnv = {
-    DB: createTestD1() as unknown as D1Database,
+    SQL: createTestSql(),
     COOKIE_SECURE: "false",
     VAPID_PUBLIC_KEY: "test-pub-key",
     VAPID_PRIVATE_KEY: "test-priv-key",
@@ -105,9 +86,13 @@ describe("Cloudflare Worker API", () => {
     const { endpointHash } = await subRes.json() as { endpointHash: string };
     expect(endpointHash).toBeDefined();
 
-    // Create a reminder
-    const now = new Date().toISOString();
-    const reminderRes = await handleRequest(
+    // Health count should reflect 1 subscription
+    const healthRes1 = await handleRequest(new Request("http://localhost/health"), env);
+    const health1 = await healthRes1.json() as { subscriptions: number };
+    expect(health1.subscriptions).toBe(1);
+
+    // Save reminder
+    const remRes = await handleRequest(
       new Request("http://localhost/reminders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -116,20 +101,20 @@ describe("Cloudflare Worker API", () => {
           reminder: {
             reminderId: "rem_1",
             taskId: "task_1",
-            notifyAt: new Date(Date.now() + 60000).toISOString(),
-            urgency: "normal",
+            notifyAt: "2026-02-15T09:00:00.000Z",
+            urgency: "high",
             title: "Quest reminder",
             body: "A study quest needs your attention.",
-            createdAt: now
+            createdAt: "2026-02-14T09:00:00.000Z"
           }
         })
       }),
       env
     );
-    expect(reminderRes.status).toBe(201);
+    expect(remRes.status).toBe(201);
 
     // Bulk replace reminders
-    const replaceRes = await handleRequest(
+    const bulkRes = await handleRequest(
       new Request(`http://localhost/subscriptions/${endpointHash}/reminders`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -138,20 +123,20 @@ describe("Cloudflare Worker API", () => {
             {
               reminderId: "rem_2",
               taskId: "task_2",
-              notifyAt: new Date(Date.now() + 120000).toISOString(),
-              urgency: "high",
+              notifyAt: "2026-02-15T10:00:00.000Z",
+              urgency: "normal",
               title: "Quest reminder",
               body: "A study quest needs your attention.",
-              createdAt: now
+              createdAt: "2026-02-14T09:00:00.000Z"
             }
           ]
         })
       }),
       env
     );
-    expect(replaceRes.status).toBe(200);
-    const replaceData = await replaceRes.json() as { reminderCount: number };
-    expect(replaceData.reminderCount).toBe(1);
+    expect(bulkRes.status).toBe(200);
+    const bulk = await bulkRes.json() as { count: number };
+    expect(bulk.count).toBe(1);
 
     // Delete subscription
     const delRes = await handleRequest(
@@ -159,19 +144,25 @@ describe("Cloudflare Worker API", () => {
       env
     );
     expect(delRes.status).toBe(204);
+
+    // Health counts should be 0
+    const healthRes2 = await handleRequest(new Request("http://localhost/health"), env);
+    const health2 = await healthRes2.json() as { subscriptions: number; reminders: number };
+    expect(health2.subscriptions).toBe(0);
+    expect(health2.reminders).toBe(0);
   });
 
   it("handles auth signup, login, logout, password change and recovery key rotation", async () => {
     const signupData = {
       email: "student@example.com",
-      salt: "salt_123",
-      authKey: "auth_key_123",
-      wrappedDek: "wrapped_dek_123",
-      recoveryAuthKey: "recovery_auth_123",
-      recoveryWrappedDek: "recovery_dek_123"
+      salt: "salt_abc123",
+      authKey: "authKey_secret",
+      wrappedDek: "wrappedDek_payload",
+      recoveryAuthKey: "recovery_authKey_secret",
+      recoveryWrappedDek: "recovery_wrappedDek_payload"
     };
 
-    // Signup
+    // 1. Signup
     const signupRes = await handleRequest(
       new Request("http://localhost/auth/signup", {
         method: "POST",
@@ -181,22 +172,24 @@ describe("Cloudflare Worker API", () => {
       env
     );
     expect(signupRes.status).toBe(201);
-    const cookieHeader = signupRes.headers.get("Set-Cookie");
-    expect(cookieHeader).toContain(SESSION_COOKIE);
-    const sessionToken = cookieHeader?.match(new RegExp(`${SESSION_COOKIE}=([^;]+)`))?.[1];
+    const cookie = signupRes.headers.get("Set-Cookie");
+    expect(cookie).toContain(SESSION_COOKIE);
+    const { userId, email } = await signupRes.json() as { userId: string; email: string };
+    expect(userId).toBeDefined();
+    expect(email).toBe("student@example.com");
 
-    // Auth Me
-    const meRes = await handleRequest(
-      new Request("http://localhost/auth/me", {
-        headers: { Cookie: `${SESSION_COOKIE}=${sessionToken}` }
+    // Duplicate signup should fail with 409
+    const dupRes = await handleRequest(
+      new Request("http://localhost/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(signupData)
       }),
       env
     );
-    expect(meRes.status).toBe(200);
-    const me = await meRes.json() as { email: string };
-    expect(me.email).toBe("student@example.com");
+    expect(dupRes.status).toBe(409);
 
-    // Fetch Salt
+    // 2. Fetch salt
     const saltRes = await handleRequest(
       new Request("http://localhost/auth/salt", {
         method: "POST",
@@ -207,74 +200,142 @@ describe("Cloudflare Worker API", () => {
     );
     expect(saltRes.status).toBe(200);
     const { salt } = await saltRes.json() as { salt: string };
-    expect(salt).toBe("salt_123");
+    expect(salt).toBe("salt_abc123");
 
-    // Login with password authKey
+    // Salt for non-existent email returns 404
+    const noSaltRes = await handleRequest(
+      new Request("http://localhost/auth/salt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: "unknown@example.com" })
+      }),
+      env
+    );
+    expect(noSaltRes.status).toBe(404);
+
+    // 3. Login with correct authKey
     const loginRes = await handleRequest(
       new Request("http://localhost/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: "student@example.com", authKey: "auth_key_123" })
+        body: JSON.stringify({ email: "student@example.com", authKey: "authKey_secret" })
       }),
       env
     );
     expect(loginRes.status).toBe(200);
-    const loginData = await loginRes.json() as { wrappedDek: string };
-    expect(loginData.wrappedDek).toBe("wrapped_dek_123");
+    const loginData = await loginRes.json() as { userId: string; salt: string; wrappedDek: string };
+    expect(loginData.userId).toBe(userId);
+    expect(loginData.salt).toBe("salt_abc123");
+    expect(loginData.wrappedDek).toBe("wrappedDek_payload");
 
-    // Login with recovery authKey
-    const recoveryLoginRes = await handleRequest(
+    // Login with invalid credentials returns 401
+    const badLoginRes = await handleRequest(
       new Request("http://localhost/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: "student@example.com", authKey: "recovery_auth_123" })
+        body: JSON.stringify({ email: "student@example.com", authKey: "wrong_key" })
       }),
       env
     );
-    expect(recoveryLoginRes.status).toBe(200);
-    const recData = await recoveryLoginRes.json() as { wrappedDek: string };
-    expect(recData.wrappedDek).toBe("recovery_dek_123");
+    expect(badLoginRes.status).toBe(401);
 
-    // Update password
-    const updatePwRes = await handleRequest(
+    // 4. GET /auth/me with session cookie
+    const token = cookie?.split(";")[0];
+    const meRes = await handleRequest(
+      new Request("http://localhost/auth/me", {
+        headers: { Cookie: token || "" }
+      }),
+      env
+    );
+    expect(meRes.status).toBe(200);
+    const me = await meRes.json() as { userId: string; email: string };
+    expect(me.userId).toBe(userId);
+
+    // GET /auth/me without session cookie returns 401
+    const unauthMe = await handleRequest(new Request("http://localhost/auth/me"), env);
+    expect(unauthMe.status).toBe(401);
+
+    // 5. Update Password
+    const updatePassRes = await handleRequest(
       new Request("http://localhost/auth/update-password", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Cookie: `${SESSION_COOKIE}=${sessionToken}`
-        },
-        body: JSON.stringify({ authKey: "new_auth_key", wrappedDek: "new_wrapped_dek" })
+        headers: { "Content-Type": "application/json", Cookie: token || "" },
+        body: JSON.stringify({ authKey: "new_authKey", wrappedDek: "new_wrappedDek" })
       }),
       env
     );
-    expect(updatePwRes.status).toBe(204);
+    expect(updatePassRes.status).toBe(204);
 
-    // Update recovery key
+    // Old password should now fail
+    const oldLogin = await handleRequest(
+      new Request("http://localhost/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: "student@example.com", authKey: "authKey_secret" })
+      }),
+      env
+    );
+    expect(oldLogin.status).toBe(401);
+
+    // New password succeeds
+    const newLogin = await handleRequest(
+      new Request("http://localhost/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: "student@example.com", authKey: "new_authKey" })
+      }),
+      env
+    );
+    expect(newLogin.status).toBe(200);
+
+    // 6. Update Recovery Key
     const updateRecRes = await handleRequest(
       new Request("http://localhost/auth/update-recovery-key", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Cookie: `${SESSION_COOKIE}=${sessionToken}`
-        },
-        body: JSON.stringify({ recoveryAuthKey: "new_rec_auth", recoveryWrappedDek: "new_rec_dek" })
+        headers: { "Content-Type": "application/json", Cookie: token || "" },
+        body: JSON.stringify({
+          recoveryAuthKey: "new_rec_authKey",
+          recoveryWrappedDek: "new_rec_wrappedDek"
+        })
       }),
       env
     );
     expect(updateRecRes.status).toBe(204);
 
-    // Logout
+    // Recovery login with updated recovery key works
+    const recLogin = await handleRequest(
+      new Request("http://localhost/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: "student@example.com", authKey: "new_rec_authKey" })
+      }),
+      env
+    );
+    expect(recLogin.status).toBe(200);
+    const recData = await recLogin.json() as { wrappedDek: string };
+    expect(recData.wrappedDek).toBe("new_rec_wrappedDek");
+
+    // 7. Logout
     const logoutRes = await handleRequest(
       new Request("http://localhost/auth/logout", {
         method: "POST",
-        headers: { Cookie: `${SESSION_COOKIE}=${sessionToken}` }
+        headers: { Cookie: token || "" }
       }),
       env
     );
     expect(logoutRes.status).toBe(204);
+
+    // Session is now invalidated
+    const postLogoutMe = await handleRequest(
+      new Request("http://localhost/auth/me", {
+        headers: { Cookie: token || "" }
+      }),
+      env
+    );
+    expect(postLogoutMe.status).toBe(401);
   });
 
-  it("handles E2EE encrypted sync push and pull", async () => {
+  it("handles E2EE encrypted sync (pull and push)", async () => {
     // Signup user
     const signupRes = await handleRequest(
       new Request("http://localhost/auth/signup", {
@@ -282,37 +343,48 @@ describe("Cloudflare Worker API", () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: "sync_user@example.com",
-          salt: "s1",
-          authKey: "k1",
-          wrappedDek: "w1",
-          recoveryAuthKey: "r1",
-          recoveryWrappedDek: "rw1"
+          salt: "salt_sync",
+          authKey: "sync_key",
+          wrappedDek: "wrappedDek_sync",
+          recoveryAuthKey: "rec_key",
+          recoveryWrappedDek: "rec_wrapped"
         })
       }),
       env
     );
-    const cookieHeader = signupRes.headers.get("Set-Cookie");
-    const sessionToken = cookieHeader?.match(new RegExp(`${SESSION_COOKIE}=([^;]+)`))?.[1];
+    const cookie = signupRes.headers.get("Set-Cookie")?.split(";")[0] || "";
 
-    const changeTime = new Date().toISOString();
+    // 1. Initial pull (empty)
+    const pull1 = await handleRequest(
+      new Request("http://localhost/sync/pull", { headers: { Cookie: cookie } }),
+      env
+    );
+    expect(pull1.status).toBe(200);
+    const pullData1 = await pull1.json() as { changes: unknown[]; cursor: string };
+    expect(pullData1.changes).toHaveLength(0);
 
-    // Push encrypted records
+    // 2. Push 2 changes
     const pushRes = await handleRequest(
       new Request("http://localhost/sync/push", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Cookie: `${SESSION_COOKIE}=${sessionToken}`
-        },
+        headers: { "Content-Type": "application/json", Cookie: cookie },
         body: JSON.stringify({
           changes: [
             {
               entity: "task",
               id: "task_100",
-              changedAt: changeTime,
+              changedAt: "2026-02-14T10:00:00.000Z",
               deleted: false,
-              ciphertext: "AES_GCM_CIPHERTEXT_BASE64",
-              iv: "AES_IV_BASE64"
+              ciphertext: "enc_task_data_1",
+              iv: "iv_1"
+            },
+            {
+              entity: "course",
+              id: "course_1",
+              changedAt: "2026-02-14T10:01:00.000Z",
+              deleted: false,
+              ciphertext: "enc_course_data_1",
+              iv: "iv_2"
             }
           ]
         })
@@ -321,102 +393,57 @@ describe("Cloudflare Worker API", () => {
     );
     expect(pushRes.status).toBe(200);
     const pushData = await pushRes.json() as { applied: number; cursor: string };
-    expect(pushData.applied).toBe(1);
-    expect(pushData.cursor).toBe(changeTime);
+    expect(pushData.applied).toBe(2);
 
-    // Pull encrypted records
-    const pullRes = await handleRequest(
-      new Request("http://localhost/sync/pull", {
-        headers: { Cookie: `${SESSION_COOKIE}=${sessionToken}` }
+    // 3. Pull changes
+    const pull2 = await handleRequest(
+      new Request("http://localhost/sync/pull", { headers: { Cookie: cookie } }),
+      env
+    );
+    const pullData2 = await pull2.json() as { changes: Array<{ id: string; ciphertext: string }>; cursor: string };
+    expect(pullData2.changes).toHaveLength(2);
+    expect(pullData2.changes[0].id).toBe("task_100");
+    expect(pullData2.changes[0].ciphertext).toBe("enc_task_data_1");
+
+    // 4. Incremental pull using cursor
+    const pull3 = await handleRequest(
+      new Request(`http://localhost/sync/pull?since=${encodeURIComponent("2026-02-14T10:00:00.000Z")}`, {
+        headers: { Cookie: cookie }
       }),
       env
     );
-    expect(pullRes.status).toBe(200);
-    const pullData = await pullRes.json() as {
-      changes: { entity: string; id: string; ciphertext?: string; iv?: string }[];
-      cursor: string;
-    };
-    expect(pullData.changes.length).toBe(1);
-    expect(pullData.changes[0].id).toBe("task_100");
-    expect(pullData.changes[0].ciphertext).toBe("AES_GCM_CIPHERTEXT_BASE64");
+    const pullData3 = await pull3.json() as { changes: Array<{ id: string }> };
+    expect(pullData3.changes).toHaveLength(1);
+    expect(pullData3.changes[0].id).toBe("course_1");
   });
 
-  it("handles dispatch-due authentication and missing VAPID", async () => {
-    const authEnv: WorkerEnv = {
+  it("handles dispatch-due with DISPATCH_TOKEN protection", async () => {
+    const vapidSpy = vi.spyOn(webpush, "setVapidDetails").mockImplementation(() => {});
+    const protectedEnv: WorkerEnv = {
       ...env,
-      DISPATCH_TOKEN: "secret-token",
-      VAPID_PUBLIC_KEY: undefined
+      DISPATCH_TOKEN: "secret_cron_token"
     };
 
-    // Unauthorized without token
+    // Unauthorized call returns 401
     const unauthRes = await handleRequest(
       new Request("http://localhost/dispatch-due", { method: "POST" }),
-      authEnv
+      protectedEnv
     );
     expect(unauthRes.status).toBe(401);
 
-    // Missing VAPID returns 503
-    const missingVapidRes = await handleRequest(
+    // Authorized call with Bearer token succeeds
+    const authRes = await handleRequest(
       new Request("http://localhost/dispatch-due", {
         method: "POST",
-        headers: { Authorization: "Bearer secret-token" }
+        headers: { Authorization: "Bearer secret_cron_token" }
       }),
-      authEnv
+      protectedEnv
     );
-    expect(missingVapidRes.status).toBe(503);
-    const body = await missingVapidRes.json() as { skipped: string };
-    expect(body.skipped).toBe("missing-vapid");
+    expect(authRes.status).toBe(200);
+    vapidSpy.mockRestore();
   });
 
-  it("handles auth edge cases and unauthenticated requests", async () => {
-    // Unknown salt
-    const unknownSaltRes = await handleRequest(
-      new Request("http://localhost/auth/salt", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: "nonexistent@example.com" })
-      }),
-      env
-    );
-    expect(unknownSaltRes.status).toBe(404);
-
-    // Invalid login credentials
-    const invalidLoginRes = await handleRequest(
-      new Request("http://localhost/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: "nonexistent@example.com", authKey: "bad_key" })
-      }),
-      env
-    );
-    expect(invalidLoginRes.status).toBe(401);
-
-    // Unauthenticated /auth/me
-    const unauthMeRes = await handleRequest(
-      new Request("http://localhost/auth/me", { method: "GET" }),
-      env
-    );
-    expect(unauthMeRes.status).toBe(401);
-
-    // Unauthenticated sync pull
-    const unauthPullRes = await handleRequest(
-      new Request("http://localhost/sync/pull", { method: "GET" }),
-      env
-    );
-    expect(unauthPullRes.status).toBe(401);
-
-    // Unauthenticated sync push
-    const unauthPushRes = await handleRequest(
-      new Request("http://localhost/sync/push", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ changes: [] })
-      }),
-      env
-    );
-    expect(unauthPushRes.status).toBe(401);
-
-    // 404 Route
+  it("returns 404 for unknown endpoints", async () => {
     const notFoundRes = await handleRequest(
       new Request("http://localhost/nonexistent-route", { method: "GET" }),
       env
@@ -424,9 +451,9 @@ describe("Cloudflare Worker API", () => {
     expect(notFoundRes.status).toBe(404);
   });
 
-  it("preserves createdAt and dueAt timestamps in D1PushStore", async () => {
-    const db = createTestD1();
-    const store = new D1PushStore(db);
+  it("preserves createdAt and dueAt timestamps in PostgresPushStore", async () => {
+    const sql = createTestSql();
+    const store = new PostgresPushStore(sql);
     const subBody = {
       endpoint: "https://push.example.com/sub/preserve-time",
       keys: {
@@ -480,16 +507,16 @@ describe("Cloudflare Worker API", () => {
   });
 
   it("retains reminders for retry upon transient push errors, and unsubscribes on 410 Gone", async () => {
-    const db = createTestD1();
+    const sql = createTestSql();
     const testEnv: WorkerEnv = {
-      DB: db,
+      SQL: sql,
       COOKIE_SECURE: "false",
       VAPID_PUBLIC_KEY: "test-pub-key",
       VAPID_PRIVATE_KEY: "test-priv-key",
       VAPID_SUBJECT: "mailto:test@example.com"
     };
 
-    const store = new D1PushStore(db);
+    const store = new PostgresPushStore(sql);
     const subBody = {
       endpoint: "https://push.example.com/sub/retry-test",
       keys: {

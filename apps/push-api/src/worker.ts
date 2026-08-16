@@ -1,8 +1,13 @@
 import { RedactedReminder } from "@throughline/domain";
 import { OAuth2Client } from "google-auth-library";
+import postgres, { type Sql } from "postgres";
 import webpush from "web-push";
 import { z } from "zod";
-import { D1Database, D1PushStore, D1SyncStore, D1UserStore } from "./d1Store";
+import {
+  PostgresPushStore,
+  PostgresSyncStore,
+  PostgresUserStore
+} from "./postgresStore";
 import {
   BulkReminderSyncSchema,
   EndpointHashParamsSchema,
@@ -21,8 +26,15 @@ export interface ScheduledController {
   noRetry(): void;
 }
 
+export interface HyperdriveBinding {
+  connectionString: string;
+}
+
 export interface WorkerEnv {
-  DB: D1Database;
+  HYPERDRIVE?: HyperdriveBinding;
+  DATABASE_URL?: string;
+  // Optional pre-instantiated Sql instance (for unit tests)
+  SQL?: Sql;
   VAPID_PUBLIC_KEY?: string;
   VAPID_PRIVATE_KEY?: string;
   VAPID_SUBJECT?: string;
@@ -66,6 +78,28 @@ const PullQuerySchema = z.object({ since: z.string().max(40).optional() });
 
 // In-memory metrics tracking for the worker isolate
 const dispatchMetrics = { sent: 0, failed: 0 };
+
+let cachedSql: Sql | null = null;
+let cachedConnectionString: string | null = null;
+
+export function getDb(env: WorkerEnv): Sql {
+  if (env.SQL) {
+    return env.SQL;
+  }
+  const connectionString = env.HYPERDRIVE?.connectionString || env.DATABASE_URL;
+  if (!connectionString) {
+    throw new Error("Missing HYPERDRIVE or DATABASE_URL database configuration");
+  }
+  if (!cachedSql || cachedConnectionString !== connectionString) {
+    cachedConnectionString = connectionString;
+    cachedSql = postgres(connectionString, {
+      max: 5,
+      idle_timeout: 20,
+      connect_timeout: 10
+    });
+  }
+  return cachedSql;
+}
 
 function getCookie(request: Request, name: string): string | null {
   const cookieHeader = request.headers.get("Cookie");
@@ -124,7 +158,7 @@ function errorResponse(status: number, error: string, headers?: Headers): Respon
   return jsonResponse({ error }, status, headers);
 }
 
-async function getUserFromRequest(request: Request, userStore: D1UserStore) {
+async function getUserFromRequest(request: Request, userStore: PostgresUserStore) {
   const token = getCookie(request, SESSION_COOKIE);
   if (!token) return null;
   return userStore.getSessionUser(token);
@@ -145,7 +179,8 @@ export async function dispatchDueReminders(env: WorkerEnv): Promise<{ sent: numb
     env.VAPID_PRIVATE_KEY as string
   );
 
-  const pushStore = new D1PushStore(env.DB);
+  const sql = getDb(env);
+  const pushStore = new PostgresPushStore(sql);
   const due = await pushStore.dueReminders();
   let sent = 0;
 
@@ -196,9 +231,10 @@ export async function handleRequest(request: Request, env: WorkerEnv): Promise<R
     return new Response(null, { status: 204, headers: resHeaders });
   }
 
-  const pushStore = new D1PushStore(env.DB);
-  const userStore = new D1UserStore(env.DB);
-  const syncStore = new D1SyncStore(env.DB);
+  const sql = getDb(env);
+  const pushStore = new PostgresPushStore(sql);
+  const userStore = new PostgresUserStore(sql);
+  const syncStore = new PostgresSyncStore(sql);
 
   try {
     // ----------------------------------------------------
@@ -249,73 +285,67 @@ export async function handleRequest(request: Request, env: WorkerEnv): Promise<R
 
     const bulkRemindersMatch = pathname.match(/^\/subscriptions\/([^/]+)\/reminders$/);
     if (method === "PUT" && bulkRemindersMatch) {
-      const endpointHash = bulkRemindersMatch[1];
-      EndpointHashParamsSchema.parse({ endpointHash });
+      const params = EndpointHashParamsSchema.parse({ endpointHash: bulkRemindersMatch[1] });
       const body = await request.json();
-      const parsedBody = BulkReminderSyncSchema.parse(body);
-      const stored = await pushStore.replaceReminders(endpointHash, parsedBody.reminders as RedactedReminder[]);
-
+      const parsed = BulkReminderSyncSchema.parse(body);
+      const stored = await pushStore.replaceReminders(params.endpointHash, parsed.reminders as RedactedReminder[]);
       if (!stored) {
-        return errorResponse(404, "subscription-not-found", resHeaders);
+        return errorResponse(404, "Subscription not found", resHeaders);
       }
-
-      return jsonResponse({ endpointHash, reminderCount: stored.length }, 200, resHeaders);
+      return jsonResponse({ count: stored.length }, 200, resHeaders);
     }
 
     // ----------------------------------------------------
-    // POST /dispatch-due
+    // Cron / Manual Dispatch
     // ----------------------------------------------------
     if (method === "POST" && pathname === "/dispatch-due") {
       if (env.DISPATCH_TOKEN) {
-        const header = request.headers.get("Authorization");
-        if (header !== `Bearer ${env.DISPATCH_TOKEN}`) {
-          return errorResponse(401, "unauthorized", resHeaders);
+        const authHeader = request.headers.get("Authorization");
+        const token = authHeader?.replace(/^Bearer\s+/i, "");
+        if (!token || token !== env.DISPATCH_TOKEN) {
+          return errorResponse(401, "Unauthorized", resHeaders);
         }
       }
-
       const result = await dispatchDueReminders(env);
-      if (result.skipped) {
-        return jsonResponse(result, 503, resHeaders);
-      }
       return jsonResponse(result, 200, resHeaders);
     }
 
     // ----------------------------------------------------
-    // Auth Routes
+    // Authentication Endpoints
     // ----------------------------------------------------
     if (method === "POST" && pathname === "/auth/signup") {
       const body = await request.json();
-      const parsed = SignupSchema.parse(body);
-      const user = await userStore.createUser(parsed);
+      const input = SignupSchema.parse(body);
+      const user = await userStore.createUser(input);
       if (!user) {
-        return errorResponse(409, "email-taken", resHeaders);
+        return errorResponse(409, "Email already registered", resHeaders);
       }
       const token = await userStore.createSession(user.id);
       resHeaders.set("Set-Cookie", buildSetCookieHeader(token, isSecure));
-      return jsonResponse({ email: user.email }, 201, resHeaders);
+      return jsonResponse({ userId: user.id, email: user.email }, 201, resHeaders);
     }
 
     if (method === "POST" && pathname === "/auth/salt") {
       const body = await request.json();
-      const { email } = SaltSchema.parse(body);
-      const salt = await userStore.getSalt(email);
+      const input = SaltSchema.parse(body);
+      const salt = await userStore.getSalt(input.email);
       if (!salt) {
-        return errorResponse(404, "unknown-account", resHeaders);
+        return errorResponse(404, "Account not found", resHeaders);
       }
       return jsonResponse({ salt }, 200, resHeaders);
     }
 
     if (method === "POST" && pathname === "/auth/login") {
       const body = await request.json();
-      const { email, authKey } = LoginSchema.parse(body);
-      const result = await userStore.verifyLogin(email, authKey);
+      const input = LoginSchema.parse(body);
+      const result = await userStore.verifyLogin(input.email, input.authKey);
       if (!result) {
-        return errorResponse(401, "invalid-credentials", resHeaders);
+        return errorResponse(401, "Invalid credentials", resHeaders);
       }
       const token = await userStore.createSession(result.userId);
       resHeaders.set("Set-Cookie", buildSetCookieHeader(token, isSecure));
       return jsonResponse(
-        { email: email.trim().toLowerCase(), salt: result.salt, wrappedDek: result.wrappedDek },
+        { userId: result.userId, salt: result.salt, wrappedDek: result.wrappedDek },
         200,
         resHeaders
       );
@@ -323,46 +353,52 @@ export async function handleRequest(request: Request, env: WorkerEnv): Promise<R
 
     if (method === "POST" && pathname === "/auth/google") {
       if (!env.GOOGLE_CLIENT_ID) {
-        return errorResponse(501, "google-auth-not-configured", resHeaders);
+        return errorResponse(501, "Google OAuth is not configured on this server", resHeaders);
       }
       const body = await request.json();
       const { credential, dek } = GoogleAuthSchema.parse(body);
-
-      let payload: { email?: string; sub?: string } | undefined;
-      try {
-        const googleClient = new OAuth2Client(env.GOOGLE_CLIENT_ID);
-        const ticket = await googleClient.verifyIdToken({
-          idToken: credential,
-          audience: env.GOOGLE_CLIENT_ID
-        });
-        payload = ticket.getPayload();
-      } catch {
-        return errorResponse(401, "invalid-google-credential", resHeaders);
-      }
-
+      const client = new OAuth2Client(env.GOOGLE_CLIENT_ID);
+      const ticket = await client.verifyIdToken({
+        idToken: credential,
+        audience: env.GOOGLE_CLIENT_ID
+      });
+      const payload = ticket.getPayload();
       if (!payload || !payload.email || !payload.sub) {
-        return errorResponse(401, "invalid-google-payload", resHeaders);
+        return errorResponse(401, "Invalid Google token", resHeaders);
       }
 
-      const email = payload.email.trim().toLowerCase();
       const googleId = payload.sub;
+      const email = payload.email;
 
-      let result = await userStore.verifyGoogleLogin(email, googleId);
-
-      if (!result) {
-        if (!dek) {
-          return errorResponse(400, "dek-required-for-signup", resHeaders);
-        }
-        const newUser = await userStore.createGoogleUser({ email, googleId, dek });
-        if (!newUser) {
-          return errorResponse(409, "email-taken-by-another-method", resHeaders);
-        }
-        result = { userId: newUser.id, dek: newUser.wrappedDek };
+      // Existing Google user
+      const existing = await userStore.verifyGoogleLogin(email, googleId);
+      if (existing) {
+        const token = await userStore.createSession(existing.userId);
+        resHeaders.set("Set-Cookie", buildSetCookieHeader(token, isSecure));
+        return jsonResponse({ userId: existing.userId, dek: existing.dek, isNew: false }, 200, resHeaders);
       }
 
-      const token = await userStore.createSession(result.userId);
+      // New user signup via Google
+      if (!dek) {
+        return errorResponse(400, "DEK required for initial Google registration", resHeaders);
+      }
+
+      const newUser = await userStore.createGoogleUser({ email, googleId, dek });
+      if (!newUser) {
+        return errorResponse(409, "Account already exists with this email", resHeaders);
+      }
+
+      const token = await userStore.createSession(newUser.id);
       resHeaders.set("Set-Cookie", buildSetCookieHeader(token, isSecure));
-      return jsonResponse({ email, dek: result.dek }, 200, resHeaders);
+      return jsonResponse({ userId: newUser.id, dek: newUser.wrappedDek, isNew: true }, 201, resHeaders);
+    }
+
+    if (method === "GET" && pathname === "/auth/me") {
+      const user = await getUserFromRequest(request, userStore);
+      if (!user) {
+        return errorResponse(401, "Not authenticated", resHeaders);
+      }
+      return jsonResponse({ userId: user.userId, email: user.email }, 200, resHeaders);
     }
 
     if (method === "POST" && pathname === "/auth/logout") {
@@ -374,77 +410,68 @@ export async function handleRequest(request: Request, env: WorkerEnv): Promise<R
       return new Response(null, { status: 204, headers: resHeaders });
     }
 
-    if (method === "GET" && pathname === "/auth/me") {
-      const user = await getUserFromRequest(request, userStore);
-      if (!user) {
-        return errorResponse(401, "unauthenticated", resHeaders);
-      }
-      return jsonResponse({ email: user.email }, 200, resHeaders);
-    }
-
     if (method === "POST" && pathname === "/auth/update-password") {
       const user = await getUserFromRequest(request, userStore);
       if (!user) {
-        return errorResponse(401, "unauthenticated", resHeaders);
+        return errorResponse(401, "Not authenticated", resHeaders);
       }
       const body = await request.json();
-      const { authKey, wrappedDek } = UpdatePasswordSchema.parse(body);
-      await userStore.updatePassword(user.userId, authKey, wrappedDek);
+      const input = UpdatePasswordSchema.parse(body);
+      await userStore.updatePassword(user.userId, input.authKey, input.wrappedDek);
       return new Response(null, { status: 204, headers: resHeaders });
     }
 
     if (method === "POST" && pathname === "/auth/update-recovery-key") {
       const user = await getUserFromRequest(request, userStore);
       if (!user) {
-        return errorResponse(401, "unauthenticated", resHeaders);
+        return errorResponse(401, "Not authenticated", resHeaders);
       }
       const body = await request.json();
-      const { recoveryAuthKey, recoveryWrappedDek } = UpdateRecoveryKeySchema.parse(body);
-      await userStore.updateRecoveryKey(user.userId, recoveryAuthKey, recoveryWrappedDek);
+      const input = UpdateRecoveryKeySchema.parse(body);
+      await userStore.updateRecoveryKey(user.userId, input.recoveryAuthKey, input.recoveryWrappedDek);
       return new Response(null, { status: 204, headers: resHeaders });
     }
 
     // ----------------------------------------------------
-    // Encrypted Sync Routes
+    // Encrypted Sync Endpoints (E2EE Ciphertext Only)
     // ----------------------------------------------------
     if (method === "GET" && pathname === "/sync/pull") {
       const user = await getUserFromRequest(request, userStore);
       if (!user) {
-        return errorResponse(401, "unauthenticated", resHeaders);
+        return errorResponse(401, "Not authenticated", resHeaders);
       }
-      const querySince = url.searchParams.get("since") || undefined;
-      const { since } = PullQuerySchema.parse({ since: querySince });
-      const result = await syncStore.pullChanges(user.userId, since);
+      const query = PullQuerySchema.parse(Object.fromEntries(url.searchParams.entries()));
+      const result = await syncStore.pullChanges(user.userId, query.since);
       return jsonResponse(result, 200, resHeaders);
     }
 
     if (method === "POST" && pathname === "/sync/push") {
       const user = await getUserFromRequest(request, userStore);
       if (!user) {
-        return errorResponse(401, "unauthenticated", resHeaders);
+        return errorResponse(401, "Not authenticated", resHeaders);
       }
       const body = await request.json();
-      const { changes } = PushSchema.parse(body);
-      const result = await syncStore.pushChanges(user.userId, changes);
+      const input = PushSchema.parse(body);
+      const result = await syncStore.pushChanges(user.userId, input.changes);
       return jsonResponse(result, 200, resHeaders);
     }
 
-    return errorResponse(404, "not-found", resHeaders);
+    return errorResponse(404, "Not Found", resHeaders);
   } catch (err: unknown) {
     if (err instanceof z.ZodError) {
-      return jsonResponse({ error: "validation-error", details: err.issues }, 400, resHeaders);
+      return jsonResponse({ error: "Validation failed", issues: err.issues }, 400, resHeaders);
     }
-    console.error("Worker error handling request:", err);
-    return errorResponse(500, "internal-error", resHeaders);
+    const message = err instanceof Error ? err.message : "Internal Server Error";
+    return errorResponse(500, message, resHeaders);
   }
 }
 
 export default {
-  fetch(request: Request, env: WorkerEnv): Promise<Response> {
+  async fetch(request: Request, env: WorkerEnv): Promise<Response> {
     return handleRequest(request, env);
   },
 
-  async scheduled(_event: ScheduledController, env: WorkerEnv, ctx: ExecutionContext): Promise<void> {
+  async scheduled(_controller: ScheduledController, env: WorkerEnv, ctx: ExecutionContext): Promise<void> {
     ctx.waitUntil(dispatchDueReminders(env));
   }
 };

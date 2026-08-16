@@ -11,12 +11,10 @@
       "*/5 * * * *"
     ]
   },
-  "d1_databases": [
+  "hyperdrive": [
     {
-      "binding": "DB",
-      "database_name": "throughline-db",
-      "database_id": "throughline-db-id",
-      "migrations_dir": "migrations"
+      "binding": "HYPERDRIVE",
+      "id": "20732bfe402a42ae8e4eaf5c48aec281"
     }
   ],
   "vars": {

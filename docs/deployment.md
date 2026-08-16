@@ -3,17 +3,18 @@
 This document covers deployment options, PWA offline capabilities, and release readiness for Throughline.
 
 Throughline supports two primary production deployment architectures:
-1. **Cloudflare Edge (Cloudflare Pages + Cloudflare Workers + D1)** — Serverless edge deployment with automatic GitHub integration, zero-maintenance global scaling, and built-in cron triggers.
+1. **Cloudflare Edge (Cloudflare Pages + Cloudflare Workers + Cloudflare Hyperdrive + Neon PostgreSQL)** — Serverless edge deployment with automatic GitHub integration, zero-maintenance global scaling, connection pooling, and built-in cron triggers.
 2. **Docker / Dokploy on EC2** — Single-server containerized deployment with Traefik ingress and Let's Encrypt TLS.
 
 ---
 
-## 1. Cloudflare Deployment (Pages + Workers + D1)
+## 1. Cloudflare Deployment (Pages + Workers + Hyperdrive + Neon)
 
-Throughline can be deployed entirely on the Cloudflare developer platform:
+Throughline is deployed on the Cloudflare developer platform with Neon Serverless Postgres:
 - **Frontend**: Cloudflare Pages hosts the Vite React PWA from `apps/web/dist`, with custom security headers and service worker caching rules defined in `_headers` and SPA routing via `_redirects`.
 - **Backend API**: Cloudflare Workers (`apps/push-api`) handles push subscriptions, VAPID dispatch, user authentication, and E2EE encrypted sync.
-- **Database**: Cloudflare D1 (serverless SQLite at the edge) stores user credentials, sessions, encrypted ciphertext sync records, push subscriptions, and redacted reminders.
+- **Database Connection Pooling**: Cloudflare Hyperdrive pools and accelerates TCP connections from Cloudflare Workers to Neon PostgreSQL globally.
+- **Database**: Neon PostgreSQL stores user credentials, sessions, encrypted ciphertext sync records, push subscriptions, and redacted reminders.
 - **Background Cron**: Cloudflare Scheduled Triggers (`*/5 * * * *`) automatically invoke the reminder dispatcher every 5 minutes without needing an external cron server.
 
 ### Architecture
@@ -29,74 +30,67 @@ Throughline can be deployed entirely on the Cloudflare developer platform:
                           │    ├─ Auth & Sessions                                              │
                           │    ├─ E2EE Ciphertext Sync (pull / push)                           │
                           │    ├─ Push Subscriptions & Redacted Reminders                      │
-                          │    ├─ D1 Database (SQLite at the edge)                             │
-                          │    └─ Scheduled Cron (*/5 * * * *) ──▶ Dispatches Due Reminders    │
-    Browser SW   ◀───────│        └─ Web Push (VAPID / Web Crypto) ─────────────┘            │
-                          └────────────────────────────────────────────────────────────────────┘
+                          │    ├─ Scheduled Cron (*/5 * * * *) ──▶ Dispatches Due Reminders    │
+                          │    └─ env.HYPERDRIVE (connection pooling proxy)                    │
+    Browser SW   ◀───────│        └─ Web Push (VAPID / Web Crypto)                        │   │
+                          └───────────────────────────────────────────────────────────────┼────┘
+                                                                                          │
+                                                                                          ▼
+                                                                                ┌──────────────────┐
+                                                                                │  Neon PostgreSQL │
+                                                                                │  (sa-east-1)     │
+                                                                                └──────────────────┘
 ```
 
-### Steps to Deploy
+### Steps to Deploy via Cloudflare Dashboard
 
-#### Step 1: Create the Cloudflare D1 Database
+#### Step 1: Create Cloudflare Hyperdrive for Neon
+Run the command below (or create in Cloudflare Dashboard under **Storage & Databases > Hyperdrive**):
 ```bash
-npx wrangler d1 create throughline-db
+npx wrangler hyperdrive create throughline-hyperdrive --connection-string="<YOUR_NEON_POSTGRES_CONNECTION_STRING>"
 ```
-Copy the returned `database_id` and update it in `apps/push-api/wrangler.jsonc`.
-
-Apply the initial database schema:
-```bash
-# Local development database
-npm run d1:migrate:local
-
-# Production Cloudflare D1 database
-npm run d1:migrate:remote
-```
-
-#### Step 2: Configure Secrets in Cloudflare Workers
-Set production secrets on the worker:
-```bash
-npx wrangler secret put VAPID_PUBLIC_KEY --config apps/push-api/wrangler.jsonc
-npx wrangler secret put VAPID_PRIVATE_KEY --config apps/push-api/wrangler.jsonc
-npx wrangler secret put VAPID_SUBJECT --config apps/push-api/wrangler.jsonc
-npx wrangler secret put SESSION_SECRET --config apps/push-api/wrangler.jsonc
-npx wrangler secret put DISPATCH_TOKEN --config apps/push-api/wrangler.jsonc
-# Optional Google OAuth
-npx wrangler secret put GOOGLE_CLIENT_ID --config apps/push-api/wrangler.jsonc
+Copy the returned `id` and ensure `apps/push-api/wrangler.jsonc` has the Hyperdrive binding:
+```jsonc
+"hyperdrive": [
+  {
+    "binding": "HYPERDRIVE",
+    "id": "<YOUR_HYPERDRIVE_ID>"
+  }
+]
 ```
 
-#### Step 3: Deploy Worker
-```bash
-npm run deploy:worker
-```
-
-#### Step 4: Deploy Frontend to Cloudflare Pages
-
-**Option A: Cloudflare Dashboard GitHub Integration (Automatic Git Builds)**
-1. In Cloudflare Dashboard, navigate to **Compute (Workers) > Pages > Connect to Git**.
+#### Step 2: Deploy Frontend to Cloudflare Pages (Git Integration)
+1. In Cloudflare Dashboard, go to **Workers & Pages > Create > Pages > Connect to Git**.
 2. Select your GitHub repository.
 3. Configure Build Settings:
-   - **Framework preset**: `None` / `Vite`
-   - **Build command**: `npm run build:pages`
-   - **Build output directory**: `apps/web/dist`
-   - **Root directory**: `/`
+   - **Project name**: `throughline-web`
+   - **Framework preset**: `Vite` (or `None`)
+   - **Root directory**: `apps/web` *(crucial for monorepo)*
+   - **Build command**: `npm run build`
+   - **Build output directory**: `dist`
 4. Add Environment Variables:
    - `NODE_VERSION`: `24`
    - `VITE_PUSH_API_URL`: `/api` (if using custom domain route or proxy) or `https://throughline-api.<your-account>.workers.dev`
    - `VITE_VAPID_PUBLIC_KEY`: your VAPID public key
    - `VITE_GOOGLE_CLIENT_ID`: (optional) your Google OAuth client ID
-5. Click **Save and Deploy**. Cloudflare Pages will automatically deploy every push to `main` and generate preview deployments for Pull Requests.
+5. Click **Save and Deploy**.
 
-**Option B: GitHub Actions Automated CI/CD Workflow**
-The repository includes `.github/workflows/deploy-cloudflare.yml`.
-1. In your GitHub repository settings, go to **Settings > Secrets and variables > Actions**.
-2. Add the following repository secrets:
-   - `CLOUDFLARE_API_TOKEN`: Cloudflare API token with `Workers & Pages: Edit` permissions.
-   - `CLOUDFLARE_ACCOUNT_ID`: Your Cloudflare Account ID.
-   - `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`: Web Push VAPID keys.
-   - `SESSION_SECRET`: Session cookie secret.
-   - `GOOGLE_CLIENT_ID`: (optional) Google OAuth client ID.
-   - `DISPATCH_TOKEN`: (optional) Bearer token for `/dispatch-due`.
-3. Pushes to `main` will automatically build the PWA, apply D1 database migrations, deploy the Worker, and deploy Pages.
+#### Step 3: Deploy Backend API to Cloudflare Workers (Git Integration)
+1. In Cloudflare Dashboard, go to **Workers & Pages > Create > Worker > Connect to Git** (or connect your existing Worker).
+2. Configure Build Settings:
+   - **Project name**: `throughline-api`
+   - **Root directory**: `apps/push-api` *(crucial for monorepo)*
+   - **Build command**: `npm run build`
+   - **Deploy command**: `npx wrangler deploy`
+3. Under **Settings > Bindings**:
+   - Add Hyperdrive binding with name `HYPERDRIVE` linked to `throughline-hyperdrive`.
+4. Under **Settings > Variables and Secrets**:
+   - `SESSION_SECRET`: Session cookie secret
+   - `VAPID_PUBLIC_KEY`: Web Push VAPID public key
+   - `VAPID_PRIVATE_KEY`: Web Push VAPID private key
+   - `VAPID_SUBJECT`: `mailto:your-email@example.com`
+   - `DISPATCH_TOKEN`: (optional) Bearer token for `/dispatch-due`
+   - `GOOGLE_CLIENT_ID`: (optional) Google OAuth client ID
 
 ### Domain & Same-Origin Routing
 To ensure seamless cookies and zero CORS configuration:
