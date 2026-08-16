@@ -343,6 +343,7 @@ export function TaskCard({
       {onStatusChange ? (
         <footer className="task-card-foot">
           <select
+            className="clay-input"
             aria-label={`Move ${task.title}`}
             value={task.status}
             onPointerDown={(event) => event.stopPropagation()}

@@ -112,7 +112,7 @@ export function NotesView({
           <span className="eyebrow">Notebook</span>
           <h1>Notes</h1>
         </div>
-        <button className="primary-button notes-page-action" type="button" onClick={createNote}>
+        <button className="primary-button clay-btn notes-page-action" type="button" onClick={createNote}>
           <Plus size={17} /> New note
         </button>
       </header>
@@ -122,6 +122,7 @@ export function NotesView({
           <label className="note-search">
           <Search size={15} />
           <input
+            className="clay-input"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search notes"
@@ -139,7 +140,7 @@ export function NotesView({
                 <button
                   key={note.id}
                   type="button"
-                  className={`note-list-card${selectedId === note.id ? " active" : ""}`}
+                  className={`note-list-card clay-btn${selectedId === note.id ? " active" : ""}`}
                   onClick={() => setSelectedId(note.id)}
                 >
                   <div className="note-list-card-head">
@@ -170,7 +171,7 @@ export function NotesView({
         {selected ? (
           <>
             {isMobileNotes ? (
-              <button type="button" className="secondary-button notes-back-button" onClick={() => setSelectedId(null)}>
+              <button type="button" className="secondary-button clay-btn notes-back-button" onClick={() => setSelectedId(null)}>
                 <ArrowLeft size={17} /> Notes
               </button>
             ) : null}
@@ -192,7 +193,7 @@ export function NotesView({
             title="No note selected"
             body="Pick a note from the list, or start a new one."
             action={
-              <button className="primary-button" type="button" onClick={createNote}>
+              <button className="primary-button clay-btn" type="button" onClick={createNote}>
                 <Plus size={17} /> New note
               </button>
             }

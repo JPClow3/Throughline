@@ -1,11 +1,11 @@
 # Architecture & Data Model
 
-This document outlines the system architecture, core data models, and design system (LiquidGlass) for Throughline.
+This document outlines the system architecture, core data models, and design system (Claymorphism) for Throughline.
 
 ## 1. System Architecture
 
 ### Workspace Layout
-- `apps/web`: React/Vite PWA, Liquid Glass UI, Dexie storage, Today/Goals/Notes/Board/Timeline/Projects, ICS export, JSON backup, notification setup.
+- `apps/web`: React/Vite PWA, Claymorphism UI, Dexie storage, Today/Goals/Notes/Board/Timeline/Projects, ICS export, JSON backup, notification setup.
 - `apps/push-api`: Fastify API for redacted push subscriptions, reminder metadata, and due reminder dispatch.
 - `packages/domain`: shared Zod schemas, sample data, gamification, ICS export, and redacted reminder contracts.
 
@@ -89,33 +89,33 @@ Dexie database name: `liquidglass-study-quests`.
 
 ---
 
-## 3. Design System (LiquidGlass)
+## 3. Design System (Claymorphism)
 
-The design system embodies a "LiquidGlass" aesthetic—a sophisticated evolution of spatial UI that prioritizes depth, clarity, and organic movement.
+The design system embodies the Claymorphism aesthetic described in `ui-ux.md`—soft inflated shapes, double inner shadows, and solid pastel surfaces that prioritize depth, clarity, and legibility without blurs or translucency.
 
 ### Brand & Style
-The style merges Glassmorphism with Minimalism, utilizing heavy backdrop blurs and light-refracting surfaces to create a sense of physical presence. The emotional response is one of "focused serenity"—the UI should feel like a high-end physical tool crafted from crystal and light.
+The style merges Claymorphism with Minimalism: solid opaque surfaces with a bright top-left inner highlight and a darker bottom-right inner shadow create a tactile "inflated" 3D volume. The emotional response is one of "focused serenity"—the UI should feel like a soft, high-end physical planner.
 
 ### Colors
-The palette is centered on a light mode execution that leverages ambient "light leaks."
+The palette is centered on a light-first execution on solid surfaces.
 - **Primary:** Refined Indigo.
-- **Surface:** Semi-translucent whites and neutrals.
+- **Surface:** Solid off-whites and pastels (clay base).
 - **Accents:** Mint and Blue.
-- **Refraction:** Pure White (#FFFFFF) at 20% opacity.
+- **Inner Shadows:** Bright top-left highlight plus darker bottom-right depth.
 
 ### Typography
-Uses **Geist** for its technical precision and clean, geometric architecture. Font weights are intentionally reduced.
+Uses **Geist** for its technical precision and clean, geometric architecture. Font weights are intentionally reduced. Tabular numerals are used for stats and dates.
 
 ### Layout & Spacing
 - **Desktop:** 12-column grid with 24px gutters and 64px side margins.
 - **Whitespace:** Emphasize "Functional Whitespace" (48px+ gaps).
-- **Glass Modules:** 24px internal padding.
+- **Clay Modules:** 24px internal padding and bubbly (24px+) corner radii.
 
 ### Elevation & Depth
-1. **Level 0 (Background):** Ambient mesh gradient.
-2. **Level 1 (Substrate):** Main content panels (40px blur).
-3. **Level 2 (Interactive):** Hovered states (60px blur).
-4. **Level 3 (Modals/Overlays):** Highest elevation (80px blur).
+1. **Level 0 (Background):** Solid soft color (off-white or soft pastel).
+2. **Level 1 (Substrate):** Main content panels (solid fill, double inner shadows, large radius).
+3. **Level 2 (Interactive):** Hovered states and cards (lighter fill, pronounced drop shadow).
+4. **Level 3 (Modals/Overlays):** Deepest outer shadow and prominent inflation.
 
 ### Visual Depth
-There is no 3D layer. Depth comes from **layering on a solid background**: opaque content surfaces sit beneath frosted floating chrome.
+There is no 3D layer and no blur/translucency. Depth comes from **inflated solid surfaces**: every clay element carries inner highlights and inner shadows that define its volume.

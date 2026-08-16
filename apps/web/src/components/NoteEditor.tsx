@@ -56,7 +56,7 @@ export function NoteEditor({ note, tasks, goals, onSave, onDelete, onToggleLink,
         />
         <div className="note-editor-actions">
           <button
-            className={`icon-toggle${note.pinned ? " active" : ""}`}
+            className={`icon-toggle clay-btn${note.pinned ? " active" : ""}`}
             type="button"
             aria-label={note.pinned ? "Unpin note" : "Pin note"}
             aria-pressed={note.pinned}
@@ -64,7 +64,7 @@ export function NoteEditor({ note, tasks, goals, onSave, onDelete, onToggleLink,
           >
             <Pin size={16} />
           </button>
-          <button className="icon-toggle" type="button" aria-label="Delete note" onClick={() => onDelete(note.id)}>
+          <button className="icon-toggle clay-btn" type="button" aria-label="Delete note" onClick={() => onDelete(note.id)}>
             <Trash2 size={16} />
           </button>
         </div>

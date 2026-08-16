@@ -145,11 +145,12 @@ export function Signup() {
       <form className="auth-form" onSubmit={submit}>
         <label>
           <span>Email</span>
-          <input type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+          <input className="clay-input" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
         </label>
         <label>
           <span>Password</span>
           <input
+            className="clay-input"
             type="password"
             autoComplete="new-password"
             required
@@ -160,6 +161,7 @@ export function Signup() {
         <label>
           <span>Confirm password</span>
           <input
+            className="clay-input"
             type="password"
             autoComplete="new-password"
             required
@@ -171,7 +173,7 @@ export function Signup() {
         <p className="auth-note">
           Your password encrypts your records. If you lose it, your recovery key is required to unlock synced data.
         </p>
-        <button className="primary-button depth-hover glow-halo" type="submit" disabled={busy}>
+        <button className="primary-button clay-btn depth-hover" type="submit" disabled={busy}>
           {busy ? "Creating…" : "Create account"}
         </button>
       </form>

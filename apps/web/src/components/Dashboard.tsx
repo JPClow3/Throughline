@@ -52,7 +52,7 @@ export function Dashboard({
       </header>
 
       <div className="today-layout">
-        <section className="today-task-surface clay-panel" aria-labelledby="today-priority-heading" style={{ borderRadius: "32px", border: "none" }}>
+        <section className="today-task-surface clay-panel" aria-labelledby="today-priority-heading">
           <div className="today-section-head">
             <div>
               <span className="eyebrow">Next</span>
@@ -88,7 +88,7 @@ export function Dashboard({
         </section>
 
         <aside className="today-side" aria-label="Today pressure and guidance">
-          <section className="today-guidance-panel clay-panel" style={{ borderRadius: "32px", border: "none" }}>
+          <section className="today-guidance-panel clay-panel">
             <div className="today-section-head">
               <div>
                 <span className="eyebrow">Guidance</span>
@@ -109,7 +109,7 @@ export function Dashboard({
             )}
           </section>
 
-          <section className="today-pressure-panel clay-panel" style={{ borderRadius: "32px", border: "none" }}>
+          <section className="today-pressure-panel clay-panel">
             <div className="today-section-head">
               <div>
                 <span className="eyebrow">Pressure</span>
@@ -130,7 +130,7 @@ export function Dashboard({
               />
             </div>
             {stats.nextStudyBlock ? (
-              <button type="button" onClick={() => onEdit(stats.nextStudyBlock!.task)} className="today-next-block clay-panel" style={{ borderRadius: "24px", border: "none", padding: "16px", cursor: "pointer" }}>
+              <button type="button" onClick={() => onEdit(stats.nextStudyBlock!.task)} className="today-next-block clay-panel">
                 <span>Next study block</span>
                 <strong>{stats.nextStudyBlock.task.title}</strong>
                 <small>{formatClock(stats.nextStudyBlock.startsAt)} · {formatMinutes(stats.nextStudyBlock.minutes)}</small>

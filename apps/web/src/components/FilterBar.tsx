@@ -78,6 +78,7 @@ export function FilterBar({
       <label className="toolbar-search">
         <Search size={15} />
         <input
+          className="clay-input"
           value={filters.search}
           onChange={(event) => setFilter("search", event.target.value)}
           placeholder="Search tasks"
@@ -87,7 +88,7 @@ export function FilterBar({
       {isCompact ? (
         <button
           type="button"
-          className="secondary-button toolbar-filter-toggle"
+          className="secondary-button clay-btn toolbar-filter-toggle"
           aria-expanded={filtersOpen}
           onClick={() => setFiltersOpen((open) => !open)}
         >
@@ -124,7 +125,7 @@ export function FilterBar({
                 <button
                   key={tag}
                   type="button"
-                  className={`filter-chip${activeTagSet.has(tag) ? " active" : ""}`}
+                  className={`filter-chip clay-btn${activeTagSet.has(tag) ? " active" : ""}`}
                   aria-pressed={activeTagSet.has(tag)}
                   onClick={() => toggleTag(tag)}
                 >
@@ -191,12 +192,12 @@ export function FilterBar({
             <div className="active-filter-bar">
               <span>{activeFilterCount(filters)} active</span>
               {onSavePreset ? (
-                <button type="button" className="secondary-button" onClick={handleSavePreset}>
+                <button type="button" className="secondary-button clay-btn" onClick={handleSavePreset}>
                   <BookmarkSimple size={15} />
                   Save preset
                 </button>
               ) : null}
-              <button type="button" className="secondary-button" onClick={onClearFilters}>
+              <button type="button" className="secondary-button clay-btn" onClick={onClearFilters}>
                 Clear filters
               </button>
             </div>
@@ -219,7 +220,7 @@ function FilterChip({
   style?: CSSProperties;
 }) {
   return (
-    <button type="button" className={`filter-chip${active ? " active" : ""}`} aria-pressed={active} onClick={onClick} style={style}>
+    <button type="button" className={`filter-chip clay-btn${active ? " active" : ""}`} aria-pressed={active} onClick={onClick} style={style}>
       {children}
     </button>
   );

@@ -1,0 +1,6 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "throughline-web",
+  "compatibility_date": "2025-02-14",
+  "pages_build_output_dir": "dist"
+}

@@ -86,7 +86,7 @@ export function GoalsView({
           <span className="eyebrow">End goals</span>
           <h1>Goals</h1>
         </div>
-        <button className="primary-button" type="button" onClick={onNewGoal}>
+        <button className="primary-button clay-btn" type="button" onClick={onNewGoal}>
           <Plus size={17} /> New goal
         </button>
       </header>
@@ -133,7 +133,7 @@ export function GoalsView({
             title="No goals yet"
             body="Set an end goal and break it into small steps."
             action={
-              <button className="primary-button" type="button" onClick={onNewGoal}>
+              <button className="primary-button clay-btn" type="button" onClick={onNewGoal}>
                 <Plus size={17} /> New goal
               </button>
             }

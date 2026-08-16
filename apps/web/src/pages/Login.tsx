@@ -66,6 +66,7 @@ export function Login() {
         <label>
           <span>Email</span>
           <input
+            className="clay-input"
             type="email"
             autoComplete="email"
             required
@@ -76,6 +77,7 @@ export function Login() {
         <label>
           <span>Password or Recovery Key</span>
           <input
+            className="clay-input"
             type="password"
             autoComplete="current-password"
             required
@@ -86,7 +88,7 @@ export function Login() {
         {error ? (
           <Notice variant="error" className="mb-4">{error}</Notice>
         ) : null}
-        <button className="primary-button depth-hover glow-halo" type="submit" disabled={busy}>
+        <button className="primary-button clay-btn depth-hover" type="submit" disabled={busy}>
           {busy ? "Signing in…" : "Sign in"}
         </button>
       </form>

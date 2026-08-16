@@ -145,7 +145,7 @@ export function Landing() {
             <Link className="landing-link" style={{ color: 'var(--tl-accent-blue)' }} to="/login">
               Log in
             </Link>
-            <Link className="primary-button" style={{ borderRadius: '30px' }} to="/signup">
+            <Link className="primary-button clay-btn" style={{ borderRadius: '30px' }} to="/signup">
               Get started
             </Link>
           </div>
@@ -170,10 +170,10 @@ export function Landing() {
                 </p>
               </Reveal>
               <Reveal delay={0.3} className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link className="primary-button flex items-center justify-center gap-3" style={{ padding: '16px 32px', borderRadius: '30px', fontSize: '16px' }} to="/signup">
+                <Link className="primary-button clay-btn flex items-center justify-center gap-3" style={{ padding: '16px 32px', borderRadius: '30px', fontSize: '16px' }} to="/signup">
                   Start Your Flow <ArrowRight size={20} />
                 </Link>
-                <a className="clay-panel text-[var(--tl-text)] font-medium transition-all duration-300" style={{ padding: '16px 32px', borderRadius: '30px', fontSize: '16px', display: 'flex', alignItems: 'center' }} href="#views">
+                <a className="clay-panel clay-btn text-[var(--tl-text)] font-medium transition-all duration-300" style={{ padding: '16px 32px', borderRadius: '30px', fontSize: '16px', display: 'flex', alignItems: 'center' }} href="#views">
                   Explore Features
                 </a>
               </Reveal>
