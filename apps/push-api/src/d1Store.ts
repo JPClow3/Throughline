@@ -93,14 +93,16 @@ export class D1PushStore {
 
     await this.db
       .prepare(
-        `INSERT INTO reminders (endpoint_hash, reminder_id, title, body, notify_at, urgency, task_id, dispatched_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `INSERT INTO reminders (endpoint_hash, reminder_id, title, body, notify_at, urgency, task_id, due_at, created_at, dispatched_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(endpoint_hash, reminder_id) DO UPDATE SET
            title = excluded.title,
            body = excluded.body,
            notify_at = excluded.notify_at,
            urgency = excluded.urgency,
            task_id = excluded.task_id,
+           due_at = excluded.due_at,
+           created_at = excluded.created_at,
            dispatched_at = excluded.dispatched_at`
       )
       .bind(
@@ -111,6 +113,8 @@ export class D1PushStore {
         reminder.notifyAt,
         reminder.urgency,
         reminder.taskId,
+        reminder.dueAt ?? null,
+        reminder.createdAt,
         dispatchedAt ?? null
       )
       .run();
@@ -161,8 +165,8 @@ export class D1PushStore {
       statements.push(
         this.db
           .prepare(
-            `INSERT INTO reminders (endpoint_hash, reminder_id, title, body, notify_at, urgency, task_id, dispatched_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+            `INSERT INTO reminders (endpoint_hash, reminder_id, title, body, notify_at, urgency, task_id, due_at, created_at, dispatched_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
           )
           .bind(
             endpointHash,
@@ -172,6 +176,8 @@ export class D1PushStore {
             reminder.notifyAt,
             reminder.urgency,
             reminder.taskId,
+            reminder.dueAt ?? null,
+            reminder.createdAt,
             dispatchedAt ?? null
           )
       );
@@ -188,7 +194,7 @@ export class D1PushStore {
     const isoNow = now.toISOString();
     const rows = await this.db
       .prepare(
-        `SELECT endpoint_hash, reminder_id, title, body, notify_at, urgency, task_id, dispatched_at
+        `SELECT endpoint_hash, reminder_id, title, body, notify_at, urgency, task_id, due_at, created_at, dispatched_at
          FROM reminders
          WHERE dispatched_at IS NULL AND notify_at <= ?
          ORDER BY notify_at ASC`
@@ -202,9 +208,9 @@ export class D1PushStore {
         notify_at: string;
         urgency: "normal" | "high" | "critical";
         task_id: string;
-        dispatched_at: string | null;
-        created_at: string;
         due_at?: string | null;
+        created_at: string;
+        dispatched_at: string | null;
       }>();
 
     return rows.results.map((r) => ({
@@ -215,6 +221,7 @@ export class D1PushStore {
       notifyAt: r.notify_at,
       urgency: r.urgency,
       taskId: r.task_id,
+      dueAt: r.due_at ?? undefined,
       createdAt: r.created_at || isoNow,
       dispatchedAt: r.dispatched_at ?? undefined
     }));

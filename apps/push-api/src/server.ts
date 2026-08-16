@@ -174,8 +174,6 @@ export async function createServer(options: CreateServerOptions = {}) {
         const errStatusCode = (err as { statusCode?: number })?.statusCode;
         if (errStatusCode === 404 || errStatusCode === 410) {
           await store.removeSubscription(reminder.endpointHash);
-        } else {
-          await store.markDispatched(reminder.endpointHash, reminder.reminderId);
         }
       }
     }

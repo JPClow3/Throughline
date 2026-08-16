@@ -60,6 +60,8 @@ CREATE TABLE IF NOT EXISTS reminders (
   notify_at TEXT NOT NULL,
   urgency TEXT NOT NULL,
   task_id TEXT NOT NULL,
+  due_at TEXT,
+  created_at TEXT NOT NULL,
   dispatched_at TEXT,
   PRIMARY KEY (endpoint_hash, reminder_id),
   FOREIGN KEY (endpoint_hash) REFERENCES subscriptions(endpoint_hash) ON DELETE CASCADE

@@ -185,6 +185,44 @@ describe("push API", () => {
 
     await app.close();
   });
+
+  it("retries reminders on transient errors and unregisters subscriptions on 410 Gone", async () => {
+    const sendNotification = vi.fn().mockRejectedValueOnce({ statusCode: 500, message: "Internal Push Error" });
+    const app = await createServer({
+      config: {
+        ...config,
+        vapidPublicKey: "public",
+        vapidPrivateKey: "private",
+        vapidSubject: "mailto:test@example.com"
+      },
+      store,
+      configureWebPush: false,
+      sendNotification
+    });
+
+    const created = await app.inject({ method: "POST", url: "/subscriptions", payload: fakeSubscription() });
+    const endpointHash = created.json().endpointHash as string;
+    await app.inject({
+      method: "PUT",
+      url: `/subscriptions/${endpointHash}/reminders`,
+      payload: { reminders: [fakeReminder({ notifyAt: "2020-01-01T00:00:00.000Z" })] }
+    });
+
+    // 1. First dispatch fails transiently (500) -> reminder should NOT be marked dispatched
+    const res1 = await app.inject({ method: "POST", url: "/dispatch-due" });
+    expect(res1.json()).toEqual({ sent: 0 });
+    const dueRemindersAfter500 = await store.dueReminders(new Date());
+    expect(dueRemindersAfter500).toHaveLength(1);
+
+    // 2. Second dispatch returns 410 Gone -> subscription and reminders should be removed
+    sendNotification.mockRejectedValueOnce({ statusCode: 410, message: "Subscription Gone" });
+    const res2 = await app.inject({ method: "POST", url: "/dispatch-due" });
+    expect(res2.json()).toEqual({ sent: 0 });
+    expect(await store.subscriptionFor(endpointHash)).toBeUndefined();
+    expect(await store.dueReminders(new Date())).toHaveLength(0);
+
+    await app.close();
+  });
 });
 
 describe("auth", () => {

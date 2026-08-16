@@ -177,8 +177,6 @@ export async function dispatchDueReminders(env: WorkerEnv): Promise<{ sent: numb
       const errStatusCode = (err as { statusCode?: number })?.statusCode;
       if (errStatusCode === 404 || errStatusCode === 410) {
         await pushStore.removeSubscription(reminder.endpointHash);
-      } else {
-        await pushStore.markDispatched(reminder.endpointHash, reminder.reminderId);
       }
     }
   }

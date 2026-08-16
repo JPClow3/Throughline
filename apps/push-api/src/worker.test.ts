@@ -1,9 +1,10 @@
 import { DatabaseSync } from "node:sqlite";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { describe, expect, it } from "vitest";
-import { D1Database, D1PreparedStatement } from "./d1Store";
-import { handleRequest, SESSION_COOKIE, WorkerEnv } from "./worker";
+import { describe, expect, it, vi } from "vitest";
+import webpush from "web-push";
+import { D1Database, D1PreparedStatement, D1PushStore } from "./d1Store";
+import { dispatchDueReminders, handleRequest, SESSION_COOKIE, WorkerEnv } from "./worker";
 
 function createTestD1(): D1Database {
   const db = new DatabaseSync(":memory:");
@@ -421,5 +422,120 @@ describe("Cloudflare Worker API", () => {
       env
     );
     expect(notFoundRes.status).toBe(404);
+  });
+
+  it("preserves createdAt and dueAt timestamps in D1PushStore", async () => {
+    const db = createTestD1();
+    const store = new D1PushStore(db);
+    const subBody = {
+      endpoint: "https://push.example.com/sub/preserve-time",
+      keys: {
+        p256dh: "BLc4...",
+        auth: "5K4..."
+      }
+    };
+    const endpointHash = await store.upsertSubscription(subBody);
+
+    const originalCreatedAt = "2026-01-01T12:00:00.000Z";
+    const originalDueAt = "2026-01-05T18:00:00.000Z";
+    const notifyAt = "2026-01-02T10:00:00.000Z";
+
+    await store.saveReminder(subBody.endpoint, {
+      reminderId: "rem_preserve_1",
+      taskId: "task_preserve_1",
+      notifyAt,
+      dueAt: originalDueAt,
+      urgency: "high",
+      title: "Quest reminder",
+      body: "A study quest needs your attention.",
+      createdAt: originalCreatedAt
+    });
+
+    const dueList = await store.dueReminders(new Date("2026-01-03T00:00:00.000Z"));
+    expect(dueList).toHaveLength(1);
+    expect(dueList[0].createdAt).toBe(originalCreatedAt);
+    expect(dueList[0].dueAt).toBe(originalDueAt);
+
+    // Also verify replaceReminders preserves createdAt and dueAt
+    const replacedCreatedAt = "2026-01-01T08:00:00.000Z";
+    const replacedDueAt = "2026-01-04T12:00:00.000Z";
+    await store.replaceReminders(endpointHash, [
+      {
+        reminderId: "rem_preserve_2",
+        taskId: "task_preserve_2",
+        notifyAt,
+        dueAt: replacedDueAt,
+        urgency: "critical",
+        title: "Quest reminder",
+        body: "A study quest needs your attention.",
+        createdAt: replacedCreatedAt
+      }
+    ]);
+
+    const dueReplaced = await store.dueReminders(new Date("2026-01-03T00:00:00.000Z"));
+    expect(dueReplaced).toHaveLength(1);
+    expect(dueReplaced[0].reminderId).toBe("rem_preserve_2");
+    expect(dueReplaced[0].createdAt).toBe(replacedCreatedAt);
+    expect(dueReplaced[0].dueAt).toBe(replacedDueAt);
+  });
+
+  it("retains reminders for retry upon transient push errors, and unsubscribes on 410 Gone", async () => {
+    const db = createTestD1();
+    const testEnv: WorkerEnv = {
+      DB: db,
+      COOKIE_SECURE: "false",
+      VAPID_PUBLIC_KEY: "test-pub-key",
+      VAPID_PRIVATE_KEY: "test-priv-key",
+      VAPID_SUBJECT: "mailto:test@example.com"
+    };
+
+    const store = new D1PushStore(db);
+    const subBody = {
+      endpoint: "https://push.example.com/sub/retry-test",
+      keys: {
+        p256dh: "BLc4...",
+        auth: "5K4..."
+      }
+    };
+    const endpointHash = await store.upsertSubscription(subBody);
+
+    await store.saveReminder(subBody.endpoint, {
+      reminderId: "rem_retry_1",
+      taskId: "task_retry_1",
+      notifyAt: "2020-01-01T00:00:00.000Z",
+      urgency: "normal",
+      title: "Quest reminder",
+      body: "A study quest needs your attention.",
+      createdAt: "2020-01-01T00:00:00.000Z"
+    });
+
+    const vapidSpy = vi.spyOn(webpush, "setVapidDetails").mockImplementation(() => {});
+    // 1. Transient failure (503 Service Unavailable): reminder should NOT be marked as dispatched
+    const sendSpy = vi.spyOn(webpush, "sendNotification").mockRejectedValueOnce({
+      statusCode: 503,
+      message: "Push service overloaded"
+    });
+
+    const dispatchResult1 = await dispatchDueReminders(testEnv);
+    expect(dispatchResult1.sent).toBe(0);
+
+    const remainingDue = await store.dueReminders(new Date());
+    expect(remainingDue).toHaveLength(1);
+    expect(remainingDue[0].reminderId).toBe("rem_retry_1");
+
+    // 2. Unregistered / Gone (410): subscription and its reminders should be removed
+    sendSpy.mockRejectedValueOnce({
+      statusCode: 410,
+      message: "Subscription gone"
+    });
+
+    const dispatchResult2 = await dispatchDueReminders(testEnv);
+    expect(dispatchResult2.sent).toBe(0);
+
+    expect(await store.subscriptionFor(endpointHash)).toBeUndefined();
+    expect(await store.dueReminders(new Date())).toHaveLength(0);
+
+    sendSpy.mockRestore();
+    vapidSpy.mockRestore();
   });
 });
