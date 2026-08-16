@@ -79,9 +79,6 @@ const PullQuerySchema = z.object({ since: z.string().max(40).optional() });
 // In-memory metrics tracking for the worker isolate
 const dispatchMetrics = { sent: 0, failed: 0 };
 
-let cachedSql: Sql | null = null;
-let cachedConnectionString: string | null = null;
-
 export function getDb(env: WorkerEnv): Sql {
   if (env.SQL) {
     return env.SQL;
@@ -90,15 +87,11 @@ export function getDb(env: WorkerEnv): Sql {
   if (!connectionString) {
     throw new Error("Missing HYPERDRIVE or DATABASE_URL database configuration");
   }
-  if (!cachedSql || cachedConnectionString !== connectionString) {
-    cachedConnectionString = connectionString;
-    cachedSql = postgres(connectionString, {
-      max: 5,
-      idle_timeout: 20,
-      connect_timeout: 10
-    });
-  }
-  return cachedSql;
+  return postgres(connectionString, {
+    max: 1,
+    idle_timeout: 0,
+    connect_timeout: 10
+  });
 }
 
 function getCookie(request: Request, name: string): string | null {
