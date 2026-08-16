@@ -13,9 +13,9 @@ Use this file first, then `docs/README.md`. The docs in `docs/` are the source o
 ## Product Rules
 
 - Keep the default behavior local-first and offline-capable. Optional accounts may sync planner records only as end-to-end-encrypted ciphertext; the server must not be able to read task titles, descriptions, notes, tags, subtasks, goals, or course details.
-- Preserve the LiquidGlass visual system.
+- Preserve the Claymorphism visual system.
 - Preserve the student-life UX priority: fast capture, course grouping, due dates, Kanban, timeline pressure, calendar export.
-- Do not add a 3D layer unless the product direction explicitly changes; current LiquidGlass depth comes from layered surfaces on a solid base.
+- Do not add a complex 3D layer unless the product direction explicitly changes; current Claymorphism depth comes from double inner shadows and drop shadows on a solid base.
 - Keep push payloads redacted. The push API may store subscriptions, due times, generic copy, urgency, reminder IDs, and opaque task IDs only.
 - Treat recovery keys as a first-class trust step. Signup and Settings must explain that password loss requires the recovery key and that encrypted data cannot be recovered if both are lost.
 - Windows support means installable/store-ready PWA unless the user explicitly changes the target.

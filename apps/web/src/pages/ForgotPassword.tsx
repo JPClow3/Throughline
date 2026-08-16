@@ -44,6 +44,7 @@ export function ForgotPassword() {
         <label>
           <span>Email</span>
           <input
+            className="clay-input"
             type="email"
             autoComplete="email"
             required
@@ -54,6 +55,7 @@ export function ForgotPassword() {
         <label>
           <span>Recovery Key</span>
           <input
+            className="clay-input"
             type="text"
             required
             placeholder="abcd-ef01-2345-..."
@@ -65,6 +67,7 @@ export function ForgotPassword() {
         <label>
           <span>New Password</span>
           <input
+            className="clay-input"
             type="password"
             autoComplete="new-password"
             required
@@ -75,7 +78,7 @@ export function ForgotPassword() {
         {error ? (
           <Notice variant="error" className="mb-4">{error}</Notice>
         ) : null}
-        <button className="primary-button depth-hover glow-halo" type="submit" disabled={busy}>
+        <button className="primary-button clay-btn depth-hover" type="submit" disabled={busy}>
           {busy ? "Recovering…" : "Reset Password"}
         </button>
       </form>

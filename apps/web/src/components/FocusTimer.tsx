@@ -132,8 +132,7 @@ export function FocusTimer({
             initial={{ opacity: 0, y: 20, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className="bg-surface/80 backdrop-blur-xl border border-white/20 p-4 rounded-2xl shadow-2xl flex flex-col items-center gap-4 min-w-[220px] max-w-[min(320px,calc(100vw-2rem))]"
-            style={{ boxShadow: "0 20px 40px -10px rgba(0,0,0,0.15)" }}
+            className="clay-panel p-5 rounded-3xl shadow-2xl flex flex-col items-center gap-4 min-w-[240px] max-w-[min(320px,calc(100vw-2rem))]"
           >
             <div className="w-full flex justify-between items-center px-1 gap-3">
               <span className="text-sm font-medium text-on-surface/70 truncate">
@@ -141,7 +140,7 @@ export function FocusTimer({
               </span>
               <button
                 onClick={closeTimer}
-                className="text-on-surface/50 hover:text-on-surface transition-colors"
+                className="text-on-surface/50 hover:text-on-surface transition-colors cursor-pointer p-1 rounded-full hover:bg-[var(--accent-soft)]"
                 aria-label="Close focus timer"
               >
                 <X size={16} />
@@ -179,10 +178,11 @@ export function FocusTimer({
             </div>
 
             {!showSuccess && (
-              <div className="flex gap-2">
+              <div className="flex gap-2 items-center">
                 <button
+                  type="button"
                   onClick={toggleTimer}
-                  className="bg-primary text-on-primary w-10 h-10 rounded-full flex items-center justify-center hover:bg-primary/90 transition-transform active:scale-95 shadow-lg shadow-primary/20"
+                  className="primary-button clay-btn !w-11 !h-11 !p-0 rounded-full flex items-center justify-center shadow-lg"
                   aria-label={isActive ? "Pause focus session" : "Start focus session"}
                 >
                   {isActive ? <Pause size={20} weight="fill" /> : <Play size={20} weight="fill" />}
@@ -190,7 +190,7 @@ export function FocusTimer({
                 <button
                   type="button"
                   onClick={logCurrentSession}
-                  className="secondary-button"
+                  className="secondary-button clay-btn"
                   aria-label="Log focus session"
                 >
                   Log

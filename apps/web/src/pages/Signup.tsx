@@ -64,7 +64,7 @@ export function Signup() {
 
     return (
       <AuthShell title="Save your recovery key" subtitle="Your records are end-to-end encrypted. This key is required if you lose your password.">
-        <div className="glass-panel" style={{ padding: "2rem", borderRadius: "var(--radius-card)", textAlign: "center", marginBottom: "2rem" }}>
+        <div className="clay-panel" style={{ padding: "2rem", borderRadius: "var(--radius-card)", textAlign: "center", marginBottom: "2rem" }}>
           <p style={{ fontWeight: "var(--fw-bold)", fontSize: "1.2rem", letterSpacing: "2px", userSelect: "all", fontFamily: "monospace", color: "var(--primary)" }}>
             {recoveryKey}
           </p>
@@ -145,11 +145,12 @@ export function Signup() {
       <form className="auth-form" onSubmit={submit}>
         <label>
           <span>Email</span>
-          <input type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+          <input className="clay-input" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
         </label>
         <label>
           <span>Password</span>
           <input
+            className="clay-input"
             type="password"
             autoComplete="new-password"
             required
@@ -160,6 +161,7 @@ export function Signup() {
         <label>
           <span>Confirm password</span>
           <input
+            className="clay-input"
             type="password"
             autoComplete="new-password"
             required
@@ -171,7 +173,7 @@ export function Signup() {
         <p className="auth-note">
           Your password encrypts your records. If you lose it, your recovery key is required to unlock synced data.
         </p>
-        <button className="primary-button depth-hover glow-halo" type="submit" disabled={busy}>
+        <button className="primary-button clay-btn depth-hover" type="submit" disabled={busy}>
           {busy ? "Creating…" : "Create account"}
         </button>
       </form>

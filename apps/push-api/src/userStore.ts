@@ -24,7 +24,7 @@ const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 function hashAuthKey(authKey: string): string {
   const salt = randomBytes(16);
   const derived = scryptSync(authKey, salt, 64);
-  return `${salt.toString("hex")}:${derived.toString("hex")}`;
+  return `${Buffer.from(salt).toString("hex")}:${Buffer.from(derived).toString("hex")}`;
 }
 
 function verifyAuthKey(authKey: string, stored: string): boolean {
@@ -87,7 +87,7 @@ export function createUserStore(dbPath: string) {
         return null; // email already taken
       }
       const row: UserRow = {
-        id: `user_${randomBytes(12).toString("hex")}`,
+        id: `user_${Buffer.from(randomBytes(12)).toString("hex")}`,
         email,
         salt: input.salt,
         authHash: hashAuthKey(input.authKey),
@@ -135,7 +135,7 @@ export function createUserStore(dbPath: string) {
         return null; // email already taken
       }
       const row: UserRow = {
-        id: `user_${randomBytes(12).toString("hex")}`,
+        id: `user_${Buffer.from(randomBytes(12)).toString("hex")}`,
         email,
         salt: "", // No salt for google users
         authHash: "", // No auth hash for google users
@@ -168,7 +168,7 @@ export function createUserStore(dbPath: string) {
     },
 
     createSession(userId: string): string {
-      const token = randomBytes(32).toString("hex");
+      const token = Buffer.from(randomBytes(32)).toString("hex");
       const createdAt = new Date();
       const expiresAt = new Date(createdAt.getTime() + SESSION_TTL_MS);
       db.prepare("INSERT INTO sessions (token, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)").run(

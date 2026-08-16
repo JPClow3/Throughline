@@ -16,8 +16,8 @@ This folder is the project memory. If you come back later, read this file first,
 - [Product & Requirements](product.md): Product requirements, current features, roadmap, and project map.
 - [Architecture](architecture.md): Workspace responsibilities, data flow, offline model, encrypted sync, and storage shapes.
 - [Notifications](notifications.md): Local notification flow, push API endpoints, VAPID setup, and privacy rules.
-- [Deployment](deployment.md): Docker-first deployment architecture, composition, and Dokploy setup.
-- [UI/UX](ui-ux.md): LiquidGlass design system, interaction rules, and workflow guidance.
+- [Deployment](deployment.md): Cloudflare (Pages + Workers + D1) and Docker/Dokploy deployment architectures, PWA offline, and release readiness.
+- [UI/UX](ui-ux.md): Claymorphism design system, interaction rules, and workflow guidance.
 - [Development Workflow](development.md): Setup, commands, quality gates, coverage, generated files, and troubleshooting.
 - [Windows Packaging](windows-packaging.md): Microsoft Store packaging notes.
 - [Decision Log](decision-log.md): Durable implementation decisions.
@@ -25,7 +25,7 @@ This folder is the project memory. If you come back later, read this file first,
 ## Working Principles
 
 - Privacy story: local-first by default, optional account sync, end-to-end-encrypted records, recovery key required for password-loss recovery, and no server access to task content.
-- Design story: LiquidGlass depth via layered surfaces on a solid base. The old 3D visual constitution is retired.
+- Design story: Claymorphism depth via inflated solid surfaces with double inner shadows. The old 3D visual constitution is retired.
 - AI workflow: follow `AGENTS.md`, then this index, then the task-specific docs above.
 
 ## Recommended Reading Paths

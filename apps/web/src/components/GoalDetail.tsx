@@ -117,8 +117,8 @@ export function GoalDetail({
 
   return (
     <section className="goal-detail" style={{ "--project-color": accent } as CSSProperties}>
-      <div className="goal-detail-head glass-panel">
-        <button className="goal-back" type="button" onClick={onBack}>
+      <div className="goal-detail-head clay-panel">
+        <button className="goal-back clay-btn" type="button" onClick={onBack}>
           <ArrowLeft size={16} /> All goals
         </button>
         <div className="goal-detail-main">
@@ -140,19 +140,19 @@ export function GoalDetail({
         </div>
         <div className="button-row">
           {progress.isComplete && goal.status !== "done" ? (
-            <button className="primary-button" type="button" onClick={() => void onSetGoalStatus(goal.id, "done")}>
+            <button className="primary-button clay-btn" type="button" onClick={() => void onSetGoalStatus(goal.id, "done")}>
               <CheckCircle2 size={17} /> Mark goal complete
             </button>
           ) : null}
           {goal.status === "done" ? (
-            <button className="secondary-button" type="button" onClick={() => void onSetGoalStatus(goal.id, "active")}>
+            <button className="secondary-button clay-btn" type="button" onClick={() => void onSetGoalStatus(goal.id, "active")}>
               Reopen goal
             </button>
           ) : null}
-          <button className="secondary-button" type="button" onClick={() => onEditGoal(goal)}>
+          <button className="secondary-button clay-btn" type="button" onClick={() => onEditGoal(goal)}>
             <PencilSimple size={16} /> Edit
           </button>
-          <button className="secondary-button" type="button" onClick={() => void onDeleteGoal(goal.id)}>
+          <button className="secondary-button clay-btn" type="button" onClick={() => void onDeleteGoal(goal.id)}>
             <Trash2 size={16} /> Delete
           </button>
         </div>
@@ -168,12 +168,13 @@ export function GoalDetail({
         </div>
         <form className="goal-add-step" onSubmit={addStep}>
           <input
+            className="clay-input"
             value={stepTitle}
             onChange={(event) => setStepTitle(event.target.value)}
             placeholder="Add a step…"
             aria-label="New step"
           />
-          <button className="primary-button" type="submit">
+          <button className="primary-button clay-btn" type="submit">
             <Plus size={17} /> Add
           </button>
         </form>
@@ -231,7 +232,7 @@ export function GoalDetail({
           </div>
         </div>
         <button
-          className="secondary-button"
+          className="secondary-button clay-btn"
           type="button"
           onClick={() => void onAddNote({ goalIds: [goal.id], projectId: goal.projectId })}
         >
@@ -240,7 +241,7 @@ export function GoalDetail({
         <div className="goal-note-list">
           {linkedNotes.length ? (
             linkedNotes.map((note) => (
-              <div key={note.id} className="goal-note-card glass-panel">
+              <div key={note.id} className="goal-note-card clay-panel">
                 <strong>{noteDisplayTitle(note)}</strong>
                 <p>{noteExcerpt(note.body, 100) || "Empty note — open Notes to write it."}</p>
               </div>

@@ -124,7 +124,7 @@ export function Landing() {
       <div className="landing text-[var(--tl-text)]">
         <AmbientBackground />
         
-        <header className="landing-nav glass-panel">
+        <header className="landing-nav clay-panel">
           <a className="landing-brand" href="#top">
             <img src="/brand/svg/throughline-icon-liquid-glass.svg" alt="" width="24" height="24" style={{ borderRadius: '6px' }} />
             <GradientText
@@ -145,7 +145,7 @@ export function Landing() {
             <Link className="landing-link" style={{ color: 'var(--tl-accent-blue)' }} to="/login">
               Log in
             </Link>
-            <Link className="primary-button" style={{ borderRadius: '30px' }} to="/signup">
+            <Link className="primary-button clay-btn" style={{ borderRadius: '30px' }} to="/signup">
               Get started
             </Link>
           </div>
@@ -170,10 +170,10 @@ export function Landing() {
                 </p>
               </Reveal>
               <Reveal delay={0.3} className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link className="primary-button flex items-center justify-center gap-3" style={{ padding: '16px 32px', borderRadius: '30px', fontSize: '16px' }} to="/signup">
+                <Link className="primary-button clay-btn flex items-center justify-center gap-3" style={{ padding: '16px 32px', borderRadius: '30px', fontSize: '16px' }} to="/signup">
                   Start Your Flow <ArrowRight size={20} />
                 </Link>
-                <a className="glass-panel text-[var(--tl-text)] font-medium transition-all duration-300" style={{ padding: '16px 32px', borderRadius: '30px', fontSize: '16px', display: 'flex', alignItems: 'center' }} href="#views">
+                <a className="clay-panel clay-btn text-[var(--tl-text)] font-medium transition-all duration-300" style={{ padding: '16px 32px', borderRadius: '30px', fontSize: '16px', display: 'flex', alignItems: 'center' }} href="#views">
                   Explore Features
                 </a>
               </Reveal>
@@ -191,7 +191,7 @@ export function Landing() {
           <section id="how" className="mb-40 max-w-[1200px] mx-auto w-full px-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {BENTO_FEATURES.map((feature, index) => (
-                <Reveal key={feature.title} delay={0.1 * index} className="glass-panel rounded-3xl p-10 flex flex-col items-start h-full">
+                <Reveal key={feature.title} delay={0.1 * index} className="clay-panel rounded-3xl p-10 flex flex-col items-start h-full">
                   <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-8 border border-white/50 text-[var(--tl-accent-blue)] shadow-sm`}>
                     {feature.icon}
                   </div>
@@ -225,7 +225,7 @@ export function Landing() {
                     viewport={{ once: true, margin: "-80px" }}
                     transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
                   >
-                    <BrowserFrame src={item.img} alt={item.alt} className="glass-panel p-2 rounded-[1.5rem]" />
+                    <BrowserFrame src={item.img} alt={item.alt} className="clay-panel p-2 rounded-[1.5rem]" />
                   </motion.div>
                 </div>
               ))}
@@ -235,7 +235,7 @@ export function Landing() {
           {/* Technical Panel - Data Portability */}
           <section className="mb-32 max-w-[1200px] mx-auto w-full px-6">
             <Reveal delay={0.2}>
-              <div className="glass-heavy rounded-[40px] p-12 md:p-20 flex flex-col lg:flex-row gap-16 items-center relative overflow-hidden" style={{ background: 'var(--tl-glass-card-strong)', border: '1px solid var(--tl-glass-border)' }}>
+              <div className="clay-heavy rounded-[40px] p-12 md:p-20 flex flex-col lg:flex-row gap-16 items-center relative overflow-hidden" style={{ background: 'var(--tl-glass-card-strong)', border: '1px solid var(--tl-glass-border)' }}>
                 <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-[var(--tl-accent-blue)]/30 to-transparent rounded-full blur-[60px]" />
                 <div className="flex-1 z-10 relative">
                   <div className="absolute -left-10 -top-10 opacity-20 w-32 h-32 pointer-events-none">
@@ -285,7 +285,7 @@ export function Landing() {
             <div className="landing-faq-list max-w-2xl mx-auto mt-10">
               {FAQ.map((item) => (
                 <Reveal key={item.q}>
-                  <details className="landing-faq-item glass-panel depth-hover mb-4 p-6 rounded-2xl">
+                  <details className="landing-faq-item clay-panel depth-hover mb-4 p-6 rounded-2xl">
                     <summary className="font-medium text-[18px] cursor-pointer outline-none">{item.q}</summary>
                     <p className="mt-4 text-[var(--tl-text-secondary)] font-light leading-relaxed">{item.a}</p>
                   </details>

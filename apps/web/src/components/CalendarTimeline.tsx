@@ -257,8 +257,9 @@ export function CalendarTimeline({
             {capitalizeFirst(selectedDate.toLocaleDateString(APP_LOCALE, { weekday: "long", month: "long", day: "numeric" }))}
           </h2>
           <button
+            type="button"
             onClick={() => onNewTask?.(selectedDate)}
-            className="bg-primary text-on-primary font-label-md text-label-md px-4 py-2 rounded-lg interactive-scale flex items-center gap-2"
+            className="primary-button clay-btn"
           >
             <Plus size={16} weight="bold" />
             New Task for Today

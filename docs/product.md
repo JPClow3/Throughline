@@ -16,7 +16,7 @@ This document outlines the product requirements, features, current roadmap, and 
 - Local-first task data stored in IndexedDB, with optional account sync across devices.
 - End-to-end-encrypted cloud sync: planner records are encrypted on-device, and the server stores ciphertext it cannot read.
 - Recovery key generation and confirmation during signup, plus regeneration from Settings.
-- LiquidGlass visual system with translucent depth, strong contrast, suave colors, and responsive layout.
+- Claymorphism visual system with tactile solid depth, strong contrast, calm colors, and responsive layout.
 - Visual task representation through quest cards, XP, urgency, energy, difficulty, RPG attributes, and completion state.
 - Kanban visualization with Backlog, Ready, Doing, Blocked, and Done.
 - ICS export for due-date tasks.
@@ -30,7 +30,7 @@ This document outlines the product requirements, features, current roadmap, and 
 - No server storage of readable task records. Synced planner content may leave the device only as end-to-end-encrypted ciphertext.
 - Recovery keys are required for password-loss recovery. If both password and recovery key are lost, encrypted synced content cannot be recovered.
 - Push payloads must not include task titles, descriptions, course names, or tags.
-- There is no 3D layer in the current product direction; LiquidGlass depth comes from layered surfaces on a solid base.
+- There is no 3D layer in the current product direction; Claymorphism depth comes from inflated solid surfaces with double inner shadows.
 
 ## 2. Feature Specs
 
@@ -62,7 +62,7 @@ A calm cockpit for the day. Shows greeting, date, and a progress hero ("X of Y t
 ## 3. Roadmap
 
 **Shipped (beta)**:
-- Calm, light-first planner with a softer dark mode (LiquidGlass visual system).
+- Calm, light-first planner with a softer dark mode (Claymorphism visual system).
 - Core entities: Goals, Tasks, Notes, Projects.
 - Views: Today, Board, Timeline, Projects, Notes.
 - Tech: React 19 / Vite / Tailwind 4 PWA; Dexie local-first storage. Fastify push API. Docker images + Compose stack. Playwright E2E suites.
@@ -83,7 +83,7 @@ A calm cockpit for the day. Shows greeting, date, and a progress hero ("X of Y t
 ### Web App (`apps/web`)
 - `vite.config.ts`: React, Tailwind, PWA manifest.
 - `src/App.tsx`: view routing.
-- `src/styles.css`: LiquidGlass token system.
+- `src/styles.css`: Claymorphism token system.
 - `src/data/`: Dexie database (`db.ts`), repositories, reminder sync.
 - `src/hooks/`: React hooks for data (`useTasks.ts`, `useGoals.ts`, etc).
 - `src/components/`: Core UI components (AppShell, Dashboard, TaskCard, Sheet, KanbanBoard, etc).

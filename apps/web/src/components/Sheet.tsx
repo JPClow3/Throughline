@@ -82,7 +82,7 @@ export function Sheet({ open, title, onClose, children }: SheetProps) {
     >
       <motion.div
         ref={panelRef}
-        className="sheet"
+        className="sheet clay-modal"
         role="dialog"
         aria-modal="true"
         aria-label={title}

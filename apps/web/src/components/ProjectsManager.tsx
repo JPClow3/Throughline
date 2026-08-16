@@ -83,7 +83,7 @@ export function ProjectsManager({ courses, tasks, onUpsertCourse, onDeleteCourse
   }
 
   return (
-    <div className="glass-panel settings-card">
+    <div className="clay-panel settings-card">
       <div className="project-rows">
         {courses.length ? (
           courses.map((course) =>
@@ -97,21 +97,22 @@ export function ProjectsManager({ courses, tasks, onUpsertCourse, onDeleteCourse
                 }}
               >
                 <input
+                  className="clay-input"
                   value={editName}
                   onChange={(event) => setEditName(event.target.value)}
                   aria-label={`Rename ${course.name}`}
                   autoFocus
                 />
-                <select value={editAttribute} onChange={(e) => setEditAttribute(e.target.value as RpgAttribute | "")} aria-label="Default attribute" style={{ width: 'auto', padding: '4px' }}>
+                <select className="clay-input" value={editAttribute} onChange={(e) => setEditAttribute(e.target.value as RpgAttribute | "")} aria-label="Default attribute" style={{ width: 'auto', padding: '4px' }}>
                   <option value="">No attribute</option>
                   {rpgAttributes.map(a => <option key={a} value={a}>{a}</option>)}
                 </select>
                 <ColorPicker value={editColor} onChange={setEditColor} label="Project colour" />
-                <button className="icon-toggle" type="submit" aria-label={`Save ${course.name}`}>
+                <button className="icon-toggle clay-btn" type="submit" aria-label={`Save ${course.name}`}>
                   <Check size={15} />
                 </button>
                 <button
-                  className="icon-toggle"
+                  className="icon-toggle clay-btn"
                   type="button"
                   aria-label="Cancel edit"
                   onClick={() => setEditingId(null)}
@@ -129,7 +130,7 @@ export function ProjectsManager({ courses, tasks, onUpsertCourse, onDeleteCourse
                 <span className="project-row-name">{course.name}</span>
                 <span className="project-row-count">{counts.get(course.id) ?? 0}</span>
                 <button
-                  className="icon-toggle"
+                  className="icon-toggle clay-btn"
                   type="button"
                   aria-label={`Edit ${course.name}`}
                   onClick={() => startEdit(course)}
@@ -137,7 +138,7 @@ export function ProjectsManager({ courses, tasks, onUpsertCourse, onDeleteCourse
                   <PencilSimple size={15} />
                 </button>
                 <button
-                  className="icon-toggle"
+                  className="icon-toggle clay-btn"
                   type="button"
                   aria-label={`Delete ${course.name}`}
                   onClick={() => void onDeleteCourse(course.id)}
@@ -153,17 +154,18 @@ export function ProjectsManager({ courses, tasks, onUpsertCourse, onDeleteCourse
       </div>
       <form className="project-add" onSubmit={addProject}>
         <input
+          className="clay-input"
           value={name}
           onChange={(event) => setName(event.target.value)}
           placeholder="New project name"
           aria-label="New project name"
         />
-        <select value={attribute} onChange={(e) => setAttribute(e.target.value as RpgAttribute | "")} aria-label="Default attribute" style={{ width: 'auto' }}>
+        <select className="clay-input" value={attribute} onChange={(e) => setAttribute(e.target.value as RpgAttribute | "")} aria-label="Default attribute" style={{ width: 'auto' }}>
           <option value="">No attribute</option>
           {rpgAttributes.map(a => <option key={a} value={a}>{a}</option>)}
         </select>
         <ColorPicker value={color} onChange={setColor} label="Project colour" />
-        <button className="primary-button" type="submit">
+        <button className="primary-button clay-btn" type="submit">
           <Plus size={16} /> Add project
         </button>
       </form>

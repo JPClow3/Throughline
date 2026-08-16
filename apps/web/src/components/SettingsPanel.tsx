@@ -203,7 +203,7 @@ export function SettingsPanel({
       </header>
       <section className="settings-grid">
         {account ? (
-          <div className="glass-panel settings-card">
+          <div className="clay-panel settings-card">
             <header>
               <CloudCheck size={20} />
               <h2>Account</h2>
@@ -219,10 +219,10 @@ export function SettingsPanel({
               </div>
             </dl>
             <div className="button-row">
-              <button className="secondary-button" type="button" onClick={() => onSyncNow?.()}>
+              <button className="secondary-button clay-btn" type="button" onClick={() => onSyncNow?.()}>
                 <ArrowsClockwise size={16} /> Sync now
               </button>
-              <button className="secondary-button" type="button" onClick={() => onSignOut?.()}>
+              <button className="secondary-button clay-btn" type="button" onClick={() => onSignOut?.()}>
                 <SignOut size={16} /> Sign out
               </button>
             </div>
@@ -231,7 +231,7 @@ export function SettingsPanel({
         ) : null}
 
         {account ? (
-          <div className="glass-panel settings-card">
+          <div className="clay-panel settings-card">
             <header>
               <Key size={20} />
               <h2>Recovery key</h2>
@@ -264,6 +264,7 @@ export function SettingsPanel({
                 <label>
                   <span>Confirm last 4 characters</span>
                   <input
+                    className="clay-input"
                     value={recoveryPartial}
                     onChange={(event) => setRecoveryPartial(event.target.value)}
                     maxLength={4}
@@ -278,7 +279,7 @@ export function SettingsPanel({
               </>
             ) : null}
             <button
-              className="secondary-button"
+              className="secondary-button clay-btn"
               type="button"
               onClick={() => void regenerateRecoveryKey()}
               disabled={recoveryBusy || !onRegenerateRecoveryKey}
@@ -290,12 +291,12 @@ export function SettingsPanel({
           </div>
         ) : null}
 
-        <div className="glass-panel settings-card">
+        <div className="clay-panel settings-card">
           <header>
             <Palette size={20} />
             <h2>Appearance</h2>
           </header>
-        <label>
+        <div>
           <span>Theme</span>
           <div className="segmented" role="group" aria-label="Theme">
             {themeOptions.map((option) => (
@@ -311,7 +312,7 @@ export function SettingsPanel({
               </button>
             ))}
           </div>
-        </label>
+        </div>
         <label className="toggle-row">
           <input
             type="checkbox"
@@ -324,14 +325,14 @@ export function SettingsPanel({
         </label>
         <p>Light is calm by default. The game layer adds XP, streaks, and RPG progress for those who want it.</p>
         <div className="button-row" style={{ marginTop: "1rem" }}>
-          <button className="secondary-button" type="button" onClick={() => void onAppearanceChange({ hasCompletedOnboarding: false })}>
+          <button className="secondary-button clay-btn" type="button" onClick={() => void onAppearanceChange({ hasCompletedOnboarding: false })}>
             <ArrowCounterClockwise size={16} />
             Restart onboarding
           </button>
         </div>
       </div>
 
-      <div className="glass-panel settings-card">
+      <div className="clay-panel settings-card">
         <header>
           <MonitorCheck size={20} />
           <h2>App readiness</h2>
@@ -356,7 +357,7 @@ export function SettingsPanel({
         </dl>
         {isInstallable && (
           <div className="button-row" style={{ marginTop: "1rem" }}>
-            <button className="primary-button" type="button" onClick={promptToInstall}>
+            <button className="primary-button clay-btn" type="button" onClick={promptToInstall}>
               <DownloadSimple size={16} /> Install App
             </button>
           </div>
@@ -364,7 +365,7 @@ export function SettingsPanel({
         <p>Throughline is designed to work fully offline once the shell is cached.</p>
       </div>
 
-      <div className="glass-panel settings-card">
+      <div className="clay-panel settings-card">
         <header>
           <Bell size={20} />
           <h2>Notifications</h2>
@@ -384,18 +385,18 @@ export function SettingsPanel({
           </div>
         </dl>
         <div className="button-row">
-          <button className="secondary-button" type="button" onClick={requestPermission}>
+          <button className="secondary-button clay-btn" type="button" onClick={requestPermission}>
             <Bell size={17} />
-            {permission}
+            {permission === "granted" ? "Granted" : permission === "denied" ? "Blocked in browser" : "Enable notifications"}
           </button>
-          <button className="secondary-button" type="button" onClick={showLocalQuestNotification}>
+          <button className="secondary-button clay-btn" type="button" onClick={showLocalQuestNotification}>
             <Send size={17} />
             Test
           </button>
         </div>
       </div>
 
-      <div className="glass-panel settings-card">
+      <div className="clay-panel settings-card">
         <header>
           <RadioTower size={20} />
           <h2>Redacted push</h2>
@@ -403,6 +404,7 @@ export function SettingsPanel({
         <label>
           <span>Push API</span>
           <input
+            className="clay-input"
             value={pushApi}
             onBlur={() => void saveReminderSyncState({ pushApiUrl: pushApi })}
             onChange={(event) => setPushApiDraft(event.target.value)}
@@ -410,20 +412,22 @@ export function SettingsPanel({
         </label>
         <label>
           <span>VAPID public key</span>
-          <input value={vapidKey} onChange={(event) => setVapidKey(event.target.value)} />
+          <input className="clay-input" value={vapidKey} onChange={(event) => setVapidKey(event.target.value)} />
         </label>
-        <p>{reminders.length} reminder payloads keep task text local.</p>
+        <p>
+          {reminders.length} reminder {reminders.length === 1 ? "payload keeps" : "payloads keep"} task text local.
+        </p>
         {syncState?.endpointHash ? <p>Endpoint hash: {syncState.endpointHash.slice(0, 12)}...</p> : null}
         {syncState?.lastReminderSyncAt ? (
           <p>Last sync: {new Date(syncState.lastReminderSyncAt).toLocaleString(APP_LOCALE)}</p>
         ) : null}
         {syncState?.lastReminderSyncError ? <Notice variant="error" className="mt-2">{syncState.lastReminderSyncError}</Notice> : null}
         <div className="button-row">
-          <button className="primary-button" type="button" onClick={subscribe}>
+          <button className="primary-button clay-btn" type="button" onClick={subscribe}>
             <RadioTower size={17} />
             Subscribe
           </button>
-          <button className="secondary-button" type="button" onClick={syncNow}>
+          <button className="secondary-button clay-btn" type="button" onClick={syncNow}>
             <Send size={17} />
             Sync
           </button>
@@ -431,30 +435,32 @@ export function SettingsPanel({
         <span className="status-pill">{status}</span>
       </div>
 
-      <div className="glass-panel settings-card">
+      <div className="clay-panel settings-card">
         <header>
           <CalendarPlus size={20} />
           <h2>Calendar export</h2>
         </header>
-        <p>{tasks.filter((task) => task.dueAt).length} due tasks available.</p>
-        <button className="primary-button" type="button" onClick={() => downloadIcs(tasks, courses)}>
+        <p>
+          {tasks.filter((task) => task.dueAt).length} due {tasks.filter((task) => task.dueAt).length === 1 ? "task" : "tasks"} available.
+        </p>
+        <button className="primary-button clay-btn" type="button" onClick={() => downloadIcs(tasks, courses)}>
           <Download size={17} />
           Export ICS
         </button>
       </div>
 
-      <div className="glass-panel settings-card">
+      <div className="clay-panel settings-card">
         <header>
           <Database size={20} />
           <h2>Your data</h2>
         </header>
         <p>Your primary planner data lives on this device. Export a JSON backup, or restore one on a new device.</p>
         <div className="button-row">
-          <button className="primary-button" type="button" onClick={() => void exportData()}>
+          <button className="primary-button clay-btn" type="button" onClick={() => void exportData()}>
             <Download size={17} />
             Export backup
           </button>
-          <button className="secondary-button" type="button" onClick={() => fileInputRef.current?.click()}>
+          <button className="secondary-button clay-btn" type="button" onClick={() => fileInputRef.current?.click()}>
             <Upload size={17} />
             Import backup
           </button>
@@ -467,7 +473,7 @@ export function SettingsPanel({
           aria-label="Import backup file"
           onChange={importData}
         />
-        <button className="secondary-button" type="button" onClick={() => void resetData()}>
+        <button className="secondary-button clay-btn" type="button" onClick={() => void resetData()}>
           <ArrowCounterClockwise size={16} />
           Reset to sample data
         </button>

@@ -209,7 +209,7 @@ function KanbanColumn({ status, tasks, children }: { status: TaskStatus; tasks: 
   const { setNodeRef, isOver } = useDroppable({ id: status });
 
   return (
-    <div ref={setNodeRef} className={`kanban-column ${isOver ? "is-over" : ""}`} aria-label={`${kanbanColumns[status]} column with ${tasks.length} tasks`}>
+    <div ref={setNodeRef} className={`kanban-column clay-panel ${isOver ? "is-over" : ""}`} aria-label={`${kanbanColumns[status]} column with ${tasks.length} tasks`}>
       <header>
         <h2>{kanbanColumns[status]}</h2>
         <span>{tasks.length}</span>

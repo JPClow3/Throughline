@@ -101,12 +101,12 @@ export function TaskEditor({ task, courses, goals = [], onSave, onDelete }: Task
     <form className="composer-form" onSubmit={submit}>
       <label>
         <span>Title</span>
-        <input autoFocus value={title} onChange={(event) => setTitle(event.target.value)} maxLength={140} />
+        <input className="clay-input" autoFocus value={title} onChange={(event) => setTitle(event.target.value)} maxLength={140} />
       </label>
       <div className="composer-grid">
         <label>
           <span>Project</span>
-          <select value={courseId} onChange={(event) => {
+          <select className="clay-input" value={courseId} onChange={(event) => {
             const nextCourseId = event.target.value;
             setCourseId(nextCourseId);
             const course = courses.find(c => c.id === nextCourseId);
@@ -124,13 +124,13 @@ export function TaskEditor({ task, courses, goals = [], onSave, onDelete }: Task
         </label>
         <label>
           <span>Due</span>
-          <input type="datetime-local" value={dueAt} onChange={(event) => setDueAt(event.target.value)} />
+          <input className="clay-input" type="datetime-local" value={dueAt} onChange={(event) => setDueAt(event.target.value)} />
         </label>
       </div>
       <div className="composer-grid">
         <label>
           <span>Status</span>
-          <select value={status} onChange={(event) => setStatus(event.target.value as TaskStatus)}>
+          <select className="clay-input" value={status} onChange={(event) => setStatus(event.target.value as TaskStatus)}>
             {taskStatuses.map((value) => (
               <option key={value} value={value}>
                 {kanbanColumns[value]}
@@ -140,7 +140,7 @@ export function TaskEditor({ task, courses, goals = [], onSave, onDelete }: Task
         </label>
         <label>
           <span>Priority</span>
-          <select value={priority} onChange={(event) => setPriority(event.target.value as Priority)}>
+          <select className="clay-input" value={priority} onChange={(event) => setPriority(event.target.value as Priority)}>
             {priorities.map((value) => (
               <option key={value} value={value}>
                 {value}
@@ -152,7 +152,7 @@ export function TaskEditor({ task, courses, goals = [], onSave, onDelete }: Task
       {goals.length ? (
         <label>
           <span>Goal</span>
-          <select value={goalId} onChange={(event) => setGoalId(event.target.value)}>
+          <select className="clay-input" value={goalId} onChange={(event) => setGoalId(event.target.value)}>
             <option value="">No goal</option>
             {goals.map((goal) => (
               <option key={goal.id} value={goal.id}>
@@ -164,7 +164,7 @@ export function TaskEditor({ task, courses, goals = [], onSave, onDelete }: Task
       ) : null}
       <label>
         <span>Description</span>
-        <textarea value={description} onChange={(event) => setDescription(event.target.value)} />
+        <textarea className="clay-input" value={description} onChange={(event) => setDescription(event.target.value)} />
       </label>
       <div className="subtasks-editor" style={{ marginBottom: "1rem" }}>
         <span style={{ fontSize: "var(--text-sm)", fontWeight: "var(--fw-medium)", color: "var(--ink-muted)", marginBottom: "0.4rem", display: "block" }}>Subtasks</span>
@@ -190,7 +190,7 @@ export function TaskEditor({ task, courses, goals = [], onSave, onDelete }: Task
       <div className="composer-grid">
         <label>
           <span>Recurrence</span>
-          <select value={recurrence} onChange={(event) => setRecurrence(event.target.value as "daily" | "weekly" | "biweekly" | "monthly" | "custom" | "")}>
+          <select className="clay-input" value={recurrence} onChange={(event) => setRecurrence(event.target.value as "daily" | "weekly" | "biweekly" | "monthly" | "custom" | "")}>
             <option value="">None</option>
             <option value="daily">Daily</option>
             <option value="weekly">Weekly</option>
@@ -200,11 +200,11 @@ export function TaskEditor({ task, courses, goals = [], onSave, onDelete }: Task
         </label>
         <label>
           <span>Tags</span>
-          <input value={tags} onChange={(event) => setTags(event.target.value)} placeholder="reading, errand" />
+          <input className="clay-input" value={tags} onChange={(event) => setTags(event.target.value)} placeholder="reading, errand" />
         </label>
       </div>
       <div className="button-row editor-actions">
-        <button className="primary-button" type="submit">
+        <button className="primary-button clay-btn" type="submit">
           Save changes
         </button>
         <button className="secondary-button danger" type="button" onClick={() => void onDelete(task.id)}>

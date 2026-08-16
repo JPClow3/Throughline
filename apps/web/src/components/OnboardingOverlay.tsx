@@ -100,7 +100,7 @@ export function OnboardingOverlay({ onSetup, onComplete }: OnboardingOverlayProp
         initial={{ opacity: 0, scale: 0.96, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.25, type: "spring", bounce: 0.12 }}
-        className="bg-surface-2 border border-border shadow-xl rounded-3xl max-w-xl w-full overflow-hidden flex flex-col"
+        className="clay-panel border border-[var(--glass-border)] shadow-2xl rounded-3xl max-w-xl w-full overflow-hidden flex flex-col"
       >
         <div className="p-8 flex flex-col gap-6">
           <div>
@@ -117,7 +117,7 @@ export function OnboardingOverlay({ onSetup, onComplete }: OnboardingOverlayProp
                 <button
                   key={item.id}
                   type="button"
-                  className={`setup-choice ${kind === item.id ? "active" : ""}`}
+                  className={`setup-choice clay-btn ${kind === item.id ? "active" : ""}`}
                   aria-pressed={kind === item.id}
                   onClick={() => chooseKind(item.id)}
                 >
@@ -134,6 +134,7 @@ export function OnboardingOverlay({ onSetup, onComplete }: OnboardingOverlayProp
                 <label key={index} className="composer-field">
                   <span>{kind === "school" ? `Course ${index + 1}` : `Project ${index + 1}`}</span>
                   <input
+                    className="clay-input"
                     value={name}
                     onChange={(event) => updateProjectName(index, event.target.value)}
                     placeholder={kind === "school" ? "Biology" : "Project name"}
@@ -141,7 +142,7 @@ export function OnboardingOverlay({ onSetup, onComplete }: OnboardingOverlayProp
                 </label>
               ))}
               {projectNames.length < 3 ? (
-                <button type="button" className="secondary-button self-start" onClick={addProject}>
+                <button type="button" className="secondary-button clay-btn self-start" onClick={addProject}>
                   <Plus size={15} />
                   Add another
                 </button>
@@ -153,11 +154,11 @@ export function OnboardingOverlay({ onSetup, onComplete }: OnboardingOverlayProp
             <div className="grid gap-4">
               <label className="composer-field">
                 <span>First task</span>
-                <input value={taskTitle} onChange={(event) => setTaskTitle(event.target.value)} />
+                <input className="clay-input" value={taskTitle} onChange={(event) => setTaskTitle(event.target.value)} />
               </label>
               <label className="composer-field">
                 <span>Project</span>
-                <select value={taskProjectIndex} onChange={(event) => setTaskProjectIndex(Number(event.target.value))}>
+                <select className="clay-input" value={taskProjectIndex} onChange={(event) => setTaskProjectIndex(Number(event.target.value))}>
                   {cleanedProjects.map((project, index) => (
                     <option key={`${project}-${index}`} value={index}>
                       {project}
@@ -167,7 +168,7 @@ export function OnboardingOverlay({ onSetup, onComplete }: OnboardingOverlayProp
               </label>
               <label className="composer-field">
                 <span>Due</span>
-                <input type="datetime-local" value={dueAt} onChange={(event) => setDueAt(event.target.value)} />
+                <input className="clay-input" type="datetime-local" value={dueAt} onChange={(event) => setDueAt(event.target.value)} />
               </label>
             </div>
           ) : null}
@@ -196,7 +197,7 @@ export function OnboardingOverlay({ onSetup, onComplete }: OnboardingOverlayProp
           ) : null}
         </div>
 
-        <div className="bg-surface p-6 flex items-center justify-between border-t border-border mt-auto">
+        <div className="bg-surface p-6 flex items-center justify-between border-t border-[var(--glass-border)] mt-auto">
           <div className="flex gap-2" aria-label="Setup progress">
             {[0, 1, 2, 3].map((index) => (
               <div
@@ -209,21 +210,21 @@ export function OnboardingOverlay({ onSetup, onComplete }: OnboardingOverlayProp
           </div>
           <div className="flex gap-3">
             {step > 0 ? (
-              <button type="button" className="secondary-button" onClick={() => setStep((current) => current - 1)}>
+              <button type="button" className="secondary-button clay-btn" onClick={() => setStep((current) => current - 1)}>
                 Back
               </button>
             ) : null}
             {step < 3 ? (
               <button
                 type="button"
-                className="primary-button"
+                className="primary-button clay-btn"
                 disabled={!canContinue}
                 onClick={() => setStep((current) => current + 1)}
               >
                 Next
               </button>
             ) : (
-              <button type="button" className="primary-button" disabled={!canContinue || submitting} onClick={() => void finish()}>
+              <button type="button" className="primary-button clay-btn" disabled={!canContinue || submitting} onClick={() => void finish()}>
                 Finish setup
                 <Check weight="bold" size={18} />
               </button>
