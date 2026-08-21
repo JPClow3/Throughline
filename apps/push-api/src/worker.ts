@@ -212,7 +212,7 @@ export async function dispatchDueReminders(env: WorkerEnv): Promise<{ sent: numb
   return { sent };
 }
 
-export async function handleRequest(request: Request, env: WorkerEnv): Promise<Response> {
+export async function handleRequest(request: Request, env: WorkerEnv, ctx?: ExecutionContext): Promise<Response> {
   const url = new URL(request.url);
   // Strip optional /api prefix to support same-origin proxy or direct routing
   const pathname = url.pathname.replace(/^\/api/, "") || "/";
@@ -228,6 +228,15 @@ export async function handleRequest(request: Request, env: WorkerEnv): Promise<R
   const pushStore = new PostgresPushStore(sql);
   const userStore = new PostgresUserStore(sql);
   const syncStore = new PostgresSyncStore(sql);
+
+  const cleanup = () => {
+    if (env.SQL) return;
+    if (ctx) {
+      ctx.waitUntil(sql.end({ timeout: 0 }));
+    } else {
+      sql.end({ timeout: 0 }).catch(() => {});
+    }
+  };
 
   try {
     // ----------------------------------------------------
@@ -456,12 +465,14 @@ export async function handleRequest(request: Request, env: WorkerEnv): Promise<R
     }
     const message = err instanceof Error ? err.message : "Internal Server Error";
     return errorResponse(500, message, resHeaders);
+  } finally {
+    cleanup();
   }
 }
 
 export default {
-  async fetch(request: Request, env: WorkerEnv): Promise<Response> {
-    return handleRequest(request, env);
+  async fetch(request: Request, env: WorkerEnv, ctx: ExecutionContext): Promise<Response> {
+    return handleRequest(request, env, ctx);
   },
 
   async scheduled(_controller: ScheduledController, env: WorkerEnv, ctx: ExecutionContext): Promise<void> {
