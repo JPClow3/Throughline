@@ -57,9 +57,13 @@ test.describe("Component Interactions & Buttons", () => {
     const taskCard = page.locator(".task-card", { hasText: title });
     await expect(taskCard).toBeVisible();
 
-    // 3. Add subtask directly on the card by typing and hitting Enter
-    // Click the card first to ensure it is focused/active
-    await taskCard.click();
+    // 3. Expand the task's explicit steps control, then add a subtask.
+    // The title opens the task editor, so it is not the correct control for
+    // expanding inline steps.
+    const stepsControl = taskCard.locator("button.subtask-progress");
+    if (await stepsControl.isVisible()) {
+      await stepsControl.click();
+    }
     
     const inlineSubtaskInput = taskCard.locator('input[placeholder*="Add subtask"]');
     if (await inlineSubtaskInput.isVisible()) {
