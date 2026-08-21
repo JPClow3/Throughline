@@ -1,5 +1,6 @@
 import { useMemo, type CSSProperties, type ReactNode } from "react";
 import { Books, ChartLineUp, Clock, Target, WarningCircle } from "@phosphor-icons/react";
+import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { deriveCoachingInsights } from "@throughline/domain";
 import { ViewSkeleton } from "../components/Skeleton";
 import { useFocusSessions } from "../hooks/useFocusSessions";
@@ -22,6 +23,37 @@ export function InsightsView() {
     let last7Days = 0;
     let previous7Days = 0;
 
+    const weeklyFocusData = [];
+    const dailyFocusHistory = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+      const dateKey = date.toISOString().split("T")[0];
+      const shortDay = date.toLocaleDateString(undefined, { weekday: 'short' });
+      weeklyFocusData.push({
+        date: shortDay,
+        fullDate: dateKey,
+        completed: 0
+      });
+      dailyFocusHistory.push({
+        date: shortDay,
+        fullDate: dateKey,
+        focusHours: 0
+      });
+    }
+
+    const weeklyFocusHistory = [];
+    for (let i = 3; i >= 0; i--) {
+      // Start of the week is 6 days ago relative to the end of that week
+      const weekStart = new Date(now.getTime() - (i * 7 + 6) * 24 * 60 * 60 * 1000);
+      const shortDate = `${weekStart.getMonth() + 1}/${weekStart.getDate()}`;
+      weeklyFocusHistory.push({
+        weekLabel: `Wk ${shortDate}`,
+        startDate: weekStart.toISOString().split("T")[0],
+        endDate: new Date(now.getTime() - (i * 7) * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+        focusHours: 0
+      });
+    }
+
     for (let i = 27; i >= 0; i--) {
       const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
       heatmap[date.toISOString().split("T")[0]] = 0;
@@ -36,6 +68,11 @@ export function InsightsView() {
         heatmap[dateKey]++;
       }
 
+      const chartMatch = weeklyFocusData.find(d => d.fullDate === dateKey);
+      if (chartMatch) {
+        chartMatch.completed++;
+      }
+
       if (completedAt >= sevenDaysAgo) {
         last7Days++;
       } else if (completedAt >= fourteenDaysAgo) {
@@ -46,6 +83,26 @@ export function InsightsView() {
         projectCounts[task.courseId] = (projectCounts[task.courseId] || 0) + 1;
       }
     }
+
+    for (const session of focusSessions) {
+      const sessionDate = new Date(session.startedAt || now.toISOString());
+      const dateKey = sessionDate.toISOString().split("T")[0];
+
+      // daily
+      const dailyMatch = dailyFocusHistory.find(d => d.fullDate === dateKey);
+      if (dailyMatch) {
+        dailyMatch.focusHours += session.durationMinutes / 60;
+      }
+
+      // weekly
+      const weeklyMatch = weeklyFocusHistory.find(w => dateKey >= w.startDate && dateKey <= w.endDate);
+      if (weeklyMatch) {
+        weeklyMatch.focusHours += session.durationMinutes / 60;
+      }
+    }
+
+    dailyFocusHistory.forEach(d => { d.focusHours = Number(d.focusHours.toFixed(1)); });
+    weeklyFocusHistory.forEach(w => { w.focusHours = Number(w.focusHours.toFixed(1)); });
 
     const topProjects = Object.entries(projectCounts)
       .sort((a, b) => b[1] - a[1])
@@ -68,6 +125,9 @@ export function InsightsView() {
       completedCount: completed.length,
       focusMinutes,
       heatmap,
+      weeklyFocusData,
+      dailyFocusHistory,
+      weeklyFocusHistory,
       last7Days,
       overdueCount,
       previous7Days,
@@ -134,6 +194,71 @@ export function InsightsView() {
       </section>
 
       <section className="insights-grid">
+        <article className="clay-panel insights-module" style={{ gridColumn: "1 / -1", display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
+          <div style={{ flex: '1 1 300px' }}>
+            <div className="insights-module-head">
+              <div>
+                <span className="eyebrow">Focus Logs</span>
+                <h2>Focus Hours (Last 7 Days)</h2>
+              </div>
+            </div>
+            <div style={{ width: '100%', height: 200, marginTop: '1rem' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={stats.dailyFocusHistory}>
+                  <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--ink-muted)' }} />
+                  <Tooltip
+                    cursor={{ fill: 'var(--surface-2)' }}
+                    contentStyle={{ borderRadius: '8px', border: '1px solid var(--border-subtle)', background: 'var(--surface)', color: 'var(--ink)' }}
+                  />
+                  <Bar dataKey="focusHours" fill="var(--accent)" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div style={{ flex: '1 1 300px' }}>
+            <div className="insights-module-head">
+              <div>
+                <span className="eyebrow">Focus Trends</span>
+                <h2>Focus Hours (Last 4 Weeks)</h2>
+              </div>
+            </div>
+            <div style={{ width: '100%', height: 200, marginTop: '1rem' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={stats.weeklyFocusHistory}>
+                  <XAxis dataKey="weekLabel" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--ink-muted)' }} />
+                  <Tooltip
+                    cursor={{ fill: 'var(--surface-2)' }}
+                    contentStyle={{ borderRadius: '8px', border: '1px solid var(--border-subtle)', background: 'var(--surface)', color: 'var(--ink)' }}
+                  />
+                  <Bar dataKey="focusHours" fill="var(--color-primary, var(--accent))" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </article>
+
+        <article className="clay-panel insights-module">
+          <div className="insights-module-head">
+            <div>
+              <span className="eyebrow">Weekly Focus</span>
+              <h2>Completions (Last 7 Days)</h2>
+            </div>
+          </div>
+          <div style={{ width: '100%', height: 200, marginTop: '1rem' }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={stats.weeklyFocusData}>
+                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--ink-muted)' }} />
+                <Tooltip
+                  cursor={{ fill: 'var(--surface-2)' }}
+                  contentStyle={{ borderRadius: '8px', border: '1px solid var(--border-subtle)', background: 'var(--surface)', color: 'var(--ink)' }}
+                />
+                <Bar dataKey="completed" fill="var(--accent)" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </article>
+
         <article className="clay-panel insights-module">
           <div className="insights-module-head">
             <div>
