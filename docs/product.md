@@ -52,7 +52,8 @@ A calm cockpit for the day. Shows greeting, date, and a progress hero ("X of Y t
 - **Projects / Areas**: Optional organiser for tasks, goals, and notes.
 - **Command/Search**: `Ctrl K` opens the command palette, searches tasks, notes, goals, and projects, and jumps directly to the right view or editor.
 - **Filters**: Board and Timeline use native preset chips, tag chips, saved custom presets, and a visible clear action.
-- **Insights**: Coaching cards answer what to adjust next using deterministic rules from tasks, projects, and focus sessions.
+- **Insights**: Coaching cards and local focus/completion charts answer what to adjust next using deterministic rules from tasks, projects, and focus sessions.
+- **Post-focus cooldown**: After a logged focus session, the app may suggest up to three real, low-energy backlog tasks; the user can dismiss, edit, complete, or start focus on a suggestion.
 - **Onboarding**: First run is a setup wizard: choose school/work/personal, create 1-3 projects or courses, add a real task, optionally enable notifications or open Settings for sync, then land in Today.
 
 ### Notifications & ICS Export

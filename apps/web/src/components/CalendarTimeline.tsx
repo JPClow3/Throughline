@@ -262,7 +262,7 @@ export function CalendarTimeline({
             className="primary-button clay-btn"
           >
             <Plus size={16} weight="bold" />
-            New Task for Today
+            New Task for {capitalizeFirst(selectedDate.toLocaleDateString(APP_LOCALE, { weekday: "short" }))}
           </button>
         </div>
 

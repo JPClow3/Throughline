@@ -42,12 +42,12 @@ export function CommandPalette({
     const down = (e: KeyboardEvent) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
-        setOpen(!open);
+        setOpen(true);
       }
     };
     document.addEventListener("keydown", down);
     return () => document.removeEventListener("keydown", down);
-  }, [open, setOpen]);
+  }, [setOpen]);
 
   const runCommand = (command: () => void) => {
     setOpen(false);
@@ -61,7 +61,7 @@ export function CommandPalette({
       onOpenChange={setOpen} 
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/20 backdrop-blur-[4px] p-4 sm:p-0"
     >
-      <div className="w-full max-w-[600px] overflow-hidden rounded-3xl clay-panel shadow-2xl border border-[var(--glass-border)] transform-gpu animate-in fade-in zoom-in-95 duration-200">
+      <div className="palette-panel w-full max-w-[600px] overflow-hidden rounded-3xl clay-panel shadow-2xl border border-[var(--glass-border)] transform-gpu">
         <Command.Input 
           autoFocus
           value={query}

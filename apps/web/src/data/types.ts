@@ -27,6 +27,7 @@ export type AppearanceSettings = {
   theme: ThemePreference;
   showGameLayer: boolean;
   hasCompletedOnboarding?: boolean;
+  pwaBannerDismissed?: boolean;
   updatedAt: string;
 };
 

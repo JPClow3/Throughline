@@ -8,13 +8,17 @@ import {
   Target,
   MagnifyingGlass,
   ArrowsClockwise,
-  Bell,
+  ChartLine,
   Plus,
-  DotsThreeCircle
+  DotsThreeCircle,
+  SignOut,
+  ShieldCheck,
+  GearSix
 } from "@phosphor-icons/react";
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ThroughlineMark } from "./ThroughlineMark";
+import { APP_LOCALE } from "../lib/format";
 
 export type AppView = "dashboard" | "goals" | "kanban" | "timeline" | "notes" | "courses" | "insights" | "settings";
 export type ShellAction = {
@@ -24,6 +28,12 @@ export type ShellAction = {
   mobileOnly?: boolean;
 };
 
+export type ShellSync = {
+  status: "idle" | "syncing" | "offline" | "error";
+  lastSyncAt: string | null;
+  syncNow: () => Promise<void>;
+};
+
 const navItems: Array<{ view: AppView; label: string; icon: ReactNode }> = [
   { view: "dashboard", label: "Today", icon: <Home size={24} weight="fill" /> },
   { view: "goals", label: "Goals", icon: <Target size={24} /> },
@@ -31,8 +41,204 @@ const navItems: Array<{ view: AppView; label: string; icon: ReactNode }> = [
   { view: "timeline", label: "Timeline", icon: <CalendarDays size={24} /> },
   { view: "notes", label: "Notes", icon: <FileText size={24} /> },
   { view: "courses", label: "Projects", icon: <FolderClosed size={24} /> },
-  { view: "insights", label: "Insights", icon: <Target size={24} /> }
+  { view: "insights", label: "Insights", icon: <ChartLine size={24} /> }
 ];
+
+function initialFromEmail(email: string | null): string {
+  const source = email?.trim();
+  return source ? source[0].toUpperCase() : "?";
+}
+
+function relativeSyncTime(iso: string | null): string {
+  if (!iso) {
+    return "";
+  }
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) {
+    return "";
+  }
+  const minutes = Math.round((Date.now() - then) / 60_000);
+  if (minutes < 1) {
+    return "just now";
+  }
+  if (minutes < 60) {
+    return `${minutes} min ago`;
+  }
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) {
+    return `${hours} h ago`;
+  }
+  return new Date(then).toLocaleDateString(APP_LOCALE, { month: "short", day: "numeric" });
+}
+
+function syncMeta(status: ShellSync["status"], lastSyncAt: string | null) {
+  switch (status) {
+    case "syncing":
+      return { tone: "is-busy", label: "Syncing…" };
+    case "offline":
+      return { tone: "is-warn", label: "Offline · saved on this device" };
+    case "error":
+      return { tone: "is-error", label: "Paused · will retry" };
+    default:
+      return lastSyncAt
+        ? { tone: "is-ok", label: "Up to date" }
+        : { tone: "is-ok", label: "Ready to sync" };
+  }
+}
+
+function useDismissableOpen(active: boolean, onClose: () => void) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!active) {
+      return;
+    }
+    function onPointerDown(event: PointerEvent) {
+      if (!containerRef.current?.contains(event.target as Node)) {
+        onClose();
+      }
+    }
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    }
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [active, onClose]);
+
+  return containerRef;
+}
+
+function AccountMenu({
+  email,
+  sync,
+  onNavigateSettings,
+  onSignOut,
+  align = "right"
+}: {
+  email: string | null;
+  sync?: ShellSync;
+  onNavigateSettings?: () => void;
+  onSignOut?: () => void;
+  align?: "right" | "left";
+}) {
+  const [open, setOpen] = useState(false);
+  const close = useCallback(() => setOpen(false), []);
+  const containerRef = useDismissableOpen(open, close);
+  const meta = sync ? syncMeta(sync.status, sync.lastSyncAt) : null;
+  const relative = relativeSyncTime(sync?.lastSyncAt ?? null);
+  const syncing = sync?.status === "syncing";
+
+  return (
+    <div className="shell-account" ref={containerRef}>
+      <button
+        type="button"
+        className="shell-avatar-button clay-btn"
+        onClick={() => setOpen((value) => !value)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={`Account menu for ${email ?? "account"}`}
+        title={email ?? undefined}
+      >
+        <span aria-hidden="true">{initialFromEmail(email)}</span>
+      </button>
+      {open ? (
+        <div className={`account-menu clay-modal ${align === "left" ? "align-left" : ""}`} role="menu" aria-label="Account">
+          <div className="account-menu-header">
+            <span className="shell-avatar account-menu-avatar" style={{ background: "var(--tl-gradient-thread)" }} aria-hidden="true">
+              {initialFromEmail(email)}
+            </span>
+            <div className="account-menu-identity">
+              <span className="account-menu-email" title={email ?? undefined}>{email ?? "Signed in"}</span>
+              <span className="account-menu-plan">
+                <ShieldCheck size={13} weight="fill" />
+                End-to-end encrypted
+              </span>
+            </div>
+          </div>
+
+          {sync && meta ? (
+            <div className="account-menu-sync">
+              <span className={`sync-dot ${meta.tone}`} aria-hidden="true" />
+              <span className="account-menu-sync-label">{meta.label}</span>
+              {relative ? <span className="account-menu-sync-time">{relative}</span> : null}
+            </div>
+          ) : null}
+
+          <div className="account-menu-actions" role="none">
+            {sync ? (
+              <button
+                type="button"
+                role="menuitem"
+                className="account-menu-item"
+                onClick={() => {
+                  void sync.syncNow();
+                }}
+                disabled={syncing}
+              >
+                <ArrowsClockwise size={16} className={syncing ? "spin" : undefined} />
+                {syncing ? "Syncing…" : "Sync now"}
+              </button>
+            ) : null}
+            {onNavigateSettings ? (
+              <button
+                type="button"
+                role="menuitem"
+                className="account-menu-item"
+                onClick={() => {
+                  close();
+                  onNavigateSettings();
+                }}
+              >
+                <GearSix size={16} />
+                Settings
+              </button>
+            ) : null}
+            <button
+              type="button"
+              role="menuitem"
+              className="account-menu-item is-danger"
+              onClick={() => {
+                close();
+                onSignOut?.();
+              }}
+            >
+              <SignOut size={16} />
+              Sign out
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function SyncPill({ sync }: { sync?: ShellSync }) {
+  if (!sync) {
+    return null;
+  }
+  const meta = syncMeta(sync.status, sync.lastSyncAt);
+  const syncing = sync.status === "syncing";
+
+  return (
+    <button
+      type="button"
+      className="shell-sync-pill clay-btn"
+      onClick={() => void sync.syncNow()}
+      disabled={syncing}
+      title={meta.label + (sync.lastSyncAt ? ` · ${relativeSyncTime(sync.lastSyncAt)}` : "")}
+      aria-label={`Sync status: ${meta.label}. Click to sync now`}
+    >
+      <span className={`sync-dot ${meta.tone}`} aria-hidden="true" />
+      <span className="font-label-md text-label-md hidden xl:inline">{meta.label}</span>
+    </button>
+  );
+}
 
 export function AppShell({
   view,
@@ -41,6 +247,9 @@ export function AppShell({
   onOpenCommandPalette,
   primaryAction,
   utilityActions = [],
+  email = null,
+  sync,
+  onSignOut,
   children
 }: {
   view: AppView;
@@ -49,6 +258,9 @@ export function AppShell({
   onOpenCommandPalette?: () => void;
   primaryAction?: ShellAction;
   utilityActions?: ShellAction[];
+  email?: string | null;
+  sync?: ShellSync;
+  onSignOut?: () => void;
   children: ReactNode;
 }) {
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
@@ -127,14 +339,7 @@ export function AppShell({
         {/* Mobile Top Header */}
         <div className="flex lg:hidden justify-between items-center w-full h-12 mb-6 flex-shrink-0">
           <span className="mobile-brand">Throughline</span>
-          <div className="flex items-center gap-3">
-            <button type="button" className="shell-icon-button clay-btn text-on-surface-variant hover:bg-[var(--accent-soft)] rounded-full p-2 transition-all" aria-label="Notifications">
-              <Bell size={20} />
-            </button>
-            <div className="shell-avatar w-8 h-8 rounded-full flex items-center justify-center text-white font-bold shadow-sm border-2 border-[var(--tl-surface)]" style={{ background: 'var(--tl-gradient-thread)' }}>
-              A
-            </div>
-          </div>
+          <AccountMenu email={email} sync={sync} onSignOut={onSignOut} align="right" />
         </div>
 
         <nav className="hidden lg:flex justify-between items-center w-full h-16 mb-8 flex-shrink-0">
@@ -165,20 +370,12 @@ export function AppShell({
                 <span className="font-label-md text-label-md hidden lg:inline">{action.label}</span>
               </button>
             ))}
-            <button type="button" className="shell-quiet-action clay-btn" aria-label="View sync status">
-              <span className="shell-inline-icon"><ArrowsClockwise size={18} /></span>
-              <span className="font-label-md text-label-md hidden lg:inline">Sync</span>
-            </button>
-            <button type="button" className="shell-icon-button clay-btn" aria-label="Notifications">
-              <Bell size={20} />
-            </button>
+            <SyncPill sync={sync} />
             <button onClick={() => onNewTask?.()} className="shell-primary-action clay-btn cursor-pointer">
               <Plus size={16} weight="bold" />
               New Task
             </button>
-            <div className="shell-avatar w-10 h-10 rounded-full ml-1 flex items-center justify-center text-white font-bold shadow-md border-2 border-[var(--tl-surface)]" style={{ background: 'var(--tl-gradient-thread)' }}>
-              A
-            </div>
+            <AccountMenu email={email} sync={sync} onNavigateSettings={() => navigate("settings")} onSignOut={onSignOut} />
           </div>
         </nav>
         {children}

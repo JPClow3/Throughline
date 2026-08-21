@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Track the app's data-theme attribute (not just OS preference) for dark: utilities. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 @theme {
   --color-on-secondary-fixed-variant: #005236;
   --color-primary-container: #6063ee;
@@ -223,6 +226,54 @@
   .clay-input:focus {
     border-color: var(--color-primary);
     box-shadow: var(--clay-inner-pressed), 0 0 0 2px var(--color-primary-fixed-dim);
+  }
+
+  .view-layout {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 100%;
+  }
+
+  .scrollbar-hide {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--ink) 22%, transparent) transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--ink) 18%, transparent);
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .palette-panel {
+    animation: rise-in 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+
+  @keyframes tl-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .spin {
+    animation: tl-spin 0.9s linear infinite;
   }
 }
 
@@ -953,6 +1004,238 @@ main {
   border-radius: var(--radius-control);
   font-size: var(--text-label);
   line-height: var(--lh-label);
+}
+
+/* Account menu + sync status (shell chrome) */
+.shell-account {
+  position: relative;
+  flex: none;
+}
+
+.shell-avatar-button {
+  display: inline-grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--radius-pill);
+  background: var(--tl-gradient-thread);
+  color: #fff;
+  font-size: var(--text-body-md);
+  font-weight: var(--fw-bold);
+}
+
+.account-menu {
+  position: absolute;
+  top: calc(100% + 0.625rem);
+  right: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: min(19rem, calc(100vw - 2rem));
+  padding: var(--space-4);
+  animation: rise-in 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.account-menu.align-left {
+  right: auto;
+  left: 0;
+}
+
+.account-menu-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.account-menu-avatar {
+  display: inline-grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  flex: none;
+  border-radius: var(--radius-pill);
+  color: #fff;
+  font-weight: var(--fw-bold);
+  box-shadow: var(--shadow-sm), var(--glass-edge);
+}
+
+.account-menu-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.account-menu-email {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink);
+  font-size: var(--text-body-md);
+  font-weight: var(--fw-semibold);
+}
+
+.account-menu-plan {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--ink-faint);
+  font-size: var(--text-label-sm);
+}
+
+.account-menu-sync {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-chip);
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+  color: var(--ink-muted);
+  font-size: var(--text-label-sm);
+}
+
+.account-menu-sync-time {
+  margin-left: auto;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.sync-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  flex: none;
+  border-radius: var(--radius-pill);
+  background: var(--ink-faint);
+}
+
+.sync-dot.is-ok {
+  background: var(--success);
+}
+
+.sync-dot.is-busy {
+  background: var(--color-primary);
+  animation: pulseBio 1.6s ease-in-out infinite;
+}
+
+.sync-dot.is-warn {
+  background: var(--warn);
+}
+
+.sync-dot.is-error {
+  background: var(--danger);
+}
+
+.account-menu-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.account-menu-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 2.5rem;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--ink-muted);
+  font-size: var(--text-label);
+  line-height: var(--lh-label);
+  text-align: left;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+
+.account-menu-item:hover:not(:disabled),
+.account-menu-item:focus-visible {
+  background: var(--accent-soft);
+  color: var(--color-primary);
+}
+
+.account-menu-item.is-danger:hover:not(:disabled),
+.account-menu-item.is-danger:focus-visible {
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: var(--danger);
+}
+
+.account-menu-item:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.shell-sync-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 2.25rem;
+  min-width: 2.25rem;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-pill);
+  color: var(--ink-muted);
+}
+
+.shell-sync-pill:disabled {
+  cursor: default;
+}
+
+/* PWA install banner */
+.pwa-install-banner {
+  position: fixed;
+  top: var(--space-4);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: max-content;
+  max-width: min(26rem, calc(100vw - 2 * var(--space-4)));
+  padding: var(--space-3) var(--space-4);
+  animation: rise-in 0.3s ease both;
+}
+
+.pwa-install-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex: none;
+  border-radius: var(--radius-control);
+  background: var(--accent-soft);
+  color: var(--color-primary);
+}
+
+.pwa-install-copy {
+  min-width: 0;
+}
+
+.pwa-install-title {
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--text-body-md);
+  font-weight: var(--fw-semibold);
+}
+
+.pwa-install-sub {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: var(--text-label-sm);
+}
+
+.pwa-install-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: none;
+}
+
+.pwa-install-banner .shell-primary-action {
+  min-height: 2.25rem;
+  padding: 0 var(--space-4);
 }
 
 .focus-timer-shell {

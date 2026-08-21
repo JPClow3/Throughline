@@ -30,7 +30,6 @@ import {
   resetSampleData,
   saveReminderSyncState
 } from "../data/repositories";
-import { DownloadSimple } from "@phosphor-icons/react";
 import { AppearanceSettings, ThemePreference } from "../data/types";
 import { usePwaInstall } from "../hooks/usePwaInstall";
 import { downloadIcs } from "../lib/downloadIcs";
@@ -63,11 +62,12 @@ export function SettingsPanel({
   appearanceSettings?: AppearanceSettings;
   onAppearanceChange: (patch: Partial<Omit<AppearanceSettings, "id">>) => Promise<AppearanceSettings>;
   account?: AccountInfo;
-  onSyncNow?: () => void;
+  onSyncNow?: () => void | Promise<void>;
   onRegenerateRecoveryKey?: () => Promise<string>;
   onSignOut?: () => void;
 }) {
   const support = useMemo(() => (typeof window === "undefined" ? null : notificationSupport()), []);
+  const [syncBusy, setSyncBusy] = useState(false);
   const [permission, setPermission] = useState(() =>
     typeof Notification === "undefined" ? "unsupported" : Notification.permission
   );
@@ -85,7 +85,9 @@ export function SettingsPanel({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pushApi = pushApiDraft ?? syncState?.pushApiUrl ?? import.meta.env.VITE_PUSH_API_URL ?? "http://127.0.0.1:8787";
   const reminders = redactedRemindersForTasks(tasks);
-  const pwaReady = Boolean(support?.serviceWorker && window.matchMedia?.("(display-mode: standalone)") !== undefined);
+  const pwaReady = Boolean(
+    support?.serviceWorker && typeof window !== "undefined" && window.matchMedia?.("(display-mode: standalone)").matches
+  );
 
   useEffect(() => {
     const updateOnline = () => setOnline(navigator.onLine);
@@ -101,6 +103,18 @@ export function SettingsPanel({
     const next = await requestNotificationPermission();
     setPermission(next);
     setStatus(`Notifications: ${next}`);
+  }
+
+  async function handleSyncNow() {
+    if (!onSyncNow || syncBusy) {
+      return;
+    }
+    setSyncBusy(true);
+    try {
+      await onSyncNow();
+    } finally {
+      setSyncBusy(false);
+    }
   }
 
   async function subscribe() {
@@ -219,8 +233,8 @@ export function SettingsPanel({
               </div>
             </dl>
             <div className="button-row">
-              <button className="secondary-button clay-btn" type="button" onClick={() => onSyncNow?.()}>
-                <ArrowsClockwise size={16} /> Sync now
+              <button className="secondary-button clay-btn" type="button" onClick={() => void handleSyncNow()} disabled={syncBusy}>
+                <ArrowsClockwise size={16} className={syncBusy ? "spin" : undefined} /> {syncBusy ? "Syncing…" : "Sync now"}
               </button>
               <button className="secondary-button clay-btn" type="button" onClick={() => onSignOut?.()}>
                 <SignOut size={16} /> Sign out
@@ -344,7 +358,7 @@ export function SettingsPanel({
           </div>
           <div>
             <dt>PWA shell</dt>
-            <dd>{pwaReady ? "ready" : "checking"}</dd>
+            <dd>{pwaReady ? "ready" : "browser"}</dd>
           </div>
           <div>
             <dt>Local data</dt>
@@ -358,7 +372,7 @@ export function SettingsPanel({
         {isInstallable && (
           <div className="button-row" style={{ marginTop: "1rem" }}>
             <button className="primary-button clay-btn" type="button" onClick={promptToInstall}>
-              <DownloadSimple size={16} /> Install App
+              <Download size={16} /> Install App
             </button>
           </div>
         )}

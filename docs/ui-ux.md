@@ -42,14 +42,22 @@ Depth is the primary navigator. There is no separate 3D canvas—depth comes fro
 - **Z-Axis Sheet Transitions:** Sheets (like task composer) use smooth spring transitions to zoom and slide in over a dimmed solid backdrop.
 - **Navigation Dock:** The primary navigation is a soft, solid floating dock.
 
-## 6. Component Specifics
+## 6. Shell Chrome & Account
+
+- **Every control is real:** the shell must not render dead affordances. If a control has no behavior yet, it is removed until it does.
+- **Account Menu:** The avatar shows the signed-in user's initial and opens a clay popover with the email, an end-to-end-encrypted reassurance, live sync status (Up to date / Syncing… / Offline · saved on this device / Paused · will retry) with relative last-sync time, plus Sync now, Settings, and Sign out actions. Available on desktop top bar and mobile header.
+- **Sync Pill:** The desktop top bar shows a compact sync status pill; clicking it triggers a manual sync. Status colors: success green (up to date), primary pulse (syncing), warning amber (offline), danger red (error).
+- **Notifications Bell:** There is no notification center yet, so no bell appears in the shell. Add one only together with a real notification surface.
+
+## 7. Component Specifics
 
 - **Buttons:** Primary uses Indigo fill/white text with clay inner shadows. Secondary uses a lighter clay surface.
 - **Input Fields:** Inset clay surfaces (reversing the inner shadows so they look pressed-in).
 - **Lists & Selectors:** Solid background by default, elevated on hover.
 - **Cards & Modules:** Strict 24px internal padding; bubbly borders.
+- **Install Banner:** The PWA install prompt is a clay modal chip (icon tile, title, subtitle, primary Install action, quiet dismiss). Dismissal persists in appearance settings in IndexedDB, not ad hoc localStorage.
 
-## 7. Core Workflows
+## 8. Core Workflows
 
 1. **Quick Capture:** Fast, keyboard-accessible floating sheet.
 2. **Goal Decomposition:** Break large goals down into minor subtasks.
@@ -57,7 +65,7 @@ Depth is the primary navigator. There is no separate 3D canvas—depth comes fro
 4. **Workflow Movement:** Process tasks naturally from Backlog to Done.
 5. **Calendar Export:** Export due dates via `.ics`.
 
-## 8. First-Run, Search, Filters & Focus
+## 9. First-Run, Search, Filters & Focus
 
 - **Setup Onboarding:** First run helps the user choose a school/work/personal workspace, create 1-3 projects or courses, add one real task, and then arrive in a useful Today view. Sync remains a Settings handoff; notification permission is optional.
 - **Command/Search:** The global search control opens the command palette and shows a desktop `Ctrl K` hint. Search results cover tasks, notes, goals, and projects, and selecting one jumps directly to the matching surface.
@@ -66,7 +74,7 @@ Depth is the primary navigator. There is no separate 3D canvas—depth comes fro
 - **Focus Sessions:** A single focus system supports untitled focus and task-attached focus. Completed sessions are stored as first-class focus records and feed Today/Insights instead of synthetic completed tasks.
 - **Board Accessibility:** Kanban cards support keyboard movement, focus restoration, clear labels, and live announcements when a task changes columns.
 
-## 9. Optional Gamification (Momentum Layer)
+## 10. Optional Gamification (Momentum Layer)
 
 - **Disabled by Default:** XP, levels, and attributes are hidden unless `showGameLayer` is enabled.
 - **Positive Streaks:** Celebrate momentum without penalizing missed days.

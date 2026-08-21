@@ -16,6 +16,12 @@ export function Signup() {
   const [confirmedSaved, setConfirmedSaved] = useState(false);
   const [partialKey, setPartialKey] = useState("");
   const [recoveryBusy, setRecoveryBusy] = useState(false);
+  // The pre-paint script resolves the theme before render, so one read is accurate here.
+  const [googleTheme] = useState<"outline" | "filled_black">(() =>
+    typeof document !== "undefined" && document.documentElement.getAttribute("data-theme") === "dark"
+      ? "filled_black"
+      : "outline"
+  );
 
   if (status === "authed" && !recoveryKey) {
     return <Navigate to="/app" replace />;
@@ -99,11 +105,11 @@ export function Signup() {
 
         {error ? <p className="auth-error">{error}</p> : null}
         <div className="button-row" style={{ justifyContent: "center", marginBottom: "1rem" }}>
-          <button className="secondary-button" type="button" onClick={() => void regenerateRecoveryKey()} disabled={recoveryBusy}>
+          <button className="secondary-button clay-btn" type="button" onClick={() => void regenerateRecoveryKey()} disabled={recoveryBusy}>
             {recoveryBusy ? "Generating..." : "Generate a different key"}
           </button>
         </div>
-        <button className="primary-button depth-hover glow-halo" disabled={!canProceed} onClick={() => navigate("/app")}>
+        <button className="primary-button clay-btn depth-hover glow-halo" disabled={!canProceed} onClick={() => navigate("/app")}>
           Continue to Planner
         </button>
       </AuthShell>
@@ -130,7 +136,7 @@ export function Signup() {
           onError={() => {
             setError("Google sign in failed.");
           }}
-          theme="filled_black"
+          theme={googleTheme}
           shape="pill"
           text="signup_with"
         />

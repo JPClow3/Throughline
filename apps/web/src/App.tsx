@@ -12,6 +12,7 @@ import { ViewSkeleton } from "./components/Skeleton";
 import { TaskComposer } from "./components/TaskComposer";
 import { TaskEditor } from "./components/TaskEditor";
 import { FocusTimer } from "./components/FocusTimer";
+import { CooldownModal } from "./components/CooldownModal";
 import { OnboardingOverlay, type OnboardingSetupInput } from "./components/OnboardingOverlay";
 import { CommandPalette } from "./components/CommandPalette";
 import { DynamicBackground } from "./components/DynamicBackground";
@@ -62,6 +63,7 @@ export function App() {
   const [selectedNoteId, setSelectedNoteId] = React.useState<string | null>(null);
   const [highlightedProjectId, setHighlightedProjectId] = React.useState<string | null>(null);
   const [focusTask, setFocusTask] = React.useState<Task | null>(null);
+  const [cooldownTasks, setCooldownTasks] = React.useState<Task[]>([]);
   const {
     tasks = [],
     courses = [],
@@ -85,13 +87,7 @@ export function App() {
   const showOnboarding = appearanceSettings ? !appearanceSettings.hasCompletedOnboarding : false;
   
   const { isInstallable, promptToInstall } = usePwaInstall();
-  const [bannerDismissed, setBannerDismissed] = React.useState(() => {
-    try {
-      return typeof localStorage !== 'undefined' && localStorage.getItem("pwa_banner_dismissed") === "true";
-    } catch {
-      return false;
-    }
-  });
+  const bannerDismissed = appearanceSettings?.pwaBannerDismissed ?? false;
 
   React.useEffect(() => {
     void syncRecurringTasks();
@@ -213,36 +209,33 @@ export function App() {
         <DynamicBackground />
         
         {isInstallable && !bannerDismissed && (
-          <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] bg-surface-2 border border-border rounded-xl shadow-lg px-4 py-3 flex items-center gap-4 max-w-[90vw] md:max-w-md">
-            <div className="bg-primary/10 p-2 rounded-lg text-primary">
+          <div className="pwa-install-banner clay-modal" role="dialog" aria-label="Install Throughline">
+            <div className="pwa-install-icon">
               <DownloadSimple size={20} />
             </div>
-            <div className="flex-1">
-              <p className="text-body-md font-medium text-ink">Install Throughline</p>
-              <p className="text-label-sm text-ink-muted">For offline access and a native feel</p>
+            <div className="pwa-install-copy">
+              <p className="pwa-install-title">Install Throughline</p>
+              <p className="pwa-install-sub">Works offline, feels native</p>
             </div>
-            <button 
-              onClick={promptToInstall}
-              className="bg-primary text-white px-3 py-1.5 rounded-lg text-label-md font-medium hover:bg-primary/90"
-            >
-              Install
-            </button>
-            <button 
-              onClick={() => {
-                setBannerDismissed(true);
-                try {
-                  if (typeof localStorage !== 'undefined') {
-                    localStorage.setItem("pwa_banner_dismissed", "true");
-                  }
-                } catch {
-                  // ignore
-                }
-              }}
-              className="text-ink-muted hover:text-ink p-1"
-              aria-label="Dismiss"
-            >
-              <X size={16} />
-            </button>
+            <div className="pwa-install-actions">
+              <button
+                type="button"
+                onClick={promptToInstall}
+                className="shell-primary-action clay-btn"
+              >
+                Install
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  void saveAppearanceSettings({ pwaBannerDismissed: true });
+                }}
+                className="shell-icon-button clay-btn"
+                aria-label="Dismiss install banner"
+              >
+                <X size={16} />
+              </button>
+            </div>
           </div>
         )}
 
@@ -252,6 +245,9 @@ export function App() {
           onNewTask={openTaskComposer}
           onOpenCommandPalette={() => setCommandPaletteOpen(true)}
           primaryAction={primaryAction}
+          email={email}
+          sync={sync}
+          onSignOut={logout}
         >
           <motion.div
             key={view}
@@ -467,8 +463,35 @@ export function App() {
           task={focusTask}
           launcherMode={view === "dashboard" || view === "timeline" ? "desktop-dock" : "hidden"}
           onTaskClose={() => setFocusTask(null)}
-          onRecordFocusSession={recordFocusSession}
+          onRecordFocusSession={async (input) => {
+            await recordFocusSession(input);
+            const inputTaskId = typeof input === 'object' ? input.taskId : undefined;
+            const backlogTasks = tasks.filter(t => (t.status === "backlog" || t.status === "ready") && t.energy <= 2 && t.id !== inputTaskId);
+            if (backlogTasks.length > 0) {
+              const suggestions = backlogTasks.sort((a, b) => a.energy - b.energy).slice(0, 3);
+              setTimeout(() => setCooldownTasks(suggestions), 3000);
+            }
+          }}
         />
+
+        {cooldownTasks.length > 0 && (
+          <CooldownModal
+            tasks={cooldownTasks}
+            onClose={() => setCooldownTasks([])}
+            onEditTask={(t) => {
+              setCooldownTasks([]);
+              setEditingTask(t);
+            }}
+            onCompleteTask={async (t) => {
+              await completeTask(t);
+              setCooldownTasks((prev) => prev.filter(p => p.id !== t.id));
+            }}
+            onStartFocus={(t) => {
+              setCooldownTasks([]);
+              setFocusTask(t);
+            }}
+          />
+        )}
         
         {showOnboarding ? (
           <OnboardingOverlay

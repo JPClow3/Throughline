@@ -12,6 +12,12 @@ export function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  // The pre-paint script resolves the theme before render, so one read is accurate here.
+  const [googleTheme] = useState<"outline" | "filled_black">(() =>
+    typeof document !== "undefined" && document.documentElement.getAttribute("data-theme") === "dark"
+      ? "filled_black"
+      : "outline"
+  );
 
   if (status === "authed") {
     return <Navigate to="/app" replace />;
@@ -51,7 +57,7 @@ export function Login() {
           onError={() => {
             setError("Google sign in failed.");
           }}
-          theme="filled_black"
+          theme={googleTheme}
           shape="pill"
         />
       </div>
