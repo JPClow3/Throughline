@@ -1,7 +1,6 @@
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { PrivacyPolicy } from "../pages/PrivacyPolicy";
-import { TermsOfService } from "../pages/TermsOfService";
+import { PrivacyPolicy, TermsOfService } from "../pages/LegalPages";
 import { MemoryRouter } from "react-router-dom";
 import React from "react";
 
@@ -24,3 +23,4 @@ describe("Legal Pages", () => {
     expect(container.textContent).toContain("Terms of Service");
   });
 });
+

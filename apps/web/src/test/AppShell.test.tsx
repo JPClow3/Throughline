@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { AppShell } from "../components/AppShell";
+import { AppShell } from "../shell/AppShell";
 
 describe("AppShell", () => {
   it("opens command palette from the global search control", () => {
@@ -11,7 +11,8 @@ describe("AppShell", () => {
       </AppShell>
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Open global search" }));
+    const triggers = screen.getAllByRole("button", { name: "Open global search" });
+    fireEvent.click(triggers[0]);
 
     expect(onOpenCommandPalette).toHaveBeenCalled();
   });
@@ -22,8 +23,8 @@ describe("AppShell", () => {
       <AppShell
         view="dashboard"
         onViewChange={vi.fn()}
-        onNewTask={vi.fn()}
-        primaryAction={{ label: "New task", icon: <span>+</span>, onClick: onPrimary }}
+        onNewTask={onPrimary}
+        primaryActionLabel="New task"
       >
         <h1>Today</h1>
       </AppShell>
@@ -45,15 +46,15 @@ describe("AppShell", () => {
     expect(container.querySelector(".shell-mobile-primary-action")).not.toBeInTheDocument();
   });
 
-  it("keeps desktop chrome out of tablet widths and leaves a gutter beside the sidebar", () => {
-    const { container } = render(
+  it("exposes every view as a labelled navigation anchor", () => {
+    render(
       <AppShell view="dashboard" onViewChange={vi.fn()} onNewTask={vi.fn()}>
         <h1>Today</h1>
       </AppShell>
     );
 
-    expect(container.querySelector(".shell-sidebar")).toHaveClass("hidden", "lg:flex");
-    expect(container.querySelector("#main-content")).toHaveClass("lg:ml-[280px]", "lg:pl-8");
-    expect(container.querySelector("nav.md\\:hidden")).toBeNull();
+    for (const label of ["Today", "Goals", "Board", "Timeline", "Notes", "Projects", "Insights", "Settings"]) {
+      expect(screen.getAllByRole("link", { name: label }).length).toBeGreaterThan(0);
+    }
   });
 });

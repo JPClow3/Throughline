@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { OnboardingOverlay } from "../components/OnboardingOverlay";
+import { OnboardingOverlay } from "../views/OnboardingOverlay";
 
 describe("OnboardingOverlay", () => {
   it("creates a first useful setup", () => {
@@ -31,3 +31,4 @@ describe("OnboardingOverlay", () => {
     expect(onComplete).toHaveBeenCalled();
   });
 });
+

@@ -1,19 +1,19 @@
 # Architecture & Data Model
 
-This document outlines the system architecture, core data models, and design system (Claymorphism) for Throughline.
+This document outlines the system architecture, core data models, and design system (Inkline) for Throughline.
 
 ## 1. System Architecture
 
 ### Workspace Layout
-- `apps/web`: React/Vite PWA, Claymorphism UI, Dexie storage, Today/Goals/Notes/Board/Timeline/Projects, ICS export, JSON backup, notification setup.
+- `apps/web`: React/Vite PWA, Inkline UI, Dexie storage, Today/Goals/Notes/Board/Timeline/Projects, ICS export, JSON backup, notification setup.
 - `apps/push-api`: Fastify API for redacted push subscriptions, reminder metadata, and due reminder dispatch.
 - `packages/domain`: shared Zod schemas, sample data, gamification, ICS export, and redacted reminder contracts.
 
 ### App Flow
 1. `apps/web/src/main.tsx` mounts `App` inside a top-level `ErrorBoundary`.
-2. `App` lazy-loads secondary views (Goals, Board, Timeline, Notes, Projects, Settings).
-3. `useTasks` exposes live Dexie queries for tasks, projects, goals, notes, settings, and progress.
-4. UI actions call `addTask`, `updateTaskStatus`, or `completeTask`.
+2. `App` owns view/overlay state and wraps the tree in `PlannerProvider`, which centralizes the Dexie-backed hooks (`useTasks`, `useGoals`, `useNotes`, `useFocusSessions`) behind a single `usePlanner()` context.
+3. Views (`src/views/`) read planner data from context; the shell lives in `src/shell/AppShell.tsx`; shared primitives live in `src/ui/`.
+4. UI actions call context mutations such as `addTask`, `updateTaskStatus`, or `completeTask`.
 5. Progress, Today metrics, focus totals, and coaching prompts are recalculated through shared helpers in `packages/domain`.
 6. Task mutations attempt redacted reminder sync in the background when a push endpoint exists.
 7. ICS export calls `exportTasksToIcs` and downloads the result in the browser.
@@ -89,33 +89,35 @@ Dexie database name: `liquidglass-study-quests`.
 
 ---
 
-## 3. Design System (Claymorphism)
+## 3. Design System (Inkline)
 
-The design system embodies the Claymorphism aesthetic described in `ui-ux.md`—soft inflated shapes, double inner shadows, and solid pastel surfaces that prioritize depth, clarity, and legibility without blurs or translucency.
+The design system embodies the Inkline aesthetic described in `ui-ux.md` — bold editorial neo-brutalism: warm paper surfaces, 2px ink borders, hard offset shadows with zero blur, and signal-colour accents that prioritize weight, clarity, and legibility.
 
 ### Brand & Style
-The style merges Claymorphism with Minimalism: solid opaque surfaces with a bright top-left inner highlight and a darker bottom-right inner shadow create a tactile "inflated" 3D volume. The emotional response is one of "focused serenity"—the UI should feel like a soft, high-end physical planner.
+The style reads like ink printed on card stock: solid opaque fills, chunky borders, and displacement-based depth. The emotional response is one of "confident momentum" — a bold, honest workspace that makes school work feel handleable.
 
 ### Colors
-The palette is centered on a light-first execution on solid surfaces.
-- **Primary:** Refined Indigo.
-- **Surface:** Solid off-whites and pastels (clay base).
-- **Accents:** Mint and Blue.
-- **Inner Shadows:** Bright top-left highlight plus darker bottom-right depth.
+- **Paper & Ink:** Warm paper (`#f1ede3`) with near-black ink in light; matte slate (`#15171e`) with bone-white ink in dark.
+- **Signal accents:** Highlighter Yellow (primary intent), Electric Blue (focus/actions), Mint Green (success/progress), Coral Red (danger/overdue), Violet (identity/game layer).
+- **Soft variants** of each accent tint chips and state surfaces.
 
 ### Typography
-Uses **Geist** for its technical precision and clean, geometric architecture. Font weights are intentionally reduced. Tabular numerals are used for stats and dates.
+Self-hosted **Geist Variable**. Headings run heavy (~800) with tight letter-spacing; section labels are uppercase micro-type with wide tracking. Tabular numerals are used for stats and dates.
 
 ### Layout & Spacing
-- **Desktop:** 12-column grid with 24px gutters and 64px side margins.
-- **Whitespace:** Emphasize "Functional Whitespace" (48px+ gaps).
-- **Clay Modules:** 24px internal padding and bubbly (24px+) corner radii.
+- **Desktop:** Single fluid content column up to 1280px inside a masthead + tab-strip shell.
+- **Mobile:** Persistent bottom dock plus floating primary action.
+- **Panels:** Roughly 20–24px internal padding with 14px corner radii.
 
 ### Elevation & Depth
-1. **Level 0 (Background):** Solid soft color (off-white or soft pastel).
-2. **Level 1 (Substrate):** Main content panels (solid fill, double inner shadows, large radius).
-3. **Level 2 (Interactive):** Hovered states and cards (lighter fill, pronounced drop shadow).
-4. **Level 3 (Modals/Overlays):** Deepest outer shadow and prominent inflation.
+1. **Level 0 (Background):** Paper with a subtle dot-grid texture.
+2. **Level 1 (Card):** Solid fill, 2px border, 3px hard shadow.
+3. **Level 2 (Hover):** Lift via translate(-2px,-2px) with a larger shadow.
+4. **Level 3 (Pressed):** Sink via translate(2px,2px); shadow collapses to none.
+5. **Level 4 (Overlay):** Sheets/modals carry an 8px shadow over a flat dimmed backdrop.
 
 ### Visual Depth
-There is no 3D layer and no blur/translucency. Depth comes from **inflated solid surfaces**: every clay element carries inner highlights and inner shadows that define its volume.
+There is no 3D layer, no gradient, no blur, and no translucency. Depth comes from **hard offset shadows and press physics** on solid paper surfaces.
+
+### Cascade Layers
+All component classes live in Tailwind's `components` cascade layer (`@layer components` in `styles.css`) with element resets in `@layer base`, so utility classes always win over component styling regardless of source order.

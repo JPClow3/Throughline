@@ -16,7 +16,7 @@ This document outlines the product requirements, features, current roadmap, and 
 - Local-first task data stored in IndexedDB, with optional account sync across devices.
 - End-to-end-encrypted cloud sync: planner records are encrypted on-device, and the server stores ciphertext it cannot read.
 - Recovery key generation and confirmation during signup, plus regeneration from Settings.
-- Claymorphism visual system with tactile solid depth, strong contrast, calm colors, and responsive layout.
+- Inkline visual system: bold editorial neo-brutalism with strong contrast, signal accents, and responsive layout.
 - Visual task representation through quest cards, XP, urgency, energy, difficulty, RPG attributes, and completion state.
 - Kanban visualization with Backlog, Ready, Doing, Blocked, and Done.
 - ICS export for due-date tasks.
@@ -30,12 +30,12 @@ This document outlines the product requirements, features, current roadmap, and 
 - No server storage of readable task records. Synced planner content may leave the device only as end-to-end-encrypted ciphertext.
 - Recovery keys are required for password-loss recovery. If both password and recovery key are lost, encrypted synced content cannot be recovered.
 - Push payloads must not include task titles, descriptions, course names, or tags.
-- There is no 3D layer in the current product direction; Claymorphism depth comes from inflated solid surfaces with double inner shadows.
+- There is no 3D layer in the current product direction; Inkline depth comes from hard offset shadows and press physics on solid paper surfaces.
 
 ## 2. Feature Specs
 
 ### Today Dashboard
-A calm cockpit for the day. Shows greeting, date, and a progress hero ("X of Y tasks done") backed only by real task data. Focus time, planned study time, completed-by-day activity, overdue count, and the next study block are derived from local tasks and focus sessions.
+A calm cockpit for the day. Shows greeting, date, and a progress hero ("X of Y tasks done") backed only by real task data. Focus time, planned study time, completed-by-day activity, overdue count, and the next study block are derived from local tasks and focus sessions. An "Also on the radar" list surfaces the next few actionable tasks that are not already prioritized, so the main panel stays useful on quiet days.
 
 ### Task Composer & Cards
 - **Composer**: Fast capture via a floating glass sheet. Up-front fields are minimal (Title, Project, Due).
@@ -47,7 +47,7 @@ A calm cockpit for the day. Shows greeting, date, and a progress hero ("X of Y t
 - **Notes**: A cross-linked notebook. Notes link many-to-many to tasks and goals. Includes a Write/Preview toggle for markdown.
 
 ### Views
-- **Kanban**: Primary workflow surface (Backlog, Ready, Doing, Blocked, Done). Drag/drop is implemented with `@dnd-kit`.
+- **Kanban**: Primary workflow surface (Backlog, Ready, Doing, Blocked, Done). Drag/drop is implemented with `@dnd-kit`, and hand-arranged column order persists across sessions.
 - **Timeline**: A time-of-day agenda for a single day. Time-blocked agenda cards.
 - **Projects / Areas**: Optional organiser for tasks, goals, and notes.
 - **Command/Search**: `Ctrl K` opens the command palette, searches tasks, notes, goals, and projects, and jumps directly to the right view or editor.
@@ -63,7 +63,7 @@ A calm cockpit for the day. Shows greeting, date, and a progress hero ("X of Y t
 ## 3. Roadmap
 
 **Shipped (beta)**:
-- Calm, light-first planner with a softer dark mode (Claymorphism visual system).
+- Bold, light-first planner with a matte dark mode (Inkline visual system).
 - Core entities: Goals, Tasks, Notes, Projects.
 - Views: Today, Board, Timeline, Projects, Notes.
 - Tech: React 19 / Vite / Tailwind 4 PWA; Dexie local-first storage. Fastify push API. Docker images + Compose stack. Playwright E2E suites.
@@ -83,11 +83,14 @@ A calm cockpit for the day. Shows greeting, date, and a progress hero ("X of Y t
 
 ### Web App (`apps/web`)
 - `vite.config.ts`: React, Tailwind, PWA manifest.
-- `src/App.tsx`: view routing.
-- `src/styles.css`: Claymorphism token system.
+- `src/App.tsx`: view routing and overlay orchestration.
+- `src/styles.css`: Inkline token system and component layer.
+- `src/state/PlannerProvider.tsx`: context over the Dexie-backed hooks (`usePlanner()`).
+- `src/shell/AppShell.tsx`: masthead, tab strip, mobile dock, account menu.
+- `src/views/`: Today, Board, Timeline, Goals, Notes, Courses, Insights, Settings views plus composers/editors/overlays.
+- `src/ui/`: shared primitives (buttons, cards, fields, chips, sheets/modals, feedback).
 - `src/data/`: Dexie database (`db.ts`), repositories, reminder sync.
 - `src/hooks/`: React hooks for data (`useTasks.ts`, `useGoals.ts`, etc).
-- `src/components/`: Core UI components (AppShell, Dashboard, TaskCard, Sheet, KanbanBoard, etc).
 - `tests/`: Playwright E2E, performance, and stress tests.
 
 ### Push API (`apps/push-api`)

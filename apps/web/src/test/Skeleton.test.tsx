@@ -1,6 +1,6 @@
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { Skeleton, ViewSkeleton } from "../components/Skeleton";
+import { Skeleton, ViewSkeleton } from "../ui";
 import React from "react";
 
 describe("Skeleton", () => {
@@ -21,3 +21,4 @@ describe("ViewSkeleton", () => {
     expect(container.querySelector(".skeleton-view")).not.toBeNull();
   });
 });
+

@@ -1,12 +1,12 @@
 import { createTask, sampleCourses } from "@throughline/domain";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { TaskCard } from "../components/TaskCard";
-import { SettingsPanel } from "../components/SettingsPanel";
-import { TaskComposer } from "../components/TaskComposer";
-import { FocusTimer } from "../components/FocusTimer";
+import { TaskCard } from "../views/TaskCard";
+import { SettingsView } from "../views/SettingsView";
+import { TaskComposer } from "../views/TaskComposer";
+import { FocusTimer } from "../views/FocusTimer";
 
-describe("calm planner UI components", () => {
+describe("planner UI components", () => {
   it("keeps quick capture disabled until a title is entered", () => {
     const onAddTask = vi.fn().mockResolvedValue(undefined);
     render(<TaskComposer courses={sampleCourses} onAddTask={onAddTask} />);
@@ -29,12 +29,12 @@ describe("calm planner UI components", () => {
     fireEvent.change(screen.getByLabelText("Description"), { target: { value: "Draft the argument and source list." } });
     fireEvent.change(screen.getByLabelText("Reminder"), { target: { value: "2026-06-04T09:30" } });
     fireEvent.change(screen.getByLabelText("Tags"), { target: { value: "paper, seminar" } });
-    
+
     fireEvent.click(screen.getByRole("button", { name: /Add step/i }));
     fireEvent.change(screen.getAllByPlaceholderText("Subtask title")[0], { target: { value: "Choose thesis" } });
     fireEvent.click(screen.getByRole("button", { name: /Add step/i }));
     fireEvent.change(screen.getAllByPlaceholderText("Subtask title")[1], { target: { value: "Collect sources" } });
-    
+
     fireEvent.click(screen.getByRole("button", { name: "Add task" }));
 
     await waitFor(() => expect(onAddTask).toHaveBeenCalled());
@@ -52,10 +52,10 @@ describe("calm planner UI components", () => {
     );
   });
 
-  it("renders a calm task card with title, checklist progress, and status control", () => {
+  it("renders a task card with title, checklist progress, and status control", () => {
     const task = createTask({
       title: "Finish studio critique",
-      description: "Refine the calm planner comparison.",
+      description: "Refine the planner comparison.",
       dueAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
       priority: "high",
       subtasks: [
@@ -91,7 +91,7 @@ describe("calm planner UI components", () => {
 
   it("exposes utility settings", () => {
     render(
-      <SettingsPanel
+      <SettingsView
         tasks={[]}
         courses={sampleCourses}
         appearanceSettings={{
@@ -119,7 +119,7 @@ describe("calm planner UI components", () => {
     });
 
     render(
-      <SettingsPanel
+      <SettingsView
         tasks={[]}
         courses={sampleCourses}
         appearanceSettings={{

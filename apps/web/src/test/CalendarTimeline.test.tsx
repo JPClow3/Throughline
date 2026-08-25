@@ -1,17 +1,11 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { CalendarTimeline } from "../components/CalendarTimeline";
 import { CourseSchema, TaskSchema } from "@throughline/domain";
-import React from "react";
+import { TimelineView } from "../views/TimelineView";
+import { renderWithPlanner } from "./planner-test-utils";
 
-describe("CalendarTimeline", () => {
+describe("TimelineView", () => {
   it("renders timeline with tasks", () => {
-    vi.stubGlobal("localStorage", {
-      getItem: vi.fn(),
-      setItem: vi.fn(),
-      removeItem: vi.fn()
-    });
-
     const timestamp = new Date().toISOString();
     const dueAt = new Date();
     dueAt.setHours(14, 0, 0, 0); // 2pm today
@@ -35,25 +29,34 @@ describe("CalendarTimeline", () => {
       CourseSchema.parse({
         id: "course-1",
         name: "Test Course",
-        color: "blue",
-        icon: "📚",
+        color: "#3d5afe",
+        icon: "T",
         createdAt: timestamp,
         updatedAt: timestamp
       })
     ];
 
-    render(
-      <CalendarTimeline
-        tasks={mockTasks}
-        courses={mockCourses}
-        goals={[]}
-        onNewTask={vi.fn()}
-        onStartFocus={vi.fn()}
-        onUpdateTask={vi.fn()}
-      />
+    renderWithPlanner(
+      <TimelineView onNewTask={vi.fn()} onStartFocus={vi.fn()} onUpdateTask={vi.fn()} />,
+      {
+        planner: {
+          tasks: mockTasks,
+          courses: mockCourses,
+          courseById: new Map(mockCourses.map((course) => [course.id, course]))
+        }
+      }
     );
 
     expect(screen.getByRole("heading", { name: "Timeline" })).toBeInTheDocument();
     expect(screen.getByText("Test Timeline Task")).toBeInTheDocument();
   });
+
+  it("shows the empty state for a day without tasks", () => {
+    renderWithPlanner(<TimelineView />, {});
+
+    // Today is selected by default and there are no tasks.
+    expect(screen.getByRole("heading", { name: "Timeline" })).toBeInTheDocument();
+    expect(screen.getByText("Nothing scheduled")).toBeInTheDocument();
+  });
 });
+

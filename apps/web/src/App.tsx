@@ -1,48 +1,47 @@
 import { Goal, Task, createCourse } from "@throughline/domain";
-import { IconContext } from "@phosphor-icons/react";
-import { X, DownloadSimple, Plus } from "@phosphor-icons/react";
+import { DownloadSimple, X } from "@phosphor-icons/react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { MotionConfig, motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import React from "react";
-import { AppShell, AppView } from "./components/AppShell";
-import { Dashboard } from "./components/Dashboard";
-import { GoalComposer } from "./components/GoalComposer";
-import { Sheet } from "./components/Sheet";
-import { ViewSkeleton } from "./components/Skeleton";
-import { TaskComposer } from "./components/TaskComposer";
-import { TaskEditor } from "./components/TaskEditor";
-import { FocusTimer } from "./components/FocusTimer";
-import { CooldownModal } from "./components/CooldownModal";
-import { OnboardingOverlay, type OnboardingSetupInput } from "./components/OnboardingOverlay";
-import { CommandPalette } from "./components/CommandPalette";
-import { DynamicBackground } from "./components/DynamicBackground";
 import { useAuth } from "./auth/AuthProvider";
+import type { AppearanceSettings } from "./data/types";
 import { clearAllData, getAppearanceSettings, saveAppearanceSettings, syncRecurringTasks } from "./data/repositories";
 import type { GlobalSearchResult } from "./hooks/useGlobalSearch";
-import { useFocusSessions } from "./hooks/useFocusSessions";
-import { useGoals } from "./hooks/useGoals";
-import { useNotes } from "./hooks/useNotes";
-import { useTasks } from "./hooks/useTasks";
-import { useTheme } from "./hooks/useTheme";
 import { usePwaInstall } from "./hooks/usePwaInstall";
+import { useTheme } from "./hooks/useTheme";
 import { requestNotificationPermission } from "./lib/notifications";
+import { AppShell, AppView, ShellSync } from "./shell/AppShell";
+import { PlannerProvider, usePlanner } from "./state/PlannerProvider";
+import { Button, Sheet, ViewSkeleton } from "./ui";
 import { useSync } from "./sync/useSync";
 
-const KanbanBoard = React.lazy(() => import("./components/KanbanBoard").then((module) => ({ default: module.KanbanBoard })));
-const CalendarTimeline = React.lazy(() =>
-  import("./components/CalendarTimeline").then((module) => ({ default: module.CalendarTimeline }))
+const TodayView = React.lazy(() => import("./views/TodayView").then((module) => ({ default: module.TodayView })));
+const BoardView = React.lazy(() => import("./views/BoardView").then((module) => ({ default: module.BoardView })));
+const TimelineView = React.lazy(() => import("./views/TimelineView").then((module) => ({ default: module.TimelineView })));
+const GoalsView = React.lazy(() => import("./views/GoalsView").then((module) => ({ default: module.GoalsView })));
+const NotesView = React.lazy(() => import("./views/NotesView").then((module) => ({ default: module.NotesView })));
+const CoursesView = React.lazy(() => import("./views/CoursesView").then((module) => ({ default: module.CoursesView })));
+const InsightsView = React.lazy(() => import("./views/InsightsView").then((module) => ({ default: module.InsightsView })));
+const SettingsView = React.lazy(() => import("./views/SettingsView").then((module) => ({ default: module.SettingsView })));
+const TaskComposer = React.lazy(() => import("./views/TaskComposer").then((module) => ({ default: module.TaskComposer })));
+const TaskEditor = React.lazy(() => import("./views/TaskEditor").then((module) => ({ default: module.TaskEditor })));
+const GoalComposer = React.lazy(() => import("./views/GoalComposer").then((module) => ({ default: module.GoalComposer })));
+const FocusTimer = React.lazy(() => import("./views/FocusTimer").then((module) => ({ default: module.FocusTimer })));
+const CooldownModal = React.lazy(() => import("./views/CooldownModal").then((module) => ({ default: module.CooldownModal })));
+const CommandPalette = React.lazy(() => import("./views/CommandPalette").then((module) => ({ default: module.CommandPalette })));
+const OnboardingOverlay = React.lazy(() =>
+  import("./views/OnboardingOverlay").then((module) => ({ default: module.OnboardingOverlay }))
 );
-const GoalsView = React.lazy(() => import("./components/GoalsView").then((module) => ({ default: module.GoalsView })));
-const NotesView = React.lazy(() => import("./components/NotesView").then((module) => ({ default: module.NotesView })));
-const ProjectsView = React.lazy(() =>
-  import("./components/ProjectsView").then((module) => ({ default: module.ProjectsView }))
-);
-const InsightsView = React.lazy(() =>
-  import("./pages/InsightsView").then((module) => ({ default: module.InsightsView }))
-);
-const SettingsPanel = React.lazy(() =>
-  import("./components/SettingsPanel").then((module) => ({ default: module.SettingsPanel }))
-);
+
+type OnboardingSetupInput = {
+  kind: "school" | "work" | "personal";
+  projectNames: string[];
+  taskTitle: string;
+  taskProjectIndex: number;
+  dueAt?: string;
+  enableNotifications: boolean;
+  openSyncSettings: boolean;
+};
 
 function initialView(): AppView {
   const params = new URLSearchParams(window.location.search);
@@ -57,35 +56,20 @@ export function App() {
   const [commandPaletteOpen, setCommandPaletteOpen] = React.useState(false);
   const [composerDate, setComposerDate] = React.useState<Date | undefined>(undefined);
   const [goalOpen, setGoalOpen] = React.useState(false);
-  const [editingTask, setEditingTask] = React.useState<Task | null>(null);
+  const [editingTaskId, setEditingTaskId] = React.useState<string | null>(null);
   const [editingGoal, setEditingGoal] = React.useState<Goal | null>(null);
   const [selectedGoalId, setSelectedGoalId] = React.useState<string | null>(null);
   const [selectedNoteId, setSelectedNoteId] = React.useState<string | null>(null);
   const [highlightedProjectId, setHighlightedProjectId] = React.useState<string | null>(null);
   const [focusTask, setFocusTask] = React.useState<Task | null>(null);
   const [cooldownTasks, setCooldownTasks] = React.useState<Task[]>([]);
-  const {
-    tasks = [],
-    courses = [],
-    loading,
-    addTask,
-    updateTask,
-    deleteTask,
-    updateTaskStatus,
-    completeTask,
-    upsertCourse,
-    deleteCourse
-  } = useTasks();
-  const { focusSessions, recordFocusSession } = useFocusSessions();
-  const { goals, addGoal, updateGoal, setGoalStatus, removeGoal } = useGoals();
-  const { notes, addNote, updateNote, removeNote, toggleNoteLink } = useNotes();
+
   const { email, dekKey, rotateRecoveryKey, logout } = useAuth();
   const sync = useSync(dekKey);
   const appearanceSettings = useLiveQuery(() => getAppearanceSettings(), []);
   useTheme(appearanceSettings?.theme);
   const showGameLayer = appearanceSettings?.showGameLayer ?? false;
   const showOnboarding = appearanceSettings ? !appearanceSettings.hasCompletedOnboarding : false;
-  
   const { isInstallable, promptToInstall } = usePwaInstall();
   const bannerDismissed = appearanceSettings?.pwaBannerDismissed ?? false;
 
@@ -93,80 +77,258 @@ export function App() {
     void syncRecurringTasks();
   }, []);
 
-  const openGoal = (goalId: string) => {
-    setSelectedGoalId(goalId);
-    setView("goals");
-  };
-  const openTaskById = (taskId: string) => {
-    const task = tasks.find((item) => item.id === taskId);
-    if (task) {
-      setEditingTask(task);
-    }
-  };
-
-  const openSearchResult = (result: GlobalSearchResult) => {
-    if (result.type === "task") {
-      setView(result.view);
-      openTaskById(result.id);
-      return;
-    }
-    if (result.type === "note") {
-      setSelectedNoteId(result.id);
-      setView("notes");
-      return;
-    }
-    if (result.type === "goal") {
-      setSelectedGoalId(result.id);
-      setView("goals");
-      return;
-    }
-    setHighlightedProjectId(result.id);
-    setView("courses");
-  };
+  // Global Ctrl/Cmd+K shortcut lives at the app level so the palette opens even
+  // before its lazy chunk has loaded.
+  React.useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "k" && (event.metaKey || event.ctrlKey)) {
+        event.preventDefault();
+        setCommandPaletteOpen(true);
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   const openTaskComposer = React.useCallback((date?: Date) => {
     setComposerDate(date);
     setComposerOpen(true);
   }, []);
 
-  const createNoteFromShell = React.useCallback(async () => {
-    const note = await addNote({});
-    setSelectedNoteId(note.id);
-    setView("notes");
-  }, [addNote, setView]);
+  const closeComposer = React.useCallback(() => {
+    setComposerOpen(false);
+    setComposerDate(undefined);
+  }, []);
 
-  const primaryAction = React.useMemo(() => {
-    if (view === "notes") {
-      return {
-        label: "New note",
-        icon: <Plus size={24} weight="bold" />,
-        onClick: () => {
-          void createNoteFromShell();
-        }
-      };
-    }
-
-    if (view === "dashboard" || view === "kanban" || view === "timeline" || view === "courses") {
-      return {
-        label: "New task",
-        icon: <Plus size={24} weight="bold" />,
-        onClick: () => openTaskComposer()
-      };
-    }
-
-    return undefined;
-  }, [createNoteFromShell, openTaskComposer, view]);
-
-  const toggleTheme = () => {
+  const toggleTheme = React.useCallback(() => {
     const current = appearanceSettings?.theme;
     const next = current === "dark" ? "light" : current === "system" ? "dark" : "dark";
     void saveAppearanceSettings({ theme: next });
+  }, [appearanceSettings?.theme]);
+
+  return (
+    <PlannerProvider>
+      <Workspace
+        view={view}
+        setView={setView}
+        composerOpen={composerOpen}
+        commandPaletteOpen={commandPaletteOpen}
+        setCommandPaletteOpen={setCommandPaletteOpen}
+        composerDate={composerDate}
+        closeComposer={closeComposer}
+        goalOpen={goalOpen}
+        setGoalOpen={setGoalOpen}
+        editingTaskId={editingTaskId}
+        setEditingTaskId={setEditingTaskId}
+        editingGoal={editingGoal}
+        setEditingGoal={setEditingGoal}
+        selectedGoalId={selectedGoalId}
+        setSelectedGoalId={setSelectedGoalId}
+        selectedNoteId={selectedNoteId}
+        setSelectedNoteId={setSelectedNoteId}
+        highlightedProjectId={highlightedProjectId}
+        setHighlightedProjectId={setHighlightedProjectId}
+        focusTask={focusTask}
+        setFocusTask={setFocusTask}
+        cooldownTasks={cooldownTasks}
+        setCooldownTasks={setCooldownTasks}
+        sync={sync}
+        email={email}
+        rotateRecoveryKey={rotateRecoveryKey}
+        logout={logout}
+        appearanceSettings={appearanceSettings}
+        showGameLayer={showGameLayer}
+        showOnboarding={showOnboarding}
+        isInstallable={isInstallable}
+        bannerDismissed={bannerDismissed}
+        promptToInstall={promptToInstall}
+        onToggleTheme={toggleTheme}
+        onOpenComposer={openTaskComposer}
+      />
+    </PlannerProvider>
+  );
+}
+
+type WorkspaceProps = {
+  view: AppView;
+  setView: (view: AppView) => void;
+  composerOpen: boolean;
+  commandPaletteOpen: boolean;
+  setCommandPaletteOpen: (open: boolean) => void;
+  composerDate?: Date;
+  closeComposer: () => void;
+  goalOpen: boolean;
+  setGoalOpen: (open: boolean) => void;
+  editingTaskId: string | null;
+  setEditingTaskId: (id: string | null) => void;
+  editingGoal: Goal | null;
+  setEditingGoal: (goal: Goal | null) => void;
+  selectedGoalId: string | null;
+  setSelectedGoalId: (id: string | null) => void;
+  selectedNoteId: string | null;
+  setSelectedNoteId: (id: string | null) => void;
+  highlightedProjectId: string | null;
+  setHighlightedProjectId: (id: string | null) => void;
+  focusTask: Task | null;
+  setFocusTask: (task: Task | null) => void;
+  cooldownTasks: Task[];
+  setCooldownTasks: React.Dispatch<React.SetStateAction<Task[]>>;
+  sync: ShellSync;
+  email: string | null;
+  rotateRecoveryKey: () => Promise<string>;
+  logout: () => Promise<void> | void;
+  appearanceSettings?: AppearanceSettings;
+  showGameLayer: boolean;
+  showOnboarding: boolean;
+  isInstallable: boolean;
+  bannerDismissed: boolean;
+  promptToInstall: () => Promise<void>;
+  onToggleTheme: () => void;
+  onOpenComposer: (date?: Date) => void;
+};
+
+/**
+ * Everything under the planner provider: shell, views, and overlays. Views read
+ * planner data from context; this component only orchestrates which surfaces are open.
+ */
+function Workspace(props: WorkspaceProps) {
+  const {
+    tasks,
+    courses,
+    goals,
+    notes,
+    loading,
+    addTask,
+    updateTask,
+    deleteTask,
+    updateTaskStatus,
+    completeTask,
+    upsertCourse,
+    deleteCourse,
+    addGoal,
+    updateGoal,
+    setGoalStatus,
+    removeGoal,
+    addNote,
+    updateNote,
+    removeNote,
+    toggleNoteLink,
+    recordFocusSession
+  } = usePlanner();
+
+  const editingTask = props.editingTaskId ? tasks.find((task) => task.id === props.editingTaskId) ?? null : null;
+
+  /** Views hand us the task object; we track only its id. */
+  const openTask = React.useCallback(
+    (task: Task) => {
+      props.setEditingTaskId(task.id);
+    },
+    [props]
+  );
+
+  const openGoalById = React.useCallback(
+    (goalId: string) => {
+      props.setSelectedGoalId(goalId);
+      props.setView("goals");
+    },
+    [props]
+  );
+
+  /** Board moves arrive as a batch of reordered/retitled-status records. */
+  const updateTasks = React.useCallback(
+    async (updates: Task[]) => {
+      for (const task of updates) {
+        await updateTask(task);
+      }
+    },
+    [updateTask]
+  );
+
+  const openSearchResult = (result: GlobalSearchResult) => {
+    if (result.type === "task") {
+      props.setView(result.view);
+      props.setEditingTaskId(result.id);
+      return;
+    }
+    if (result.type === "note") {
+      props.setSelectedNoteId(result.id);
+      props.setView("notes");
+      return;
+    }
+    if (result.type === "goal") {
+      openGoalById(result.id);
+      return;
+    }
+    props.setHighlightedProjectId(result.id);
+    props.setView("courses");
   };
+
+  const primaryActionLabel =
+    props.view === "notes"
+      ? "New note"
+      : props.view === "dashboard" || props.view === "kanban" || props.view === "timeline" || props.view === "courses"
+        ? "New task"
+        : undefined;
+
+  const { view, setSelectedNoteId, setView, onOpenComposer } = props;
+
+  const handlePrimaryAction = React.useCallback(async () => {
+    if (view === "notes") {
+      const note = await addNote({});
+      setSelectedNoteId(note.id);
+      setView("notes");
+      return;
+    }
+    if (primaryActionLabel) {
+      onOpenComposer();
+    }
+  }, [view, addNote, primaryActionLabel, setSelectedNoteId, setView, onOpenComposer]);
+
+  // Quick capture: `N` opens the composer (or a new note on Notes) from any
+  // planner view, unless the user is typing or a dialog already owns the screen.
+  React.useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "n" && event.key !== "N") {
+        return;
+      }
+      if (event.metaKey || event.ctrlKey || event.altKey) {
+        return;
+      }
+      const target = event.target as HTMLElement | null;
+      if (target?.isContentEditable || target?.closest("input, textarea, select, [contenteditable='true']")) {
+        return;
+      }
+      const dialogOpen =
+        props.commandPaletteOpen ||
+        props.composerOpen ||
+        props.goalOpen ||
+        Boolean(props.editingGoal) ||
+        Boolean(props.editingTaskId) ||
+        props.cooldownTasks.length > 0 ||
+        props.showOnboarding;
+      if (dialogOpen) {
+        return;
+      }
+      event.preventDefault();
+      void handlePrimaryAction();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [
+    props.commandPaletteOpen,
+    props.composerOpen,
+    props.goalOpen,
+    props.editingGoal,
+    props.editingTaskId,
+    props.cooldownTasks,
+    props.showOnboarding,
+    handlePrimaryAction
+  ]);
 
   const completeOnboardingSetup = async (input: OnboardingSetupInput) => {
     await clearAllData();
 
-    const palette = ["#5b73f0", "#2fa980", "#f3b95f"];
+    const palette = ["#3d5afe", "#1fae67", "#e8a013"];
     const icons = input.kind === "school" ? ["B", "M", "H"] : input.kind === "work" ? ["W", "S", "P"] : ["P", "H", "A"];
     const createdCourses = input.projectNames.map((name, index) =>
       createCourse({
@@ -200,189 +362,159 @@ export function App() {
       }
     }
 
-    setView(input.openSyncSettings ? "settings" : "dashboard");
+    props.setView(input.openSyncSettings ? "settings" : "dashboard");
   };
 
   return (
-    <MotionConfig reducedMotion="user">
-      <IconContext.Provider value={{ weight: "regular" }}>
-        <DynamicBackground />
-        
-        {isInstallable && !bannerDismissed && (
-          <div className="pwa-install-banner clay-modal" role="dialog" aria-label="Install Throughline">
+    <>
+      <AnimatePresence>
+        {props.isInstallable && !props.bannerDismissed ? (
+          <motion.div
+            key="install-banner"
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 24 }}
+            className="ik-card pwa-install-banner"
+            role="dialog"
+            aria-label="Install Throughline"
+          >
             <div className="pwa-install-icon">
-              <DownloadSimple size={20} />
+              <DownloadSimple size={19} weight="bold" />
             </div>
             <div className="pwa-install-copy">
               <p className="pwa-install-title">Install Throughline</p>
               <p className="pwa-install-sub">Works offline, feels native</p>
             </div>
             <div className="pwa-install-actions">
-              <button
-                type="button"
-                onClick={promptToInstall}
-                className="shell-primary-action clay-btn"
-              >
+              <Button variant="accent" size="sm" onClick={() => void props.promptToInstall()}>
                 Install
-              </button>
+              </Button>
               <button
                 type="button"
+                className="icon-toggle"
                 onClick={() => {
                   void saveAppearanceSettings({ pwaBannerDismissed: true });
                 }}
-                className="shell-icon-button clay-btn"
                 aria-label="Dismiss install banner"
               >
-                <X size={16} />
+                <X size={14} weight="bold" />
               </button>
             </div>
-          </div>
-        )}
-
-        <AppShell
-          view={view}
-          onViewChange={setView}
-          onNewTask={openTaskComposer}
-          onOpenCommandPalette={() => setCommandPaletteOpen(true)}
-          primaryAction={primaryAction}
-          email={email}
-          sync={sync}
-          onSignOut={logout}
-        >
-          <motion.div
-            key={view}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-            className="view-frame"
-          >
-            {loading ? (
-              <ViewSkeleton />
-            ) : (
-              <>
-                {view === "dashboard" ? (
-                  <Dashboard
-                    tasks={tasks}
-                    courses={courses}
-                    focusSessions={focusSessions}
-                    onComplete={completeTask}
-                    onUpdateTask={updateTask}
-                    onNewTask={openTaskComposer}
-                    onEdit={setEditingTask}
-                    onStartFocus={setFocusTask}
-                  />
-                ) : null}
-                {view === "goals" ? (
-                  <React.Suspense fallback={<ViewSkeleton />}>
-                    <GoalsView
-                      goals={goals}
-                      tasks={tasks}
-                      courses={courses}
-                      notes={notes}
-                      showGameLayer={showGameLayer}
-                      selectedId={selectedGoalId}
-                      onSelectGoal={setSelectedGoalId}
-                      onNewGoal={() => setGoalOpen(true)}
-                      onSetGoalStatus={setGoalStatus}
-                      onDeleteGoal={removeGoal}
-                      onEditGoal={setEditingGoal}
-                      onAddTask={addTask}
-                      onAddNote={addNote}
-                      onCompleteTask={completeTask}
-                      onStatusChange={updateTaskStatus}
-                      onEditTask={setEditingTask}
-                      onUpdateTask={updateTask}
-                      onReorderTask={updateTask}
-                    />
-                  </React.Suspense>
-                ) : null}
-                {view === "kanban" ? (
-                  <React.Suspense fallback={<ViewSkeleton />}>
-                    <KanbanBoard
-                      tasks={tasks}
-                      courses={courses}
-                      goals={goals}
-                      notes={notes}
-                      showGameLayer={showGameLayer}
-                      onComplete={completeTask}
-                      onStatusChange={updateTaskStatus}
-                      onEdit={setEditingTask}
-                      onUpdateTask={updateTask}
-                      onOpenNotes={() => setView("notes")}
-                      onStartFocus={setFocusTask}
-                    />
-                  </React.Suspense>
-                ) : null}
-                {view === "timeline" ? (
-                  <React.Suspense fallback={<ViewSkeleton />}>
-                    <CalendarTimeline 
-                      tasks={tasks} 
-                      courses={courses} 
-                      goals={goals} 
-                      onNewTask={openTaskComposer}
-                      onStartFocus={setFocusTask}
-                      onUpdateTask={updateTask}
-                    />
-                  </React.Suspense>
-                ) : null}
-                {view === "notes" ? (
-                  <React.Suspense fallback={<ViewSkeleton />}>
-                    <NotesView
-                      notes={notes}
-                      tasks={tasks}
-                      goals={goals}
-                      onAddNote={addNote}
-                      onUpdateNote={updateNote}
-                      onRemoveNote={removeNote}
-                      onToggleLink={toggleNoteLink}
-                      onOpenTask={openTaskById}
-                      onOpenGoal={openGoal}
-                      selectedId={selectedNoteId}
-                      onSelectedIdChange={setSelectedNoteId}
-                    />
-                  </React.Suspense>
-                ) : null}
-                {view === "courses" ? (
-                  <React.Suspense fallback={<ViewSkeleton />}>
-                    <ProjectsView
-                      courses={courses}
-                      tasks={tasks}
-                      onUpsertCourse={upsertCourse}
-                      onDeleteCourse={deleteCourse}
-                      highlightedProjectId={highlightedProjectId}
-                    />
-                  </React.Suspense>
-                ) : null}
-                {view === "insights" ? (
-                  <React.Suspense fallback={<ViewSkeleton />}>
-                    <InsightsView />
-                  </React.Suspense>
-                ) : null}
-                {view === "settings" ? (
-                  <React.Suspense fallback={<ViewSkeleton />}>
-                    <SettingsPanel
-                      tasks={tasks}
-                      courses={courses}
-                      appearanceSettings={appearanceSettings}
-                      onAppearanceChange={saveAppearanceSettings}
-                      account={{ email, syncStatus: sync.status, lastSyncAt: sync.lastSyncAt }}
-                      onSyncNow={sync.syncNow}
-                      onRegenerateRecoveryKey={rotateRecoveryKey}
-                      onSignOut={logout}
-                    />
-                  </React.Suspense>
-                ) : null}
-              </>
-            )}
           </motion.div>
-        </AppShell>
+        ) : null}
+      </AnimatePresence>
 
-        <CommandPalette 
-          open={commandPaletteOpen} 
-          setOpen={setCommandPaletteOpen}
-          onNavigate={setView}
-          onNewTask={() => setComposerOpen(true)}
-          onToggleTheme={toggleTheme}
+      <AppShell
+        view={props.view}
+        onViewChange={props.setView}
+        onNewTask={() => void handlePrimaryAction()}
+        onOpenCommandPalette={() => props.setCommandPaletteOpen(true)}
+        primaryActionLabel={primaryActionLabel}
+        email={props.email}
+        sync={props.sync}
+        onSignOut={props.logout}
+      >
+        <motion.div
+          key={props.view}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.18 }}
+          className="view-frame"
+        >
+          {loading || props.appearanceSettings === undefined ? (
+            <ViewSkeleton />
+          ) : (
+            <React.Suspense fallback={<ViewSkeleton />}>
+              {props.view === "dashboard" ? (
+                <TodayView onNewTask={props.onOpenComposer} onEdit={openTask} onStartFocus={props.setFocusTask} />
+              ) : null}
+              {props.view === "kanban" ? (
+                <BoardView
+                  onComplete={(task) => completeTask(task)}
+                  onStatusChange={(taskId, status) => void updateTaskStatus(taskId, status)}
+                  onUpdateTasks={(updates) => void updateTasks(updates)}
+                  onEdit={openTask}
+                  onOpenNotes={() => props.setView("notes")}
+                  onStartFocus={props.setFocusTask}
+                />
+              ) : null}
+              {props.view === "timeline" ? (
+                <TimelineView
+                  onNewTask={props.onOpenComposer}
+                  onStartFocus={props.setFocusTask}
+                  onUpdateTask={(task) => void updateTask(task)}
+                />
+              ) : null}
+              {props.view === "goals" ? (
+                <GoalsView
+                  goals={goals}
+                  tasks={tasks}
+                  courses={courses}
+                  notes={notes}
+                  selectedId={props.selectedGoalId}
+                  onSelectGoal={props.setSelectedGoalId}
+                  onNewGoal={() => props.setGoalOpen(true)}
+                  onSetGoalStatus={(goalId, status) => setGoalStatus(goalId, status)}
+                  onDeleteGoal={removeGoal}
+                  onEditGoal={props.setEditingGoal}
+                  onAddTask={addTask}
+                  onAddNote={addNote}
+                  onCompleteTask={(task) => completeTask(task)}
+                  onStatusChange={(taskId, status) => void updateTaskStatus(taskId, status)}
+                  onEditTask={openTask}
+                  onUpdateTask={(task) => void updateTask(task)}
+                  onReorderTask={updateTask}
+                />
+              ) : null}
+              {props.view === "notes" ? (
+                <NotesView
+                  notes={notes}
+                  tasks={tasks}
+                  goals={goals}
+                  onAddNote={addNote}
+                  onUpdateNote={updateNote}
+                  onRemoveNote={removeNote}
+                  onToggleLink={(noteId, kind, refId, linked) => void toggleNoteLink(noteId, kind, refId, linked)}
+                  onOpenTask={(taskId) => props.setEditingTaskId(taskId)}
+                  onOpenGoal={openGoalById}
+                  selectedId={props.selectedNoteId}
+                  onSelectedIdChange={props.setSelectedNoteId}
+                />
+              ) : null}
+              {props.view === "courses" ? (
+                <CoursesView
+                  courses={courses}
+                  tasks={tasks}
+                  onUpsertCourse={upsertCourse}
+                  onDeleteCourse={deleteCourse}
+                  highlightedProjectId={props.highlightedProjectId}
+                />
+              ) : null}
+              {props.view === "insights" ? <InsightsView /> : null}
+              {props.view === "settings" ? (
+                <SettingsView
+                  tasks={tasks}
+                  courses={courses}
+                  appearanceSettings={props.appearanceSettings}
+                  onAppearanceChange={saveAppearanceSettings}
+                  account={{ email: props.email, syncStatus: props.sync.status, lastSyncAt: props.sync.lastSyncAt }}
+                  onSyncNow={props.sync.syncNow}
+                  onRegenerateRecoveryKey={props.rotateRecoveryKey}
+                  onSignOut={props.logout}
+                />
+              ) : null}
+            </React.Suspense>
+          )}
+        </motion.div>
+      </AppShell>
+
+      <React.Suspense fallback={null}>
+        <CommandPalette
+          open={props.commandPaletteOpen}
+          setOpen={props.setCommandPaletteOpen}
+          onNavigate={props.setView}
+          onNewTask={() => props.onOpenComposer()}
+          onToggleTheme={props.onToggleTheme}
           tasks={tasks}
           notes={notes}
           goals={goals}
@@ -390,58 +522,58 @@ export function App() {
           onOpenResult={openSearchResult}
         />
 
-        <Sheet 
-          open={composerOpen} 
-          title="New task" 
-          onClose={() => {
-            setComposerOpen(false);
-            setComposerDate(undefined);
-          }}
-        >
-          <TaskComposer
-            courses={courses}
-            goals={goals}
-            showGameLayer={showGameLayer}
-            initialDate={composerDate}
-            onAddTask={async (input) => {
-              await addTask(input);
-              setComposerOpen(false);
-              setComposerDate(undefined);
-            }}
-          />
+        <Sheet open={props.composerOpen} title="New task" onClose={props.closeComposer}>
+          {props.composerOpen ? (
+            <TaskComposer
+              courses={courses}
+              goals={goals}
+              showGameLayer={props.showGameLayer}
+              initialDate={props.composerDate}
+              onAddTask={async (input) => {
+                await addTask(input);
+                props.closeComposer();
+              }}
+            />
+          ) : null}
         </Sheet>
 
-        <Sheet open={goalOpen} title="New goal" onClose={() => setGoalOpen(false)}>
-          <GoalComposer
-            courses={courses}
-            onSubmit={async (input) => {
-              await addGoal(input);
-              setGoalOpen(false);
-            }}
-          />
-        </Sheet>
-
-        <Sheet open={Boolean(editingGoal)} title="Edit goal" onClose={() => setEditingGoal(null)}>
-          {editingGoal ? (
+        <Sheet open={props.goalOpen} title="New goal" onClose={() => props.setGoalOpen(false)}>
+          {props.goalOpen ? (
             <GoalComposer
               courses={courses}
-              goal={editingGoal}
               onSubmit={async (input) => {
+                await addGoal(input);
+                props.setGoalOpen(false);
+              }}
+            />
+          ) : null}
+        </Sheet>
+
+        <Sheet open={Boolean(props.editingGoal)} title="Edit goal" onClose={() => props.setEditingGoal(null)}>
+          {props.editingGoal ? (
+            <GoalComposer
+              courses={courses}
+              goal={props.editingGoal}
+              onSubmit={async (input) => {
+                const current = props.editingGoal;
+                if (!current) {
+                  return;
+                }
                 await updateGoal({
-                  ...editingGoal,
+                  ...current,
                   title: input.title,
                   summary: input.summary ?? "",
                   projectId: input.projectId,
                   color: input.color,
                   targetDate: input.targetDate ? new Date(input.targetDate).toISOString() : undefined
                 });
-                setEditingGoal(null);
+                props.setEditingGoal(null);
               }}
             />
           ) : null}
         </Sheet>
 
-        <Sheet open={Boolean(editingTask)} title="Edit task" onClose={() => setEditingTask(null)}>
+        <Sheet open={Boolean(editingTask)} title="Edit task" onClose={() => props.setEditingTaskId(null)}>
           {editingTask ? (
             <TaskEditor
               task={editingTask}
@@ -449,51 +581,53 @@ export function App() {
               goals={goals}
               onSave={async (updated) => {
                 await updateTask(updated);
-                setEditingTask(null);
+                props.setEditingTaskId(null);
               }}
               onDelete={async (taskId) => {
                 await deleteTask(taskId);
-                setEditingTask(null);
+                props.setEditingTaskId(null);
               }}
             />
           ) : null}
         </Sheet>
-        
+
         <FocusTimer
-          task={focusTask}
-          launcherMode={view === "dashboard" || view === "timeline" ? "desktop-dock" : "hidden"}
-          onTaskClose={() => setFocusTask(null)}
+          task={props.focusTask}
+          launcherMode={props.view === "dashboard" || props.view === "timeline" ? "desktop-dock" : "hidden"}
+          onTaskClose={() => props.setFocusTask(null)}
           onRecordFocusSession={async (input) => {
             await recordFocusSession(input);
-            const inputTaskId = typeof input === 'object' ? input.taskId : undefined;
-            const backlogTasks = tasks.filter(t => (t.status === "backlog" || t.status === "ready") && t.energy <= 2 && t.id !== inputTaskId);
+            const inputTaskId = typeof input === "object" ? input.taskId : undefined;
+            const backlogTasks = tasks.filter(
+              (task) => (task.status === "backlog" || task.status === "ready") && task.energy <= 2 && task.id !== inputTaskId
+            );
             if (backlogTasks.length > 0) {
               const suggestions = backlogTasks.sort((a, b) => a.energy - b.energy).slice(0, 3);
-              setTimeout(() => setCooldownTasks(suggestions), 3000);
+              setTimeout(() => props.setCooldownTasks(suggestions), 3000);
             }
           }}
         />
 
-        {cooldownTasks.length > 0 && (
+        {props.cooldownTasks.length > 0 ? (
           <CooldownModal
-            tasks={cooldownTasks}
-            onClose={() => setCooldownTasks([])}
-            onEditTask={(t) => {
-              setCooldownTasks([]);
-              setEditingTask(t);
+            tasks={props.cooldownTasks}
+            onClose={() => props.setCooldownTasks([])}
+            onEditTask={(task) => {
+              props.setCooldownTasks([]);
+              props.setEditingTaskId(task.id);
             }}
-            onCompleteTask={async (t) => {
-              await completeTask(t);
-              setCooldownTasks((prev) => prev.filter(p => p.id !== t.id));
+            onCompleteTask={(task) => {
+              completeTask(task);
+              props.setCooldownTasks((prev) => prev.filter((item) => item.id !== task.id));
             }}
-            onStartFocus={(t) => {
-              setCooldownTasks([]);
-              setFocusTask(t);
+            onStartFocus={(task) => {
+              props.setCooldownTasks([]);
+              props.setFocusTask(task);
             }}
           />
-        )}
-        
-        {showOnboarding ? (
+        ) : null}
+
+        {props.showOnboarding ? (
           <OnboardingOverlay
             onSetup={completeOnboardingSetup}
             onComplete={async () => {
@@ -501,8 +635,8 @@ export function App() {
             }}
           />
         ) : null}
-      </IconContext.Provider>
-    </MotionConfig>
+      </React.Suspense>
+    </>
   );
 }
 
@@ -518,3 +652,8 @@ function useStateWithUrl(initializer: () => AppView): [AppView, (view: AppView) 
 
   return [view, update];
 }
+
+export default App;
+
+export type { AppView };
+

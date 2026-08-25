@@ -1,104 +1,74 @@
-import {
-  ArrowRight,
-  Kanban,
-  Clock,
-  CodeBlock,
-  Database,
-  ShieldCheck
-} from "@phosphor-icons/react";
+import { ArrowRight, CalendarDots, Database, Kanban, LockKey, Note, ShieldCheck } from "@phosphor-icons/react";
 import { MotionConfig, motion } from "motion/react";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { Link } from "react-router-dom";
+import { Mark } from "../ui";
 
-
-
-function Reveal({ children, delay = 0, className, style }: { children: ReactNode; delay?: number; className?: string; style?: React.CSSProperties }) {
+function Reveal({ children, delay = 0 }: { children: ReactNode; delay?: number }) {
   return (
     <motion.div
-      className={className}
-      style={style}
-      initial={{ opacity: 0, y: 30 }}
+      initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-80px" }}
-      transition={{ duration: 0.8, delay, ease: [0.22, 1, 0.36, 1] }}
+      viewport={{ once: true, margin: "-60px" }}
+      transition={{ duration: 0.5, delay, ease: [0.2, 0.9, 0.3, 1] }}
     >
       {children}
     </motion.div>
   );
 }
 
-function BrowserFrame({ src, alt, className }: { src: string; alt: string; className?: string }) {
-  return (
-    <div className={`browser-frame${className ? ` ${className}` : ""}`}>
-      <div className="browser-bar" aria-hidden="true">
-        <span />
-        <span />
-        <span />
-      </div>
-      <img src={src} alt={alt} loading="lazy" width={2480} height={1600} />
-    </div>
-  );
-}
-
-function AmbientBackground() {
-  return (
-    <div className="fixed inset-0 z-[-2] pointer-events-none overflow-hidden">
-      <div className="absolute top-[-10%] left-0 -translate-x-1/2 w-[60vw] h-[60vw] bg-gradient-to-br from-[var(--tl-accent-blue)]/30 to-[var(--tl-accent-violet)]/10 rounded-full blur-[100px] animate-pulse-bio" />
-      <div className="absolute bottom-[-10%] right-0 translate-x-1/2 w-[70vw] h-[70vw] bg-gradient-to-tl from-[var(--tl-accent-aqua)]/20 to-[var(--tl-accent-blue)]/10 rounded-full blur-[120px] animate-pulse-bio" style={{ animationDelay: '-4s' }} />
-      <div className="absolute top-[40%] right-0 w-[40vw] h-[40vw] bg-[var(--tl-accent-aqua)]/10 rounded-full blur-[150px] animate-pulse-bio" style={{ animationDelay: '-2s' }} />
-      
-      <div className="fixed inset-0 z-[-1] pointer-events-none opacity-25 flex items-center justify-center scale-150">
-        <svg className="w-full h-full animate-float-slow" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="thread-bg" x1="180" x2="820" y1="160" y2="820" gradientUnits="userSpaceOnUse">
-              <stop offset="0" stopColor="#7EA7FF" />
-              <stop offset="0.52" stopColor="#B9A7FF" />
-              <stop offset="1" stopColor="#8FE7DD" />
-            </linearGradient>
-            <filter id="glow">
-              <feGaussianBlur stdDeviation="8" result="coloredBlur" />
-              <feMerge>
-                <feMergeNode in="coloredBlur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-          </defs>
-          <path className="filament-path" fill="none" filter="url(#glow)" stroke="url(#thread-bg)" strokeLinecap="round" strokeWidth="20" d="M100 200 C200 400 300 200 500 500 C700 800 800 500 900 700" />
-          <path className="filament-path" fill="none" filter="url(#glow)" stroke="url(#thread-bg)" strokeLinecap="round" strokeLinejoin="round" strokeWidth="40" style={{ animationDelay: '1s', opacity: 0.5 }} d="M260 260 C260 330 260 350 330 352 C405 352 395 351 455 352 C515 352 500 435 565 435 C650 435 654 510 654 565 C654 640 704 654 748 724" />
-        </svg>
-      </div>
-    </div>
-  );
-}
+const FEATURES = [
+  {
+    icon: (
+      <span className="feature-icon" style={{ background: "var(--yellow)" }}>
+        <ShieldCheck size={22} weight="bold" />
+      </span>
+    ),
+    title: "Local-first privacy",
+    body: "Your planner lives on your device in IndexedDB. Optional sync is end-to-end encrypted — records only ever leave as ciphertext the server can't read."
+  },
+  {
+    icon: (
+      <span className="feature-icon" style={{ background: "var(--green-soft)" }}>
+        <Kanban size={22} weight="bold" />
+      </span>
+    ),
+    title: "Course & task planning",
+    body: "Group coursework into projects, break goals into steps, and move work across a Backlog → Done board that keeps up with you."
+  },
+  {
+    icon: (
+      <span className="feature-icon" style={{ background: "var(--blue-soft)" }}>
+        <CalendarDots size={22} weight="bold" />
+      </span>
+    ),
+    title: "Deadlines without dread",
+    body: "A time-of-day agenda shows today's pressure honestly, exports clean .ics files for your calendar, and reminds you before things slip."
+  }
+];
 
 const SHOWCASE = [
   {
     eyebrow: "Board",
-    title: "Visualize your workflow",
-    body: "A beautifully clean Kanban board. Drag, drop, and focus on what needs to be done next.",
+    title: "See the whole workload",
+    body: "A bold five-column Kanban board. Drag tasks between Backlog, Ready, Doing, Blocked, and Done — or move them by keyboard.",
     img: "/store-assets/shots/board.png",
-    alt: "Throughline Kanban board interface"
+    alt: "Throughline Kanban board"
   },
   {
     eyebrow: "Timeline",
-    title: "Pace yourself",
-    body: "A gentle hourly agenda. Schedule tasks without the overwhelming pressure of a stuffed calendar.",
+    title: "Pace your day",
+    body: "One day at a time, laid out hour by hour. Schedule study blocks without the overwhelm of a stuffed calendar.",
     img: "/store-assets/shots/timeline.png",
-    alt: "Throughline timeline interface"
+    alt: "Throughline timeline agenda"
   },
   {
     eyebrow: "Notes",
     title: "Everything connected",
-    body: "A built-in markdown notebook that naturally links back to your tasks and goals.",
+    body: "A markdown notebook that cross-links to tasks and goals, so lecture notes stay one click away from the work they support.",
     img: "/store-assets/shots/notes.png",
-    alt: "Throughline markdown notes interface"
+    alt: "Throughline markdown notes"
   }
-];
-
-const BENTO_FEATURES = [
-  { icon: <ShieldCheck size={28} weight="duotone" />, color: "bg-[var(--tl-surface-tint)]", title: "Local-First Privacy", body: "Your data never leaves your device. Total sovereignty over your academic life powered by IndexedDB." },
-  { icon: <Kanban size={28} weight="duotone" />, color: "bg-[var(--tl-surface-tint)]", title: "Course and Task Planning", body: "Group coursework, goals, notes, due dates, and Kanban progress in one calm planning hub." },
-  { icon: <Clock size={28} weight="duotone" />, color: "bg-[var(--tl-surface-tint)]", title: "Academic Rhythm", body: "Sync with your semesters. Automated scheduling that breathes with your actual energy levels." }
 ];
 
 const FAQ = [
@@ -116,209 +86,229 @@ const FAQ = [
   }
 ];
 
-import GradientText from "../components/GradientText";
-
 export function Landing() {
   return (
     <MotionConfig reducedMotion="user">
-      <div className="landing text-[var(--tl-text)]">
-        <AmbientBackground />
-        
-        <header className="landing-nav clay-panel">
-          <a className="landing-brand" href="#top">
-            <img src="/brand/svg/throughline-icon-liquid-glass.svg" alt="" width="24" height="24" style={{ borderRadius: '6px' }} />
-            <GradientText
-              colors={['var(--tl-accent-blue)', 'var(--tl-accent-violet)', 'var(--tl-accent-aqua)', 'var(--tl-accent-blue)']}
-              animationSpeed={4}
-              showBorder={false}
-              className="font-bold ml-2 pr-1"
-            >
-              Throughline
-            </GradientText>
-          </a>
+      <div className="landing">
+        <header className="landing-nav">
+          <Link className="landing-brand" to="/" aria-label="Throughline home">
+            <span className="shell-brand-mark" aria-hidden="true">
+              <Mark size={18} />
+            </span>
+            Throughline
+          </Link>
           <nav className="landing-nav-links" aria-label="Sections">
-            <a href="#how">How it works</a>
+            <a href="#features">Features</a>
             <a href="#views">The app</a>
             <a href="#faq">FAQ</a>
           </nav>
           <div className="landing-nav-actions">
-            <Link className="landing-link" style={{ color: 'var(--tl-accent-blue)' }} to="/login">
+            <Link className="landing-link" to="/login">
               Log in
             </Link>
-            <Link className="primary-button clay-btn" style={{ borderRadius: '30px' }} to="/signup">
+            <Link to="/signup" className="btn btn-accent btn-sm">
               Get started
             </Link>
           </div>
         </header>
 
-        <main id="top" className="landing-main" style={{ paddingTop: '160px' }}>
-          {/* Hero Section */}
-          <section className="flex flex-col items-center text-center mb-32">
-            <div className="relative w-full max-w-4xl min-w-0 flex flex-col items-center">
-              <div className="absolute inset-0 bg-[var(--tl-surface-glass)] rounded-[100px] blur-[60px] -z-10" />
-              <h1 className="font-display-lg text-[40px] md:text-[64px] font-bold text-[var(--tl-text)] mb-6 drop-shadow-sm flex flex-col items-center gap-2 relative leading-tight" style={{ letterSpacing: 0 }}>
-                <Reveal delay={0} style={{ transform: 'translateZ(20px) scale(1.02)' }}>Academic Flow,</Reveal>
-                <Reveal delay={0.1} style={{ transform: 'translateZ(40px) scale(1.05)' }}>
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--tl-accent-blue)] to-[#7EA7FF]">
-                    Engineered.
-                  </span>
-                </Reveal>
-              </h1>
-              <Reveal delay={0.2} style={{ transform: 'translateZ(10px) scale(1.01)' }}>
-                <p className="text-[18px] text-[var(--tl-text-secondary)] max-w-2xl mx-auto mb-10 leading-relaxed font-light">
-                  A local-first student planner for courses, tasks, notes, due dates, and calm academic momentum without giving up privacy.
-                </p>
-              </Reveal>
-              <Reveal delay={0.3} className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link className="primary-button clay-btn flex items-center justify-center gap-3" style={{ padding: '16px 32px', borderRadius: '30px', fontSize: '16px' }} to="/signup">
-                  Start Your Flow <ArrowRight size={20} />
-                </Link>
-                <a className="clay-panel clay-btn text-[var(--tl-text)] font-medium transition-all duration-300" style={{ padding: '16px 32px', borderRadius: '30px', fontSize: '16px', display: 'flex', alignItems: 'center' }} href="#views">
-                  Explore Features
-                </a>
-              </Reveal>
-            </div>
-          </section>
-
-          {/* Connected SVG Filament for Modules */}
-          <div className="hidden lg:block absolute left-1/2 -translate-x-1/2 top-[500px] w-full max-w-[1000px] h-[600px] -z-10 pointer-events-none">
-            <svg className="w-full h-full opacity-30" viewBox="0 0 1000 600">
-              <path d="M200 100 C300 300 700 100 800 300 C900 500 500 400 300 550" fill="none" filter="url(#glow)" stroke="url(#thread-bg)" strokeDasharray="8 16" strokeLinecap="round" strokeWidth="8" />
-            </svg>
-          </div>
-
-          {/* Bento Feature Grid */}
-          <section id="how" className="mb-40 max-w-[1200px] mx-auto w-full px-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {BENTO_FEATURES.map((feature, index) => (
-                <Reveal key={feature.title} delay={0.1 * index} className="clay-panel rounded-3xl p-10 flex flex-col items-start h-full">
-                  <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-8 border border-white/50 text-[var(--tl-accent-blue)] shadow-sm`}>
-                    {feature.icon}
-                  </div>
-                  <h3 className="text-[24px] font-semibold text-[var(--tl-text)] mb-4">{feature.title}</h3>
-                  <p className="text-[16px] text-[var(--tl-text-secondary)] leading-relaxed font-light">
-                    {feature.body}
-                  </p>
-                </Reveal>
-              ))}
-            </div>
-          </section>
-
-          {/* Showcase Section */}
-          <section id="views" className="landing-section">
-            <Reveal className="landing-section-head text-center mb-16">
-              <span className="eyebrow" style={{ color: 'var(--tl-accent-blue)' }}>The app</span>
-              <h2 className="text-[40px] font-bold text-[var(--tl-text)] mt-2">One plan, a few calm views.</h2>
+        <main id="top" className="landing-main">
+          <section className="landing-hero">
+            <Reveal>
+              <div className="landing-hero-badge-row">
+                <span className="chip-static">
+                  <LockKey size={12} weight="bold" /> Local-first
+                </span>
+                <span className="chip-static">
+                  <ShieldCheck size={12} weight="bold" /> End-to-end encrypted sync
+                </span>
+                <span className="chip-static">
+                  <Note size={12} weight="bold" /> Installable PWA
+                </span>
+              </div>
             </Reveal>
-            <div className="landing-showcase">
-              {SHOWCASE.map((item, index) => (
-                <div key={item.title} className={`landing-showcase-row${index % 2 ? " is-reversed" : ""}`}>
-                  <Reveal className="landing-showcase-text">
-                    <span className="eyebrow" style={{ color: 'var(--tl-accent-blue)' }}>{item.eyebrow}</span>
-                    <h3 className="text-[32px] font-semibold text-[var(--tl-text)] mb-4 mt-2">{item.title}</h3>
-                    <p className="text-[18px] text-[var(--tl-text-secondary)] font-light">{item.body}</p>
-                  </Reveal>
-                  <motion.div
-                    className="landing-showcase-shot"
-                    initial={{ opacity: 0, y: 24 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, margin: "-80px" }}
-                    transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                  >
-                    <BrowserFrame src={item.img} alt={item.alt} className="clay-panel p-2 rounded-[1.5rem]" />
-                  </motion.div>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* Technical Panel - Data Portability */}
-          <section className="mb-32 max-w-[1200px] mx-auto w-full px-6">
+            <Reveal delay={0.05}>
+              <h1>
+                School work,
+                <br />
+                <span className="landing-hero-accent">handled.</span>
+              </h1>
+            </Reveal>
+            <Reveal delay={0.1}>
+              <p className="landing-hero-sub">
+                A local-first student planner for courses, tasks, notes, due dates, and calm academic momentum —
+                without giving up privacy.
+              </p>
+            </Reveal>
+            <Reveal delay={0.15}>
+              <div className="landing-hero-actions">
+                <Link to="/signup" className="btn btn-primary" style={{ minHeight: 50, paddingInline: "1.6rem", fontSize: "1rem" }}>
+                  Start planning free <ArrowRight size={18} weight="bold" />
+                </Link>
+                <a href="#views" className="btn" style={{ minHeight: 50, paddingInline: "1.6rem", fontSize: "1rem" }}>
+                  Explore features
+                </a>
+              </div>
+            </Reveal>
             <Reveal delay={0.2}>
-              <div className="clay-heavy rounded-[40px] p-12 md:p-20 flex flex-col lg:flex-row gap-16 items-center relative overflow-hidden" style={{ background: 'var(--tl-glass-card-strong)', border: '1px solid var(--tl-glass-border)' }}>
-                <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-[var(--tl-accent-blue)]/30 to-transparent rounded-full blur-[60px]" />
-                <div className="flex-1 z-10 relative">
-                  <div className="absolute -left-10 -top-10 opacity-20 w-32 h-32 pointer-events-none">
-                    <svg viewBox="0 0 1024 1024"><circle cx="512" cy="512" fill="none" r="400" stroke="#7EA7FF" strokeDasharray="100 50" strokeWidth="40" /></svg>
-                  </div>
-                  <h2 className="text-[36px] font-bold text-[var(--tl-text)] mb-6">True Data Portability</h2>
-                  <p className="text-[18px] text-[var(--tl-text-secondary)] font-light mb-10 leading-relaxed">
-                    We believe your thoughts belong to you. Import and export everything via clean JSON. The underlying IndexedDB architecture ensures lightning fast, offline-first performance without a central server sniffing your research.
-                  </p>
-                  <div className="flex flex-wrap gap-4">
-                    <div className="px-6 py-3 rounded-2xl border bg-[var(--tl-surface-glass-strong)] border-[var(--tl-glass-border)] text-[var(--tl-text)] font-medium flex items-center gap-2 backdrop-blur-md shadow-sm transition-transform hover:scale-105">
-                      <CodeBlock size={20} color="var(--tl-accent-blue)" /> JSON Export
-                    </div>
-                    <div className="px-6 py-3 rounded-2xl border bg-[var(--tl-surface-glass-strong)] border-[var(--tl-glass-border)] text-[var(--tl-text)] font-medium flex items-center gap-2 backdrop-blur-md shadow-sm transition-transform hover:scale-105">
-                      <Database size={20} color="var(--tl-accent-violet)" /> IndexedDB
-                    </div>
-                  </div>
+              <div className="landing-hero-mock ik-card" aria-hidden="true">
+                <div className="landing-hero-mock-head">
+                  <span className="chip-static" style={{ background: "var(--green-soft)" }}>
+                    Today · 1 of 3 done
+                  </span>
+                  <span className="chip-static">Due today</span>
                 </div>
-                <div className="flex-1 w-full z-10">
-                  <div className="bg-[var(--tl-surface-glass-strong)] border border-[var(--tl-glass-border)] rounded-3xl p-8 font-mono text-[13px] text-[var(--tl-text-secondary)] shadow-inner overflow-x-auto relative backdrop-blur-xl">
-                    <div className="absolute top-5 left-6 flex gap-3">
-                      <div className="w-3 h-3 rounded-full bg-[#ff5f56] shadow-sm" />
-                      <div className="w-3 h-3 rounded-full bg-[#ffbd2e] shadow-sm" />
-                      <div className="w-3 h-3 rounded-full bg-[#27c93f] shadow-sm" />
-                    </div>
-                    <pre className="mt-8"><code>{`{
-  "user": "scholar_01",
-  "workspace": "Thesis_Drafting",
-  "flow_state": "active",
-  "data_locality": "100%",
-  "sync": {
-    "provider": "none",
-    "status": "isolated"
-  }
-}`}</code></pre>
-                  </div>
+                <div className="landing-hero-mock-row">
+                  <span className="project-dot" style={{ "--project-color": "var(--green)" } as CSSProperties} />
+                  <span className="landing-hero-mock-title landing-hero-mock-done">Read chapter 4</span>
+                  <span className="chip-static" style={{ background: "var(--green-soft)" }}>Done</span>
+                </div>
+                <div className="landing-hero-mock-row">
+                  <span className="project-dot" style={{ "--project-color": "var(--blue)" } as CSSProperties} />
+                  <span className="landing-hero-mock-title">Biology lab report</span>
+                  <span className="chip-static" style={{ background: "var(--yellow-soft)" }}>Today · 18:00</span>
+                </div>
+                <div className="landing-hero-mock-row">
+                  <span className="project-dot" style={{ "--project-color": "var(--red)" } as CSSProperties} />
+                  <span className="landing-hero-mock-title">Email professor</span>
+                  <span className="chip-static" style={{ background: "var(--red-soft)" }}>Overdue</span>
                 </div>
               </div>
             </Reveal>
           </section>
 
-          <section id="faq" className="landing-section landing-faq">
-            <Reveal className="landing-section-head text-center">
-              <span className="eyebrow" style={{ color: 'var(--tl-accent-blue)' }}>Questions</span>
-              <h2 className="text-[40px] font-bold text-[var(--tl-text)] mt-2">Good to know.</h2>
+          <section id="features" className="landing-section">
+            <Reveal>
+              <div className="landing-section-head">
+                <span className="eyebrow">Why Throughline</span>
+                <h2>One plan. Every deadline.</h2>
+              </div>
             </Reveal>
-            <div className="landing-faq-list max-w-2xl mx-auto mt-10">
+            <div className="feature-grid">
+              {FEATURES.map((feature, index) => (
+                <Reveal key={feature.title} delay={index * 0.06}>
+                  <article className="ik-card feature-card">
+                    {feature.icon}
+                    <h3>{feature.title}</h3>
+                    <p>{feature.body}</p>
+                  </article>
+                </Reveal>
+              ))}
+            </div>
+          </section>
+
+          <section id="views" className="landing-section">
+            <Reveal>
+              <div className="landing-section-head">
+                <span className="eyebrow">The app</span>
+                <h2>One plan, a few strong views.</h2>
+              </div>
+            </Reveal>
+            <div className="flex flex-col gap-16">
+              {SHOWCASE.map((item, index) => (
+                <div key={item.title} className={`showcase-row${index % 2 ? " is-reversed" : ""}`}>
+                  <Reveal>
+                    <div className="showcase-text">
+                      <span className="eyebrow">{item.eyebrow}</span>
+                      <h3>{item.title}</h3>
+                      <p>{item.body}</p>
+                    </div>
+                  </Reveal>
+                  <Reveal delay={0.08}>
+                    <div className="ik-card showcase-shot">
+                      <div className="browser-bar" aria-hidden="true">
+                        <span />
+                        <span />
+                        <span />
+                      </div>
+                      <img src={item.img} alt={item.alt} loading="lazy" width={2480} height={1600} />
+                    </div>
+                  </Reveal>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section>
+            <Reveal>
+              <div className="ik-card portability-panel">
+                <div>
+                  <span className="eyebrow">Data portability</span>
+                  <h2>Your notes belong to you</h2>
+                  <p>
+                    Import and export everything as clean JSON. The local-first IndexedDB core means fast, offline
+                    performance — no central server sniffing your research.
+                  </p>
+                  <div className="code-chip-row">
+                    <span className="chip-static">
+                      <Database size={14} weight="bold" style={{ color: "var(--blue)" }} /> JSON export
+                    </span>
+                    <span className="chip-static">
+                      <Database size={14} weight="bold" style={{ color: "var(--violet)" }} /> IndexedDB
+                    </span>
+                    <span className="chip-static">
+                      <Database size={14} weight="bold" style={{ color: "var(--green)" }} /> .ics calendar export
+                    </span>
+                  </div>
+                </div>
+                <div className="json-window">
+                  <pre>
+                    <code>{`{
+  "user": "scholar_01",
+  "workspace": "Thesis_Drafting",
+  "flow_state": "active",
+  "data_locality": "100%",
+  "sync": {
+    "provider": "optional-e2ee",
+    "status": "ciphertext-only"
+  }
+}`}</code>
+                  </pre>
+                </div>
+              </div>
+            </Reveal>
+          </section>
+
+          <section id="faq" className="landing-section">
+            <Reveal>
+              <div className="landing-section-head">
+                <span className="eyebrow">Questions</span>
+                <h2>Good to know.</h2>
+              </div>
+            </Reveal>
+            <div className="faq-list">
               {FAQ.map((item) => (
                 <Reveal key={item.q}>
-                  <details className="landing-faq-item clay-panel depth-hover mb-4 p-6 rounded-2xl">
-                    <summary className="font-medium text-[18px] cursor-pointer outline-none">{item.q}</summary>
-                    <p className="mt-4 text-[var(--tl-text-secondary)] font-light leading-relaxed">{item.a}</p>
+                  <details className="ik-card faq-item">
+                    <summary>{item.q}</summary>
+                    <p>{item.a}</p>
                   </details>
                 </Reveal>
               ))}
             </div>
           </section>
 
-          <section className="landing-final text-center mt-32 mb-20">
-            <Reveal>
-              <h2 className="text-[40px] font-bold text-[var(--tl-text)] mb-4">Start with one goal.</h2>
-              <p className="text-[18px] text-[var(--tl-text-secondary)] font-light mb-8">Add the first step today — Throughline keeps the rest calm.</p>
-              <Link className="primary-button depth-hover glow-halo inline-flex items-center gap-2" style={{ padding: '16px 32px', borderRadius: '30px', fontSize: '16px' }} to="/signup">
-                Get started <ArrowRight size={17} />
-              </Link>
-            </Reveal>
+          <section className="ik-card landing-final">
+            <h2>Start with one goal.</h2>
+            <p>Add the first step today — Throughline keeps the rest calm.</p>
+            <Link to="/signup" className="btn btn-accent" style={{ minHeight: 50, paddingInline: "1.6rem", fontSize: "1rem" }}>
+              Get started <ArrowRight size={17} weight="bold" />
+            </Link>
           </section>
         </main>
 
-        <footer className="landing-footer border-t border-[var(--tl-border-subtle)] mt-10 pt-10 pb-10">
-          <div className="max-w-[1200px] mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6 text-center md:text-left">
-            <div className="text-[14px] text-[var(--tl-text-secondary)]/70">
-              © 2024 Throughline. Engineered for Flow.
-            </div>
-            <div className="flex flex-wrap justify-center gap-8">
-              <a className="text-[14px] text-[var(--tl-text-secondary)]/70 hover:text-[var(--tl-accent-blue)] transition-colors" href="#privacy">Privacy</a>
-              <a className="text-[14px] text-[var(--tl-text-secondary)]/70 hover:text-[var(--tl-accent-blue)] transition-colors" href="#terms">Terms</a>
-              <a className="text-[14px] text-[var(--tl-text-secondary)]/70 hover:text-[var(--tl-accent-blue)] transition-colors" href="#faq">Methodology</a>
-              <a className="text-[14px] text-[var(--tl-text-secondary)]/70 hover:text-[var(--tl-accent-blue)] transition-colors" href="#support">Support</a>
-            </div>
+        <footer className="landing-footer">
+          <div className="landing-footer-inner">
+            <span>© 2026 Throughline. Plan the line.</span>
+            <nav className="landing-footer-links" aria-label="Legal">
+              <Link to="/privacy">Privacy</Link>
+              <Link to="/terms">Terms</Link>
+              <a href="/#faq">FAQ</a>
+            </nav>
           </div>
         </footer>
       </div>
     </MotionConfig>
   );
 }
+

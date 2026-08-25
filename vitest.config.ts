@@ -1,5 +1,10 @@
 import { defineConfig } from "vitest/config";
 
+// Tests must always load React's development build: the production build has
+// no act(), which breaks every component test when NODE_ENV is inherited as
+// "production" from the host machine.
+process.env.NODE_ENV = "test";
+
 export default defineConfig({
   test: {
     environment: "jsdom",

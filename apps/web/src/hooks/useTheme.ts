@@ -4,7 +4,7 @@ import type { ThemePreference } from "../data/types";
 export type ResolvedTheme = "light" | "dark";
 
 const STORAGE_KEY = "lg-theme";
-const THEME_COLOR = { light: "#eef1f6", dark: "#1b1d23" } as const;
+const THEME_COLOR = { light: "#f1ede3", dark: "#15171e" } as const;
 
 function prefersDark(): boolean {
   return typeof window !== "undefined" && !!window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;

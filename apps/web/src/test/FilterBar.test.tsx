@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { CourseSchema } from "@throughline/domain";
-import { FilterBar } from "../components/FilterBar";
+import { FilterBar } from "../views/FilterBar";
 import { defaultFilterPresets, defaultFilterState } from "../data/repositories";
 
 describe("FilterBar", () => {
@@ -97,3 +97,4 @@ describe("FilterBar", () => {
     });
   });
 });
+

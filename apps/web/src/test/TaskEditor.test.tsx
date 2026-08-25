@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { TaskEditor } from "../components/TaskEditor";
+import { TaskEditor } from "../views/TaskEditor";
 import { CourseSchema, TaskSchema } from "@throughline/domain";
 import React from "react";
 
@@ -64,3 +64,4 @@ describe("TaskEditor", () => {
     expect(onDelete).toHaveBeenCalledWith("1");
   });
 });
+

@@ -37,8 +37,8 @@ export const appManifest = {
   description: "A calm, local-first student planner for quests, notes, boards, timelines, and progress.",
   lang: "en",
   dir: "ltr" as const,
-  theme_color: "#eef0f4",
-  background_color: "#eef0f4",
+  theme_color: "#f1ede3",
+  background_color: "#f1ede3",
   display: "standalone" as const,
   display_override: [
     "tabbed" as unknown as "standalone",

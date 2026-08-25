@@ -99,3 +99,19 @@ Decision: Add real accounts (email + password) and cross-device sync, while keep
 Reason: The owner wanted a presentable landing page and a login, then full accounts with cloud sync. To preserve the privacy stance while syncing, the crypto is zero-knowledge — a DEK (random AES-256 key) encrypts records, wrapped by a KEK derived from the password via PBKDF2; only the wrapped DEK, salt, and a scrypt hash of an authKey reach the server. IndexedDB stays the UI source of truth so the app works offline; the engine reconciles with last-write-wins by `updatedAt` plus deletion tombstones.
 
 Consequence: This deliberately reverses "task data never leaves the device" -> "data leaves only as ciphertext the server can't read." A forgotten password can be recovered only with the user-held recovery key. Signup must generate and confirm that key; Settings must allow regeneration. If both password and recovery key are lost, encrypted synced content cannot be recovered. `Course` gained `createdAt`/`updatedAt` (Dexie v5 + a `tombstones` store). New deps: `react-router-dom`, `@fastify/cookie`. The push API now also serves `/auth/*` and `/sync/*`; SQLite lives on the existing data volume.
+
+## 013 - Inkline Replaces Claymorphism
+
+Decision: The UI was rebuilt from the ground up on a new visual language, **Inkline**: warm paper surfaces, 2px ink borders, hard offset shadows (no blur), signal-colour accents (highlighter yellow primary), heavy Geist weights for headings, uppercase micro-labels, and press-physics interactions (hover lifts, press sinks). Dark mode is matte slate with bone-white ink. All component classes live in the Tailwind `components` cascade layer so utilities can override them; element resets live in `@layer base`.
+
+Reason: A ground-up UI/UX rebuild direction was chosen to move away from soft clay depth entirely. Neo-brutalist ink-on-paper reads bold and editorial, keeps AA contrast trivially, renders cheaply (no blur/backdrop filters, protecting perf budgets), and gives the gamification layer room for tactile celebration.
+
+Consequence: `docs/ui-ux.md` and AGENTS.md now describe Inkline; the Claymorphism token system, clay utility classes, DynamicBackground, and GradientText were removed. DOM contracts that Playwright suites rely on (`.task-card`, `.today-primary-action`, `.composer-form`, nav aria-labels, onboarding copy, cmdk placeholder, `data-theme`) were preserved across the rebuild so behavioural tests kept passing while visual snapshots were regenerated. Planner data access moved to a `PlannerProvider` context (`usePlanner()`) instead of prop drilling through `App.tsx`.
+
+## 014 - Board Moves Persist Custom Ordering
+
+Decision: Kanban columns sort by the task's explicit order field with most-recently-touched as tie-break. Every drag, keyboard move (Ctrl+Arrow, footer select), and completion that changes a card's slot or column persists a minimal batch of reordered records through updateTask, planned by pps/web/src/lib/board.ts (planBoardMove). Pressing N anywhere in the planner opens quick capture.
+
+Reason: Same-column drags previously did nothing because column order was derived from recency, so the board's primary workflow felt broken. Quick capture needed a keyboard path to match the fast-capture requirement.
+
+Consequence: Cards keep their hand-arranged sequence across sessions and sync; legacy tasks with default order = 0 still render by recency until first reordered. Status-only fallback remains when no batch handler is provided.

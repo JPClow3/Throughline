@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { InsightsView } from "../pages/InsightsView";
+import { InsightsView } from "../views/InsightsView";
 import { CourseSchema, TaskSchema } from "@throughline/domain";
 import * as useTasksHook from "../hooks/useTasks";
 import * as useFocusSessionsHook from "../hooks/useFocusSessions";
@@ -142,3 +142,4 @@ describe("InsightsView", () => {
     expect(screen.getByText("You complete more tasks before noon.")).toBeInTheDocument();
   });
 });
+

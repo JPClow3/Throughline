@@ -2,7 +2,7 @@ import { FormEvent, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthProvider";
 import { AuthShell } from "./AuthShell";
-import { Notice } from "../components/Notice";
+import { Button, Field, Notice, TextInput } from "../ui";
 
 export function ForgotPassword() {
   const { resetPassword, status } = useAuth();
@@ -27,7 +27,7 @@ export function ForgotPassword() {
     setError("");
     try {
       if (!resetPassword) {
-         throw new Error("Reset password not implemented.");
+        throw new Error("Reset password not implemented.");
       }
       await resetPassword(email, recoveryKey.trim().toLowerCase(), newPassword);
       navigate("/app");
@@ -41,46 +41,39 @@ export function ForgotPassword() {
   return (
     <AuthShell title="Recover Account" subtitle="Use your 32-character recovery key to set a new password.">
       <form className="auth-form" onSubmit={submit}>
-        <label>
-          <span>Email</span>
-          <input
-            className="clay-input"
+        <Field label="Email">
+          <TextInput
             type="email"
             autoComplete="email"
             required
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(event) => setEmail(event.target.value)}
           />
-        </label>
-        <label>
-          <span>Recovery Key</span>
-          <input
-            className="clay-input"
+        </Field>
+        <Field label="Recovery Key">
+          <TextInput
             type="text"
             required
             placeholder="abcd-ef01-2345-..."
             value={recoveryKey}
-            onChange={(e) => setRecoveryKey(e.target.value)}
-            style={{ fontFamily: "monospace" }}
+            onChange={(event) => setRecoveryKey(event.target.value)}
           />
-        </label>
-        <label>
-          <span>New Password</span>
-          <input
-            className="clay-input"
+        </Field>
+        <Field label="New Password">
+          <TextInput
             type="password"
             autoComplete="new-password"
             required
             value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
+            onChange={(event) => setNewPassword(event.target.value)}
           />
-        </label>
+        </Field>
         {error ? (
-          <Notice variant="error" className="mb-4">{error}</Notice>
+          <Notice variant="error">{error}</Notice>
         ) : null}
-        <button className="primary-button clay-btn depth-hover" type="submit" disabled={busy}>
+        <Button variant="primary" type="submit" disabled={busy}>
           {busy ? "Recovering…" : "Reset Password"}
-        </button>
+        </Button>
       </form>
       <p className="auth-switch">
         Remembered it? <Link to="/login">Sign in</Link>

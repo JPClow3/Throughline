@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { Sheet } from "../components/Sheet";
+import { Sheet } from "../ui";
 import React from "react";
 
 describe("Sheet", () => {
@@ -41,3 +41,4 @@ describe("Sheet", () => {
     expect(screen.queryByText("Closed Sheet")).not.toBeInTheDocument();
   });
 });
+

@@ -1,6 +1,6 @@
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { Spinner } from "../components/Spinner";
+import { Spinner } from "../ui";
 import React from "react";
 
 describe("Spinner", () => {
@@ -16,3 +16,4 @@ describe("Spinner", () => {
     expect(svg?.classList.contains("my-spin")).toBe(true);
   });
 });
+

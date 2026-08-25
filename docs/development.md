@@ -94,4 +94,5 @@ Seed data lives in `packages/domain/src/sample-data.ts`.
 Do not commit: `node_modules/`, `apps/web/dist/`, `apps/web/dev-dist/`, `test-results/`, `playwright-report/`, `*.tsbuildinfo`, `apps/push-api/data/`, `coverage/`.
 
 If dependency install is interrupted, delete generated dependency artifacts (`node_modules`, `package-lock.json`) and reinstall. Never delete source folders to fix package-manager state.
+If component tests fail with `TypeError: React.act is not a function`, the host machine likely sets `NODE_ENV=production`; `vitest.config.ts` pins `NODE_ENV=test` so this should not recur.
 If browser notifications do not appear, check browser permission, HTTPS/PWA context, service worker support, and platform-specific PWA notification support.

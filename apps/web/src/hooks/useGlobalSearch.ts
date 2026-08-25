@@ -1,6 +1,6 @@
 import { Course, Goal, Note, Task } from "@throughline/domain";
 import { useMemo } from "react";
-import type { AppView } from "../components/AppShell";
+import type { AppView } from "../shell/AppShell";
 
 export type GlobalSearchResultType = "task" | "note" | "goal" | "project";
 
@@ -171,3 +171,4 @@ export function useGlobalSearch(input: {
     [query, tasks, notes, goals, courses]
   );
 }
+

@@ -3,7 +3,7 @@ import { Link, Navigate, useNavigate } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
 import { useAuth } from "../auth/AuthProvider";
 import { AuthShell } from "./AuthShell";
-import { Notice } from "../components/Notice";
+import { Button, Field, Notice, TextInput } from "../ui";
 
 export function Login() {
   const { login, loginWithGoogle, status } = useAuth();
@@ -39,7 +39,7 @@ export function Login() {
 
   return (
     <AuthShell title="Welcome back" subtitle="Sign in to sync your plan across devices.">
-      <div style={{ display: "flex", justifyContent: "center", marginBottom: "1rem" }}>
+      <div style={{ display: "flex", justifyContent: "center", marginBottom: "0.5rem" }}>
         <GoogleLogin
           onSuccess={async (credentialResponse) => {
             if (credentialResponse.credential) {
@@ -61,49 +61,41 @@ export function Login() {
           shape="pill"
         />
       </div>
-      
-      <div style={{ display: "flex", alignItems: "center", margin: "1.5rem 0", color: "var(--ink-muted)", fontSize: "0.85em" }}>
-        <div style={{ flex: 1, height: "1px", backgroundColor: "var(--surface-border)" }} />
-        <span style={{ padding: "0 1rem" }}>or continue with email</span>
-        <div style={{ flex: 1, height: "1px", backgroundColor: "var(--surface-border)" }} />
-      </div>
+
+      <div className="auth-divider">or continue with email</div>
 
       <form className="auth-form" onSubmit={submit}>
-        <label>
-          <span>Email</span>
-          <input
-            className="clay-input"
+        <Field label="Email">
+          <TextInput
             type="email"
             autoComplete="email"
             required
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(event) => setEmail(event.target.value)}
           />
-        </label>
-        <label>
-          <span>Password or Recovery Key</span>
-          <input
-            className="clay-input"
+        </Field>
+        <Field label="Password or Recovery Key">
+          <TextInput
             type="password"
             autoComplete="current-password"
             required
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(event) => setPassword(event.target.value)}
           />
-        </label>
+        </Field>
         {error ? (
-          <Notice variant="error" className="mb-4">{error}</Notice>
+          <Notice variant="error">{error}</Notice>
         ) : null}
-        <button className="primary-button clay-btn depth-hover" type="submit" disabled={busy}>
+        <Button variant="primary" type="submit" disabled={busy}>
           {busy ? "Signing in…" : "Sign in"}
-        </button>
+        </Button>
       </form>
       <div className="auth-switch" style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
         <p>
           New here? <Link to="/signup">Create an account</Link>
         </p>
         <p style={{ fontSize: "0.85em" }}>
-          <Link to="/forgot-password" style={{ color: "var(--ink-muted)" }}>Forgot your password?</Link>
+          <Link to="/forgot-password">Forgot your password?</Link>
         </p>
       </div>
     </AuthShell>

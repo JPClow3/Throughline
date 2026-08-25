@@ -7,12 +7,11 @@ import "@fontsource-variable/geist";
 import { App } from "./App";
 import { AuthProvider } from "./auth/AuthProvider";
 import { RequireAuth } from "./auth/RequireAuth";
-import { ErrorBoundary } from "./components/ErrorBoundary";
+import { ErrorBoundary } from "./ui/ErrorBoundary";
 import { Landing } from "./pages/Landing";
 import { Login } from "./pages/Login";
 import { Signup } from "./pages/Signup";
-import { PrivacyPolicy } from "./pages/PrivacyPolicy";
-import { TermsOfService } from "./pages/TermsOfService";
+import { PrivacyPolicy, TermsOfService } from "./pages/LegalPages";
 import { ForgotPassword } from "./pages/ForgotPassword";
 import "./styles.css";
 

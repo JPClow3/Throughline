@@ -2,11 +2,10 @@ import { createNote, sampleCourses, sampleGoals, sampleNotes, sampleTasks } from
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
-import { GoalsView } from "../components/GoalsView";
-import { NoteEditor } from "../components/NoteEditor";
-import { NotesView } from "../components/NotesView";
-import { ProjectsManager } from "../components/ProjectsManager";
-import { TaskEditor } from "../components/TaskEditor";
+import { GoalsView } from "../views/GoalsView";
+import { NoteEditor, NotesView } from "../views/NotesView";
+import { CoursesView } from "../views/CoursesView";
+import { TaskEditor } from "../views/TaskEditor";
 
 const noop = () => {};
 const asyncNoop = () => Promise.resolve();
@@ -134,11 +133,11 @@ describe("NotesView", () => {
   });
 });
 
-describe("ProjectsManager", () => {
+describe("CoursesView", () => {
   it("lists projects and adds a new one", async () => {
     const onUpsertCourse = vi.fn().mockResolvedValue(undefined);
     render(
-      <ProjectsManager
+      <CoursesView
         courses={sampleCourses}
         tasks={sampleTasks}
         onUpsertCourse={onUpsertCourse}

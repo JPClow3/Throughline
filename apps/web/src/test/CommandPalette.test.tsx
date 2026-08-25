@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { CommandPalette } from "../components/CommandPalette";
+import { CommandPalette } from "../views/CommandPalette";
 
 describe("CommandPalette", () => {
   beforeEach(() => {
@@ -46,3 +46,4 @@ describe("CommandPalette", () => {
     expect(onOpenResult).toHaveBeenCalledWith(expect.objectContaining({ id: "task_1", type: "task" }));
   });
 });
+

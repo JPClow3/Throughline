@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "./AuthProvider";
-import { Spinner } from "../components/Spinner";
+import { Spinner } from "../ui";
 
 export function RequireAuth({ children }: { children: ReactNode }) {
   const { status } = useAuth();
@@ -20,3 +20,4 @@ export function RequireAuth({ children }: { children: ReactNode }) {
 
   return <>{children}</>;
 }
+

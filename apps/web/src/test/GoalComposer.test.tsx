@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { GoalComposer } from "../components/GoalComposer";
+import { GoalComposer } from "../views/GoalComposer";
 import React from "react";
 
 describe("GoalComposer", () => {
@@ -11,3 +11,4 @@ describe("GoalComposer", () => {
     expect(screen.getByRole("button", { name: /Create goal/i })).toBeInTheDocument();
   });
 });
+

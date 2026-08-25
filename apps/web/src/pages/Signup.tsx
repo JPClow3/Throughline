@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
 import { useAuth } from "../auth/AuthProvider";
 import { AuthShell } from "./AuthShell";
+import { Button, Field, TextInput, ToggleRow } from "../ui";
 
 export function Signup() {
   const { signup, loginWithGoogle, rotateRecoveryKey, status } = useAuth();
@@ -70,55 +71,44 @@ export function Signup() {
 
     return (
       <AuthShell title="Save your recovery key" subtitle="Your records are end-to-end encrypted. This key is required if you lose your password.">
-        <div className="clay-panel" style={{ padding: "2rem", borderRadius: "var(--radius-card)", textAlign: "center", marginBottom: "2rem" }}>
-          <p style={{ fontWeight: "var(--fw-bold)", fontSize: "1.2rem", letterSpacing: "2px", userSelect: "all", fontFamily: "monospace", color: "var(--primary)" }}>
-            {recoveryKey}
-          </p>
-        </div>
-        <p className="auth-note" style={{ marginBottom: "2rem" }}>
-          Save this in a password manager before continuing. The server cannot read your task content, and
-          Throughline cannot recover encrypted data if both your password and recovery key are lost.
+        <div className="recovery-key-display">{recoveryKey}</div>
+        <p className="text-center text-sm text-[var(--ink-soft)]">
+          Save this in a password manager before continuing. The server cannot read your task content, and Throughline
+          cannot recover encrypted data if both your password and recovery key are lost.
         </p>
 
-        <div style={{ marginBottom: "2rem", display: "flex", flexDirection: "column", gap: "1rem", textAlign: "left" }}>
-          <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.9rem" }}>
-            <input 
-              type="checkbox" 
-              checked={confirmedSaved} 
-              onChange={(e) => setConfirmedSaved(e.target.checked)} 
-              style={{ width: "1rem", height: "1rem" }}
-            />
+        <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+          <ToggleRow checked={confirmedSaved} onChange={setConfirmedSaved}>
             I have saved this recovery key securely
-          </label>
-          <label style={{ display: "flex", flexDirection: "column", gap: "0.25rem", fontSize: "0.9rem" }}>
-            <span>To confirm, please enter the last 4 characters of your key:</span>
-            <input
+          </ToggleRow>
+          <Field label="To confirm, enter the last 4 characters of your key">
+            <TextInput
               type="text"
               value={partialKey}
-              onChange={(e) => setPartialKey(e.target.value)}
+              onChange={(event) => setPartialKey(event.target.value)}
               placeholder="last 4"
               maxLength={4}
-              style={{ fontFamily: "monospace", textTransform: "lowercase", width: "6rem", textAlign: "center" }}
+              style={{ fontFamily: "monospace", width: "8rem", textAlign: "center" }}
             />
-          </label>
+          </Field>
         </div>
 
         {error ? <p className="auth-error">{error}</p> : null}
-        <div className="button-row" style={{ justifyContent: "center", marginBottom: "1rem" }}>
-          <button className="secondary-button clay-btn" type="button" onClick={() => void regenerateRecoveryKey()} disabled={recoveryBusy}>
+        <div className="flex flex-col items-center gap-3">
+          <Button onClick={() => void regenerateRecoveryKey()} disabled={recoveryBusy}>
             {recoveryBusy ? "Generating..." : "Generate a different key"}
-          </button>
+          </Button>
+          <Button variant="primary" disabled={!canProceed} onClick={() => navigate("/app")}>
+            Continue to Planner
+          </Button>
         </div>
-        <button className="primary-button clay-btn depth-hover glow-halo" disabled={!canProceed} onClick={() => navigate("/app")}>
-          Continue to Planner
-        </button>
       </AuthShell>
     );
   }
 
   return (
     <AuthShell title="Create your account" subtitle="Local-first by default. Optional sync is end-to-end encrypted before records leave this device.">
-      <div style={{ display: "flex", justifyContent: "center", marginBottom: "1rem" }}>
+      <div style={{ display: "flex", justifyContent: "center", marginBottom: "0.5rem" }}>
         <GoogleLogin
           onSuccess={async (credentialResponse) => {
             if (credentialResponse.credential) {
@@ -141,47 +131,38 @@ export function Signup() {
           text="signup_with"
         />
       </div>
-      
-      <div style={{ display: "flex", alignItems: "center", margin: "1.5rem 0", color: "var(--ink-muted)", fontSize: "0.85em" }}>
-        <div style={{ flex: 1, height: "1px", backgroundColor: "var(--surface-border)" }} />
-        <span style={{ padding: "0 1rem" }}>or create with email</span>
-        <div style={{ flex: 1, height: "1px", backgroundColor: "var(--surface-border)" }} />
-      </div>
+
+      <div className="auth-divider">or create with email</div>
 
       <form className="auth-form" onSubmit={submit}>
-        <label>
-          <span>Email</span>
-          <input className="clay-input" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
-        </label>
-        <label>
-          <span>Password</span>
-          <input
-            className="clay-input"
+        <Field label="Email">
+          <TextInput type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} />
+        </Field>
+        <Field label="Password">
+          <TextInput
             type="password"
             autoComplete="new-password"
             required
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={(event) => setPassword(event.target.value)}
           />
-        </label>
-        <label>
-          <span>Confirm password</span>
-          <input
-            className="clay-input"
+        </Field>
+        <Field label="Confirm password">
+          <TextInput
             type="password"
             autoComplete="new-password"
             required
             value={confirm}
-            onChange={(e) => setConfirm(e.target.value)}
+            onChange={(event) => setConfirm(event.target.value)}
           />
-        </label>
+        </Field>
         {error ? <p className="auth-error">{error}</p> : null}
-        <p className="auth-note">
+        <p className="text-sm text-[var(--ink-soft)]">
           Your password encrypts your records. If you lose it, your recovery key is required to unlock synced data.
         </p>
-        <button className="primary-button clay-btn depth-hover" type="submit" disabled={busy}>
+        <Button variant="primary" type="submit" disabled={busy}>
           {busy ? "Creating…" : "Create account"}
-        </button>
+        </Button>
       </form>
       <p className="auth-switch">
         Already have an account? <Link to="/login">Sign in</Link>
