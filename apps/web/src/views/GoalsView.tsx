@@ -1,9 +1,10 @@
 import { Course, Goal, GoalStatus, Note, Task, TaskStatus, deriveGoalProgress, nextGoalTaskOrder, noteDisplayTitle, noteExcerpt, notesForGoal, tasksForGoal } from "@throughline/domain";
-import { ArrowLeft, CaretDown, CaretUp, CheckCircle, Note as FileText, PencilSimple, Plus, Target, Trash } from "@phosphor-icons/react";
+import { ArrowLeft, CaretDown, CaretUp, CheckCircle, Confetti, Note as FileText, PencilSimple, Plus, Target, Trash } from "@phosphor-icons/react";
+import { AnimatePresence, motion } from "motion/react";
 import { FormEvent, useState } from "react";
 import type { NoteInput, TaskInput } from "../data/repositories";
 import { APP_LOCALE } from "../lib/format";
-import { Button, Card, EmptyState, Ring, SectionHeading, TextInput } from "../ui";
+import { Button, Card, ConfirmDialog, EmptyState, Ring, SectionHeading, TextInput } from "../ui";
 import { TaskCard } from "./TaskCard";
 
 export function GoalsView({
@@ -170,6 +171,8 @@ function GoalDetail({
   onDeleteGoal: (goalId: string) => Promise<void>;
 }) {
   const [stepTitle, setStepTitle] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [celebrate, setCelebrate] = useState(false);
   const courseMap = new Map(courses.map((course) => [course.id, course]));
   const children = tasksForGoal(goal.id, tasks);
   const linkedNotes = notesForGoal(goal.id, notes);
@@ -179,6 +182,12 @@ function GoalDetail({
   const accent = goal.color ?? project?.color ?? "var(--blue)";
 
   const statusLabel = goal.status === "done" ? "Complete" : goal.status === "paused" ? "Paused" : "";
+
+  async function markComplete() {
+    await onSetGoalStatus(goal.id, "done");
+    setCelebrate(true);
+    window.setTimeout(() => setCelebrate(false), 2600);
+  }
 
   async function addStep(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -218,6 +227,26 @@ function GoalDetail({
   return (
     <section className="goal-detail" style={{ "--project-color": accent } as React.CSSProperties}>
       <Card className="goal-detail-head">
+        <AnimatePresence>
+          {celebrate ? (
+            <motion.div
+              className="completion-burst goal-celebration"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              aria-hidden="true"
+            >
+              <motion.span
+                className="xp-burst"
+                initial={{ opacity: 0, y: 6, scale: 0.7 }}
+                animate={{ opacity: [0, 1, 1, 0], y: [-4, -30, -40, -52], scale: 1 }}
+                transition={{ duration: 1.8, times: [0, 0.12, 0.75, 1], ease: "easeOut" }}
+              >
+                <Confetti size={18} weight="bold" /> Goal complete!
+              </motion.span>
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
         <div>
           <Button size="sm" onClick={onBack}>
             <ArrowLeft size={14} weight="bold" /> All goals
@@ -242,7 +271,7 @@ function GoalDetail({
         </div>
         <div className="button-row">
           {progress.isComplete && goal.status !== "done" ? (
-            <Button variant="primary" onClick={() => void onSetGoalStatus(goal.id, "done")}>
+            <Button variant="primary" onClick={() => void markComplete()}>
               <CheckCircle size={15} weight="bold" /> Mark goal complete
             </Button>
           ) : null}
@@ -252,11 +281,23 @@ function GoalDetail({
           <Button onClick={() => onEditGoal(goal)}>
             <PencilSimple size={14} weight="bold" /> Edit
           </Button>
-          <Button variant="danger" onClick={() => void onDeleteGoal(goal.id)}>
+          <Button variant="danger" onClick={() => setConfirmDelete(true)}>
             <Trash size={14} weight="bold" /> Delete
           </Button>
         </div>
       </Card>
+
+      <ConfirmDialog
+        open={confirmDelete}
+        title="Delete this goal?"
+        message={`"${goal.title}" will be removed. Its ${progress.total} task${progress.total === 1 ? "" : "s"} stay in your planner, just without a goal.`}
+        confirmLabel="Delete goal"
+        onConfirm={() => {
+          setConfirmDelete(false);
+          void onDeleteGoal(goal.id);
+        }}
+        onCancel={() => setConfirmDelete(false)}
+      />
 
       <div className="goal-steps">
         <SectionHeading icon={<Target size={17} weight="bold" style={{ color: "var(--ink-soft)" }} />} eyebrow="Steps" title="Tasks toward this goal" />

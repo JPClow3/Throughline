@@ -42,7 +42,7 @@ function CompletionBurst({ task }: { task: Task }) {
   );
 
   return (
-    <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center overflow-visible" aria-hidden="true">
+    <div className="completion-burst" aria-hidden="true">
       <motion.span
         className="xp-burst"
         initial={{ opacity: 0, y: 6, scale: 0.7 }}
@@ -54,7 +54,7 @@ function CompletionBurst({ task }: { task: Task }) {
       {particles.map((particle, index) => (
         <motion.span
           key={index}
-          className="absolute h-2 w-2 border-2 border-[var(--line)]"
+          className="burst-particle"
           style={{ backgroundColor: particle.color }}
           initial={{ x: 0, y: 0, opacity: 1, scale: 0, rotate: 0 }}
           animate={{
@@ -197,7 +197,7 @@ export function TaskCard({
       {totalSubtasks ? (
         <button
           type="button"
-          className={`subtask-progress${expanded ? " mb-2 mt-3" : ""}`}
+          className={`subtask-progress${expanded ? " is-expanded" : ""}`}
           onClick={(event) => {
             event.stopPropagation();
             setExpanded(!expanded);
@@ -210,19 +210,19 @@ export function TaskCard({
       ) : null}
 
       {showSubtaskEditor ? (
-        <div className="mt-2 flex flex-col gap-0.5 overflow-hidden" onClick={(event) => event.stopPropagation()}>
+        <div className="subtask-editor" onClick={(event) => event.stopPropagation()}>
           <AnimatePresence initial={false}>
             {showSubtaskEditor ? (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
-                className="flex flex-col gap-0.5"
+                className="subtask-editor-inner"
               >
                 {(task.subtasks || []).map((subtask, index) => (
-                  <label key={subtask.id} className={`subtask-row cursor-pointer${subtask.completed ? " done" : ""}`}>
+                  <label key={subtask.id} className={`subtask-row${subtask.completed ? " done" : ""}`}>
                     <input type="checkbox" className="checkbox" checked={subtask.completed} onChange={() => toggleSubtask(index)} />
-                    <span className="min-w-0 flex-1 truncate">{subtask.title}</span>
+                    <span className="subtask-title">{subtask.title}</span>
                   </label>
                 ))}
                 <div className="subtask-add-row">

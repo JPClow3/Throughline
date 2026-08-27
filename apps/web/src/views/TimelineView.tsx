@@ -191,10 +191,13 @@ export function TimelineView({
           ))}
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-base font-bold md:text-lg">
-            {capitalizeFirst(selectedDate.toLocaleDateString(APP_LOCALE, { weekday: "long", month: "long", day: "numeric" }))}
-          </h2>
+        <div className="view-head agenda-day-head">
+          <div>
+            <span className="eyebrow">Selected day</span>
+            <h2 className="agenda-day-title">
+              {capitalizeFirst(selectedDate.toLocaleDateString(APP_LOCALE, { weekday: "long", month: "long", day: "numeric" }))}
+            </h2>
+          </div>
           <Button variant="accent" onClick={() => onNewTask?.(selectedDate)}>
             <Plus size={15} weight="bold" />
             New Task for {capitalizeFirst(selectedDate.toLocaleDateString(APP_LOCALE, { weekday: "short" }))}

@@ -1,0 +1,13 @@
+# Taste
+- Development machine is Windows: shell commands must use PowerShell syntax (`Select-Object -Last N`, `$env:VAR`, `Get-ChildItem`), not Unix utilities like `tail`. Confidence: 0.9
+- Host machine sets `NODE_ENV=production` globally, which silently breaks tooling that needs development builds (e.g., React `act()` in component tests). Pin `NODE_ENV` explicitly inside test configs so suites are immune to inherited environment. Confidence: 0.85
+- Prefer semantic CSS classes backed by design tokens over inline `style={{}}` props and ad-hoc utility-classname soup; when touching a component, migrate inline layout/shadow/z-index values into stylesheet classes and named custom properties. Confidence: 0.8
+- Normalize repeated raw values into tokens: one duration token (~120ms) for micro-transitions, a single entrance-animation duration, hard-offset shadow tokens, and a named z-index ladder instead of scattered magic numbers. Confidence: 0.8
+- Use `:focus-visible` (not `:focus`) so mouse clicks don't show focus rings; every interactive element gets a visible keyboard focus style, including `:focus-within` on composite inputs. Confidence: 0.85
+- Ship a global `prefers-reduced-motion` override covering animations and transitions; decorative loops (shimmer/pulse) must stop under it. Confidence: 0.8
+- Icon-only buttons carry `aria-label`s; avoid per-second `aria-live` announcements — announce milestones or state changes only. Confidence: 0.75
+- Keep touch targets usable: ≥ ~34px for dense icon controls, ≥ ~40px for primary mobile controls; make hover-only affordances visible on `(hover: none)` devices. Confidence: 0.75
+- Render numeric data (stats, dates, timers, counts) with `font-variant-numeric: tabular-nums`, and use one consistent icon weight across the app. Confidence: 0.75
+- For broad UI/refactor work: survey/read the relevant conventions and code first, run structured audits, then execute fixes in planned waves tracked via todo lists. Confidence: 0.7
+- Immediately verify with a build/typecheck after bulk or regex-based edits to shared files before moving on. Confidence: 0.7
+- Before declaring a goal complete, run the full documented quality gate (typecheck → lint → tests → build → coverage → e2e) and record non-obvious environment traps in the repo's troubleshooting docs. Confidence: 0.7

@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { NoteInput } from "../data/repositories";
 import { useNotesSearch } from "../hooks/useNotesSearch";
 import { useCompactFilters } from "./FilterBar";
-import { Button, Card, EmptyState, IconButton, TextInput } from "../ui";
+import { Button, Card, ConfirmDialog, EmptyState, IconButton, TextInput } from "../ui";
 import { UnlinkButton } from "../ui";
 
 type LinkKind = "task" | "goal";
@@ -16,12 +16,11 @@ function HighlightedText({ text, terms }: { text: string; terms: string[] }) {
   const escapedTerms = terms.map((term) => term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
   const regex = new RegExp(`(${escapedTerms.join("|")})`, "gi");
   const parts = text.split(regex);
+  // A fresh non-global regex per part: reusing the global regex with .test()
+  // carries lastIndex state and silently skips alternating matches.
+  const isMatch = new RegExp(`^(?:${escapedTerms.join("|")})$`, "i");
 
-  return (
-    <>
-      {parts.map((part, index) => (regex.test(part) ? <mark key={index}>{part}</mark> : part))}
-    </>
-  );
+  return <>{parts.map((part, index) => (isMatch.test(part) ? <mark key={index}>{part}</mark> : part))}</>;
 }
 
 export function NotesView({
@@ -90,6 +89,8 @@ export function NotesView({
       setSelectedId(sorted[0].id);
     }
   }, [isMobileNotes, notes, selectedId, setSelectedId, sorted]);
+
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   async function createNote() {
     const note = await onAddNote({});
@@ -180,7 +181,7 @@ export function NotesView({
                   tasks={tasks}
                   goals={goals}
                   onSave={onUpdateNote}
-                  onDelete={(noteId) => void removeNote(noteId)}
+                  onDelete={(noteId) => setConfirmDeleteId(noteId)}
                   onToggleLink={onToggleLink}
                   onOpenTask={onOpenTask}
                   onOpenGoal={onOpenGoal}
@@ -201,6 +202,20 @@ export function NotesView({
           </div>
         ) : null}
       </section>
+
+      <ConfirmDialog
+        open={confirmDeleteId !== null}
+        title="Delete this note?"
+        message="The note and its links will be removed. This can't be undone."
+        confirmLabel="Delete note"
+        onConfirm={() => {
+          if (confirmDeleteId) {
+            void removeNote(confirmDeleteId);
+          }
+          setConfirmDeleteId(null);
+        }}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
     </div>
   );
 }

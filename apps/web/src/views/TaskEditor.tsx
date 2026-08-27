@@ -4,7 +4,7 @@ import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, us
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { FormEvent, useState } from "react";
-import { Button, Field, Select, TextArea, TextInput } from "../ui";
+import { Button, ConfirmDialog, Field, Select, TextArea, TextInput } from "../ui";
 
 function toLocalInput(iso?: string) {
   if (!iso) {
@@ -41,6 +41,9 @@ export function TaskEditor({
     task.recurrence?.pattern ?? ""
   );
   const [attributes, setAttributes] = useState(task.attributes);
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   function addSubtask() {
     setSubtasks([...subtasks, { id: crypto.randomUUID(), title: "", completed: false }]);
@@ -75,33 +78,49 @@ export function TaskEditor({
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!title.trim()) {
+      setError("Give the task a title before saving.");
       return;
     }
+    setError("");
+    setSaving(true);
+    try {
+      await onSave({
+        ...task,
+        title: title.trim(),
+        courseId: courseId || undefined,
+        goalId: goalId || undefined,
+        dueAt: dueAt ? new Date(dueAt).toISOString() : undefined,
+        status,
+        priority,
+        description: description.trim(),
+        tags: tags
+          .split(",")
+          .map((tag) => tag.trim())
+          .filter(Boolean),
+        subtasks: subtasks.map((subtask) => ({ ...subtask, title: subtask.title.trim() })).filter((subtask) => subtask.title),
+        recurrence: recurrence ? { pattern: recurrence as "daily" | "weekly" | "biweekly" | "monthly" | "custom" } : undefined,
+        attributes,
+        completedAt: status === "done" ? task.completedAt ?? new Date().toISOString() : undefined
+      });
+    } finally {
+      setSaving(false);
+    }
+  }
 
-    await onSave({
-      ...task,
-      title: title.trim(),
-      courseId: courseId || undefined,
-      goalId: goalId || undefined,
-      dueAt: dueAt ? new Date(dueAt).toISOString() : undefined,
-      status,
-      priority,
-      description: description.trim(),
-      tags: tags
-        .split(",")
-        .map((tag) => tag.trim())
-        .filter(Boolean),
-      subtasks: subtasks.map((subtask) => ({ ...subtask, title: subtask.title.trim() })).filter((subtask) => subtask.title),
-      recurrence: recurrence ? { pattern: recurrence as "daily" | "weekly" | "biweekly" | "monthly" | "custom" } : undefined,
-      attributes,
-      completedAt: status === "done" ? task.completedAt ?? new Date().toISOString() : undefined
-    });
+  async function handleDelete() {
+    setConfirmDelete(false);
+    await onDelete(task.id);
   }
 
   return (
     <form className="composer-form" onSubmit={submit}>
       <Field label="Title">
-        <TextInput autoFocus value={title} onChange={(event) => setTitle(event.target.value)} maxLength={140} />
+        <TextInput autoFocus value={title} onChange={(event) => { setTitle(event.target.value); if (error) setError(""); }} maxLength={140} aria-invalid={error ? true : undefined} />
+        {error ? (
+          <p className="composer-error" role="alert">
+            {error}
+          </p>
+        ) : null}
       </Field>
       <div className="composer-grid">
         <Field label="Project">
@@ -207,13 +226,22 @@ export function TaskEditor({
       </div>
 
       <div className="button-row editor-actions">
-        <Button variant="primary" type="submit">
-          Save changes
+        <Button variant="primary" type="submit" disabled={saving}>
+          {saving ? "Saving…" : "Save changes"}
         </Button>
-        <Button variant="danger" onClick={() => void onDelete(task.id)}>
+        <Button variant="danger" onClick={() => setConfirmDelete(true)}>
           <Trash size={15} weight="bold" /> Delete
         </Button>
       </div>
+
+      <ConfirmDialog
+        open={confirmDelete}
+        title="Delete this task?"
+        message={`"${task.title}" will be removed from your planner. This can't be undone.`}
+        confirmLabel="Delete task"
+        onConfirm={() => void handleDelete()}
+        onCancel={() => setConfirmDelete(false)}
+      />
     </form>
   );
 }
@@ -244,11 +272,13 @@ function SortableSubtask({
     <div ref={setNodeRef} style={style} className="subtask-edit-row">
       <button
         type="button"
-        style={{ background: "transparent", border: "none", cursor: "grab", color: "var(--ink-muted)", padding: 0 }}
+        className="drag-handle"
+        aria-label={`Reorder ${subtask.title}`}
+        style={{ position: "static", width: 30, height: 30, opacity: 1 }}
         {...attributes}
         {...listeners}
       >
-        <GripVertical size={13} />
+        <GripVertical size={14} weight="bold" />
       </button>
       <input
         type="checkbox"

@@ -136,7 +136,7 @@ function AccountMenu({
             <div>
               <span className="account-menu-email">{email ?? "Signed in"}</span>
               <span className="account-menu-plan">
-                <ShieldCheck size={12} weight="fill" />
+                <ShieldCheck size={12} weight="bold" />
                 End-to-end encrypted
               </span>
             </div>
@@ -161,7 +161,7 @@ function AccountMenu({
                 }}
                 disabled={syncing}
               >
-                <ArrowsClockwise size={15} className={syncing ? "spin" : undefined} />
+                <ArrowsClockwise size={15} weight="bold" className={syncing ? "spin" : undefined} />
                 {syncing ? "Syncing…" : "Sync now"}
               </button>
             ) : null}
@@ -175,7 +175,7 @@ function AccountMenu({
                   onNavigateSettings();
                 }}
               >
-                <GearSix size={15} />
+                <GearSix size={15} weight="bold" />
                 Settings
               </button>
             ) : null}
@@ -188,7 +188,7 @@ function AccountMenu({
                 onSignOut?.();
               }}
             >
-              <SignOut size={15} />
+              <SignOut size={15} weight="bold" />
               Sign out
             </button>
           </div>

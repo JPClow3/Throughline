@@ -96,6 +96,14 @@ export function FocusTimer({
   };
 
   const closeTimer = () => {
+    // Never throw away real work: closing mid-session logs the elapsed time
+    // as a focus record (minimum one minute) instead of discarding it.
+    const elapsedSeconds = totalSeconds - timeLeft;
+    if (!showSuccess && isActive && elapsedSeconds >= 60) {
+      setIsActive(false);
+      finishSession(elapsedSeconds);
+      return;
+    }
     setIsOpen(false);
     resetTimer();
     setShowSuccess(false);
@@ -144,11 +152,10 @@ export function FocusTimer({
               className="focus-ring"
               style={{ "--progress": progress } as React.CSSProperties}
               role="timer"
-              aria-live="polite"
             >
               {showSuccess ? (
                 <span className="relative flex flex-col items-center gap-0.5 text-[var(--green)]">
-                  <CheckCircle size={30} weight="fill" />
+                  <CheckCircle size={30} weight="bold" />
                   <strong className="text-xs font-bold">Logged</strong>
                 </span>
               ) : (
@@ -166,7 +173,7 @@ export function FocusTimer({
                   onClick={toggleTimer}
                   style={{ width: 46, height: 46, padding: 0, borderRadius: "50%" }}
                 >
-                  {isActive ? <Pause size={18} weight="fill" /> : <Play size={18} weight="fill" />}
+                  {isActive ? <Pause size={18} weight="bold" /> : <Play size={18} weight="bold" />}
                 </Button>
                 <Button aria-label="Log focus session" onClick={logCurrentSession}>
                   Log
@@ -179,7 +186,7 @@ export function FocusTimer({
 
       {!isOpen && launcherMode === "desktop-dock" ? (
         <button type="button" className="focus-dock-button" onClick={openUntitledFocus} aria-label="Start focus session">
-          <Play size={17} weight="fill" />
+          <Play size={17} weight="bold" />
           <span>Focus</span>
         </button>
       ) : null}

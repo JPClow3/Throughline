@@ -172,7 +172,8 @@ describe("TaskEditor", () => {
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Delete" }));
-    expect(onDelete).toHaveBeenCalledWith(task.id);
+    fireEvent.click(await screen.findByRole("button", { name: "Delete task" }));
+    await waitFor(() => expect(onDelete).toHaveBeenCalledWith(task.id));
   });
 });
 

@@ -191,11 +191,11 @@ export function InsightsView() {
       </section>
 
       <section className="insights-grid">
-        <article className="ik-card insights-module" style={{ gridColumn: "1 / -1", display: "flex", gap: "2rem", flexWrap: "wrap" }}>
-          <div style={{ flex: "1 1 300px", minWidth: 0 }}>
+        <article className="ik-card insights-module insights-module-wide">
+          <div className="insights-chart-col">
             <span className="eyebrow">Focus logs</span>
             <h2>Focus hours, last 7 days</h2>
-            <div style={{ width: "100%", height: 200, marginTop: "1rem" }}>
+            <div className="insights-chart">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={stats.dailyFocusHistory}>
                   <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "var(--ink-faint)" }} />
@@ -215,10 +215,10 @@ export function InsightsView() {
             </div>
           </div>
 
-          <div style={{ flex: "1 1 300px", minWidth: 0 }}>
+          <div className="insights-chart-col">
             <span className="eyebrow">Focus trends</span>
             <h2>Focus hours, last 4 weeks</h2>
-            <div style={{ width: "100%", height: 200, marginTop: "1rem" }}>
+            <div className="insights-chart">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={stats.weeklyFocusHistory}>
                   <XAxis dataKey="weekLabel" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "var(--ink-faint)" }} />
@@ -240,11 +240,11 @@ export function InsightsView() {
         </article>
 
         <article className="ik-card insights-module">
-          <div>
+          <div className="insights-chart-col">
             <span className="eyebrow">Weekly rhythm</span>
             <h2>Completions, last 7 days</h2>
           </div>
-          <div style={{ width: "100%", height: 200, marginTop: "1rem" }}>
+          <div className="insights-chart">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={stats.weeklyCompletionsData}>
                 <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "var(--ink-faint)" }} />

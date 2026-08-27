@@ -182,14 +182,14 @@ function PressureRow({
   return (
     <div
       className={`pressure-row${tone ? ` pressure-${tone}` : ""}`}
-      style={
-        progress > 0
-          ? {
-              background: `linear-gradient(to right, color-mix(in srgb, var(--yellow) 28%, transparent) ${progress}%, transparent ${progress}%)`
-            }
-          : undefined
-      }
     >
+      {progress > 0 ? (
+        <span
+          className="pressure-progress"
+          style={{ width: `${Math.min(100, Math.round(progress))}%` }}
+          aria-hidden="true"
+        />
+      ) : null}
       <span className="pressure-icon">{icon}</span>
       <span>{label}</span>
       <strong>{value}</strong>

@@ -24,24 +24,21 @@ export function CooldownModal({
       <motion.div
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative flex flex-col gap-5 p-6"
+        className="cooldown-body"
       >
         <ModalCloseButton onClose={onClose} />
 
-        <div className="flex flex-col items-center px-4 pt-3 text-center">
-          <div
-            className="mb-3 grid h-12 w-12 place-items-center rounded-xl border-2 border-[var(--line)]"
-            style={{ background: "var(--green-soft)", boxShadow: "2px 2px 0 0 var(--shadow-ink)" }}
-          >
+        <div className="cooldown-hero">
+          <div className="cooldown-badge" aria-hidden="true">
             <BatteryCharging size={22} weight="bold" />
           </div>
-          <h2 className="text-lg font-bold">Session Complete!</h2>
-          <p className="mt-1 text-sm text-[var(--ink-soft)]">
+          <h2>Session Complete!</h2>
+          <p>
             Great focus. If you're looking for a quick win to cool down, here are some low-energy tasks from your backlog.
           </p>
         </div>
 
-        <div className="custom-scrollbar flex min-h-0 flex-col gap-3 overflow-y-auto pb-2">
+        <div className="cooldown-task-list custom-scrollbar">
           {tasks.map((task) => (
             <TaskCard key={task.id} task={task} compact onEdit={onEditTask} onComplete={onCompleteTask} onStartFocus={onStartFocus} />
           ))}

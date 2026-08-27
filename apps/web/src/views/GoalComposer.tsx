@@ -21,20 +21,29 @@ export function GoalComposer({
   const [summary, setSummary] = useState(goal?.summary ?? "");
   const [projectId, setProjectId] = useState(goal?.projectId ?? "");
   const [targetDate, setTargetDate] = useState(toDateInput(goal?.targetDate));
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const trimmed = title.trim();
     if (!trimmed) {
+      setError("Give the goal a name before saving.");
       return;
     }
-    await onSubmit({
-      title: trimmed,
-      summary: summary.trim() || undefined,
-      projectId: projectId || undefined,
-      targetDate: targetDate || undefined,
-      color: projectId ? courses.find((course) => course.id === projectId)?.color : goal?.color
-    });
+    setError("");
+    setSaving(true);
+    try {
+      await onSubmit({
+        title: trimmed,
+        summary: summary.trim() || undefined,
+        projectId: projectId || undefined,
+        targetDate: targetDate || undefined,
+        color: projectId ? courses.find((course) => course.id === projectId)?.color : goal?.color
+      });
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -43,9 +52,18 @@ export function GoalComposer({
         <TextInput
           autoFocus
           value={title}
-          onChange={(event) => setTitle(event.target.value)}
+          onChange={(event) => {
+            setTitle(event.target.value);
+            if (error) setError("");
+          }}
           placeholder="What do you want to achieve?"
+          aria-invalid={error ? true : undefined}
         />
+        {error ? (
+          <p className="composer-error" role="alert">
+            {error}
+          </p>
+        ) : null}
       </Field>
       <Field label="Summary">
         <TextInput value={summary} onChange={(event) => setSummary(event.target.value)} placeholder="A short why (optional)" />
@@ -66,8 +84,8 @@ export function GoalComposer({
         </Field>
       </div>
       <div>
-        <Button variant="primary" type="submit">
-          <Plus size={15} weight="bold" /> {goal ? "Save changes" : "Create goal"}
+        <Button variant="primary" type="submit" disabled={saving}>
+          <Plus size={15} weight="bold" /> {saving ? "Saving…" : goal ? "Save changes" : "Create goal"}
         </Button>
       </div>
     </form>

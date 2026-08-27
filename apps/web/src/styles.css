@@ -234,7 +234,7 @@
   position: fixed;
   top: -48px;
   left: 16px;
-  z-index: 400;
+  z-index: var(--z-skip-link);
   padding: 10px 16px;
   background: var(--yellow);
   border: 2px solid var(--line);
@@ -394,10 +394,10 @@
   cursor: pointer;
   white-space: nowrap;
   transition:
-    transform 0.12s ease,
-    box-shadow 0.12s ease,
-    background-color 0.12s ease,
-    color 0.12s ease;
+    transform var(--dur-fast) ease,
+    box-shadow var(--dur-fast) ease,
+    background-color var(--dur-fast) ease,
+    color var(--dur-fast) ease;
 }
 .btn:hover:not(:disabled) {
   transform: translate(-2px, -2px);
@@ -405,7 +405,7 @@
 }
 .btn:active:not(:disabled) {
   transform: translate(2px, 2px);
-  box-shadow: 0 0 0 0 var(--shadow-ink);
+  box-shadow: none;
 }
 .btn:disabled {
   cursor: not-allowed;
@@ -417,7 +417,7 @@
   min-height: 34px;
   padding: 0 0.7rem;
   font-size: var(--text-sm);
-  box-shadow: 2px 2px 0 0 var(--shadow-ink);
+  box-shadow: var(--shadow-0);
 }
 .btn-sm:hover:not(:disabled) {
   box-shadow: var(--shadow-1);
@@ -457,11 +457,11 @@
 .btn-ghost:hover:not(:disabled) {
   border-color: var(--line);
   background: var(--card);
-  box-shadow: 2px 2px 0 0 var(--shadow-ink);
+  box-shadow: var(--shadow-0);
   transform: none;
 }
 .btn-ghost:active:not(:disabled) {
-  transform: translate(1px, 1px);
+  transform: translate(2px, 2px);
   box-shadow: none;
 }
 .btn-icon {
@@ -470,8 +470,8 @@
   padding: 0;
 }
 .btn-icon.btn-sm {
-  min-height: 30px;
-  width: 30px;
+  min-height: 34px;
+  width: 34px;
 }
 
 /* Fields */
@@ -497,7 +497,7 @@
   border-radius: var(--radius-control);
   font-size: var(--text-body);
   box-shadow: none;
-  transition: box-shadow 0.12s ease, background-color 0.12s ease;
+  transition: box-shadow var(--dur-fast) ease, background-color var(--dur-fast) ease;
 }
 .input:hover {
   background: var(--card);
@@ -555,12 +555,12 @@ select.input {
   color: var(--ink);
   white-space: nowrap;
   cursor: pointer;
-  box-shadow: 2px 2px 0 0 var(--shadow-ink);
-  transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.1s ease;
+  box-shadow: var(--shadow-0);
+  transition: transform var(--dur-fast) ease, box-shadow var(--dur-fast) ease, background-color var(--dur-fast) ease;
 }
 .chip:hover {
   transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 0 var(--shadow-ink);
+  box-shadow: var(--shadow-1);
 }
 .chip:active {
   transform: translate(1px, 1px);
@@ -795,7 +795,14 @@ select.input {
   transform-origin: center;
 }
 
-/* Progress ring — conic gradient with an inner paper disc */
+/* Progress ring — conic gradient with an inner paper disc.
+   --ring-ratio is a registered custom property so the sweep animates. */
+@property --ring-ratio {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0;
+}
+
 .goal-ring {
   --ring-size: 46px;
   --ring-thickness: 7px;
@@ -813,6 +820,12 @@ select.input {
     );
   border: 2px solid var(--line);
   flex-shrink: 0;
+  transition: --ring-ratio 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .goal-ring {
+    transition: none;
+  }
 }
 .goal-ring::before {
   content: "";
@@ -892,7 +905,7 @@ select.input {
   align-items: center;
   gap: 0.6rem;
   font-weight: var(--fw-bold);
-  font-size: 1.05rem;
+  font-size: var(--text-section);
   letter-spacing: -0.01em;
   text-decoration: none;
   color: var(--ink);
@@ -905,7 +918,7 @@ select.input {
   background: var(--yellow);
   color: var(--on-signal);
   border-radius: 10px;
-  box-shadow: 2px 2px 0 0 var(--shadow-ink);
+  box-shadow: var(--shadow-0);
   color: var(--ink);
 }
 
@@ -921,11 +934,11 @@ select.input {
   font-size: var(--text-sm);
   color: var(--ink-faint);
   cursor: pointer;
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  transition: transform var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
 }
 .shell-search-trigger:hover {
   transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 0 var(--shadow-ink);
+  box-shadow: var(--shadow-1);
   color: var(--ink-soft);
 }
 .shell-search-kbd {
@@ -956,12 +969,12 @@ select.input {
   font-size: var(--text-label);
   font-weight: var(--fw-semibold);
   cursor: pointer;
-  box-shadow: 2px 2px 0 0 var(--shadow-ink);
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  box-shadow: var(--shadow-0);
+  transition: transform var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
 }
 .shell-sync-pill:hover:not(:disabled) {
   transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 0 var(--shadow-ink);
+  box-shadow: var(--shadow-1);
 }
 .shell-sync-pill:disabled {
   cursor: default;
@@ -1006,12 +1019,12 @@ select.input {
   font-weight: var(--fw-bold);
   font-size: 1rem;
   cursor: pointer;
-  box-shadow: 2px 2px 0 0 var(--shadow-ink);
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  box-shadow: var(--shadow-0);
+  transition: transform var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
 }
 .shell-avatar-button:hover {
   transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 0 var(--shadow-ink);
+  box-shadow: var(--shadow-1);
 }
 :root[data-theme="dark"] .shell-avatar-button {
   color: #14161d;
@@ -1048,7 +1061,7 @@ select.input {
   cursor: pointer;
   white-space: nowrap;
   text-decoration: none;
-  transition: color 0.12s ease, background-color 0.12s ease;
+  transition: color var(--dur-fast) ease, background-color var(--dur-fast) ease;
 }
 .shell-tab:first-child {
   border-left: 2px solid var(--line-soft);
@@ -1093,7 +1106,7 @@ select.input {
   left: 12px;
   right: 12px;
   bottom: calc(10px + env(safe-area-inset-bottom, 0px));
-  z-index: 60;
+  z-index: var(--z-dock);
   display: flex;
   justify-content: space-around;
   align-items: center;
@@ -1120,24 +1133,24 @@ select.input {
   border-radius: 12px;
   text-decoration: none;
   color: var(--ink-faint);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: var(--fw-bold);
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  transition: background-color 0.12s ease, color 0.12s ease;
+  transition: background-color var(--dur-fast) ease, color var(--dur-fast) ease;
 }
 .dock-link.active {
   background: var(--yellow);
   border-color: var(--line);
   color: var(--on-signal);
-  box-shadow: 2px 2px 0 0 var(--shadow-ink);
+  box-shadow: var(--shadow-0);
 }
 .dock-more-sheet {
   position: fixed;
   left: 12px;
   right: 12px;
   bottom: 86px;
-  z-index: 60;
+  z-index: var(--z-dock);
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.5rem;
@@ -1164,8 +1177,8 @@ select.input {
   font-weight: var(--fw-semibold);
   color: var(--ink);
   cursor: pointer;
-  box-shadow: 2px 2px 0 0 var(--shadow-ink);
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  box-shadow: var(--shadow-0);
+  transition: transform var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
 }
 .dock-more-link:active {
   transform: translate(1px, 1px);
@@ -1181,7 +1194,7 @@ select.input {
   position: fixed;
   right: 18px;
   bottom: 86px;
-  z-index: 70;
+  z-index: var(--z-fab);
   display: grid;
   place-items: center;
   width: 58px;
@@ -1192,7 +1205,7 @@ select.input {
   color: var(--on-signal);
   box-shadow: var(--shadow-2);
   cursor: pointer;
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  transition: transform var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
 }
 .shell-mobile-primary-action:hover {
   transform: translate(-2px, -2px);
@@ -1213,7 +1226,7 @@ select.input {
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  z-index: 80;
+  z-index: var(--z-popover);
   width: 264px;
   padding: 0.9rem;
   background: var(--card);
@@ -1274,6 +1287,7 @@ select.input {
 .account-menu-sync-time {
   margin-left: auto;
   color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
 }
 .account-menu-actions {
   display: flex;
@@ -1298,7 +1312,7 @@ select.input {
 .account-menu-item:hover:not(:disabled) {
   border-color: var(--line);
   background: var(--card-tinted);
-  box-shadow: 2px 2px 0 0 var(--shadow-ink);
+  box-shadow: var(--shadow-0);
 }
 .account-menu-item.is-danger {
   color: var(--danger);
@@ -1318,14 +1332,14 @@ select.input {
   bottom: 96px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 90;
+  z-index: var(--z-banner);
   display: flex;
   align-items: center;
   gap: 0.8rem;
   padding: 0.8rem 1rem;
   width: min(420px, calc(100vw - 24px));
   background: var(--card);
-  animation: ik-rise-in 0.2s ease both;
+  animation: ik-rise-in 0.16s ease both;
 }
 @media (min-width: 1024px) {
   .pwa-install-banner {
@@ -1418,6 +1432,7 @@ select.input {
   border: 1.5px solid var(--line);
   border-radius: var(--radius-chip);
   padding: 0.2rem 0.6rem;
+  font-variant-numeric: tabular-nums;
 }
 .today-priority-list {
   display: flex;
@@ -1447,12 +1462,12 @@ select.input {
   font-size: var(--text-sm);
   text-align: left;
   cursor: pointer;
-  transition: background-color 0.1s ease, border-color 0.1s ease;
+  transition: background-color var(--dur-fast) ease, border-color var(--dur-fast) ease;
 }
 .today-radar-row:hover {
   border-color: var(--line);
   background: var(--card-tinted);
-  box-shadow: 2px 2px 0 0 var(--shadow-ink);
+  box-shadow: var(--shadow-0);
 }
 .today-radar-title {
   font-weight: var(--fw-semibold);
@@ -1515,6 +1530,8 @@ select.input {
   flex-direction: column;
 }
 .pressure-row {
+  position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
   gap: 0.65rem;
@@ -1522,6 +1539,17 @@ select.input {
   border-bottom: 2px dashed var(--line-soft);
   font-size: var(--text-sm);
   border-radius: 6px;
+}
+.pressure-progress {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--yellow-soft);
+  transition: width 0.4s ease;
+}
+.pressure-icon,
+.pressure-row > span:not(.pressure-progress),
+.pressure-row strong {
+  position: relative;
 }
 .pressure-row:last-child {
   border-bottom: none;
@@ -1567,12 +1595,12 @@ select.input {
   color: var(--ink-soft);
   cursor: pointer;
   text-align: left;
-  box-shadow: 2px 2px 0 0 var(--shadow-ink);
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  box-shadow: var(--shadow-0);
+  transition: transform var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
 }
 .today-next-block:hover {
   transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 0 var(--shadow-ink);
+  box-shadow: var(--shadow-1);
 }
 .today-next-block:active {
   transform: translate(1px, 1px);
@@ -1613,6 +1641,7 @@ select.input {
 .stat-tile-detail {
   font-size: var(--text-label);
   color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
 }
 
 /* ========================= Task card =================================== */
@@ -1627,7 +1656,7 @@ select.input {
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-1);
   cursor: pointer;
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  transition: transform var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
 }
 .task-card:hover {
   transform: translate(-2px, -2px);
@@ -1673,21 +1702,21 @@ select.input {
 .complete-button {
   display: grid;
   place-items: center;
-  width: 30px;
-  height: 30px;
+  width: 34px;
+  height: 34px;
   flex-shrink: 0;
   border: 2px solid var(--line);
   border-radius: 9px;
   background: var(--paper-2);
   color: var(--ink);
   cursor: pointer;
-  box-shadow: 2px 2px 0 0 var(--shadow-ink);
-  transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.1s ease;
+  box-shadow: var(--shadow-0);
+  transition: transform var(--dur-fast) ease, box-shadow var(--dur-fast) ease, background-color var(--dur-fast) ease;
 }
 .complete-button:hover:not(:disabled) {
   background: var(--green-soft);
   transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 0 var(--shadow-ink);
+  box-shadow: var(--shadow-1);
 }
 .complete-button:active:not(:disabled) {
   transform: translate(2px, 2px);
@@ -1724,11 +1753,23 @@ select.input {
   overflow: hidden;
   cursor: pointer;
 }
+.subtask-progress.is-expanded {
+  margin-bottom: var(--space-2);
+  margin-top: var(--space-3);
+}
 .subtask-progress > div {
   height: 100%;
   background: var(--green);
   border-right: 2px solid var(--line);
   transition: width 0.25s ease;
+}
+.subtask-editor,
+.subtask-editor-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+  margin-top: var(--space-2);
 }
 .subtask-row {
   display: flex;
@@ -1738,6 +1779,14 @@ select.input {
   font-size: var(--text-sm);
   color: var(--ink-soft);
   min-width: 0;
+  cursor: pointer;
+}
+.subtask-row .subtask-title {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .subtask-row.done > span {
   text-decoration: line-through;
@@ -1776,6 +1825,7 @@ select.input {
   border-radius: var(--radius-chip);
   background: var(--paper-2);
   font-size: var(--text-label);
+  font-variant-numeric: tabular-nums;
   font-weight: var(--fw-semibold);
   white-space: nowrap;
   color: var(--ink-soft);
@@ -1799,11 +1849,32 @@ button.meta-chip:hover {
   min-height: 36px;
   font-size: var(--text-sm);
 }
+.completion-burst {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-celebrate);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+  pointer-events: none;
+}
+.goal-celebration {
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: var(--space-5);
+}
+.burst-particle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border: 2px solid var(--line);
+}
 .xp-burst {
   position: absolute;
   left: 50%;
   top: 12%;
-  z-index: 30;
+  z-index: var(--z-celebrate);
   transform: translateX(-50%);
   padding: 0.2rem 0.6rem;
   background: var(--yellow);
@@ -1812,7 +1883,7 @@ button.meta-chip:hover {
   border-radius: var(--radius-chip);
   font-size: var(--text-label);
   font-weight: var(--fw-bold);
-  box-shadow: 2px 2px 0 0 var(--shadow-ink);
+  box-shadow: var(--shadow-0);
   pointer-events: none;
   white-space: nowrap;
 }
@@ -1881,30 +1952,36 @@ button.meta-chip:hover {
 .sortable-quest.dragging {
   opacity: 0.85;
   rotate: 1.5deg;
-  z-index: 20;
+  z-index: var(--z-lifted-card);
 }
 .drag-handle {
   position: absolute;
   top: 8px;
   left: -10px;
-  z-index: 5;
+  z-index: var(--z-drag);
   display: grid;
   place-items: center;
-  width: 24px;
-  height: 24px;
+  width: 30px;
+  height: 30px;
   border: 2px solid var(--line);
   border-radius: 8px;
   background: var(--yellow);
   color: var(--on-signal);
   cursor: grab;
-  box-shadow: 2px 2px 0 0 var(--shadow-ink);
+  box-shadow: var(--shadow-0);
   opacity: 0;
-  transition: opacity 0.12s ease;
+  transition: opacity var(--dur-fast) ease;
 }
 .sortable-quest:hover .drag-handle,
 .sortable-quest:focus-within .drag-handle,
 .sortable-quest.dragging .drag-handle {
   opacity: 1;
+}
+/* Touch has no hover: keep the handle visible on coarse pointers. */
+@media (hover: none) {
+  .drag-handle {
+    opacity: 1;
+  }
 }
 .drag-handle:active {
   cursor: grabbing;
@@ -1948,7 +2025,7 @@ button.meta-chip:hover {
   cursor: pointer;
   white-space: nowrap;
   flex-shrink: 0;
-  box-shadow: 2px 2px 0 0 var(--shadow-ink);
+  box-shadow: var(--shadow-0);
 }
 .kanban-mobile-tabs [role="tab"][aria-selected="true"] {
   background: var(--ink);
@@ -2012,7 +2089,7 @@ button.meta-chip:hover {
   background: var(--paper-2);
 }
 .filter-segmented > button {
-  min-height: 36px;
+  min-height: 40px;
   padding: 0 0.75rem;
   border: none;
   background: transparent;
@@ -2075,13 +2152,13 @@ button.meta-chip:hover {
   border-radius: var(--radius-control);
   background: var(--card);
   cursor: pointer;
-  box-shadow: 2px 2px 0 0 var(--shadow-ink);
-  transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.1s ease;
+  box-shadow: var(--shadow-0);
+  transition: transform var(--dur-fast) ease, box-shadow var(--dur-fast) ease, background-color var(--dur-fast) ease;
   flex-shrink: 0;
 }
 .day-chip:hover {
   transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 0 var(--shadow-ink);
+  box-shadow: var(--shadow-1);
 }
 .day-chip.active {
   background: var(--yellow);
@@ -2133,6 +2210,15 @@ button.meta-chip:hover {
   font-size: var(--text-label);
   font-weight: var(--fw-semibold);
   color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+.agenda-day-head {
+  align-items: center;
+  border-top: 2px dashed var(--line-soft);
+  padding-top: var(--space-4);
+}
+.agenda-day-title {
+  font-size: var(--text-section);
 }
 .agenda-card h3 {
   font-size: var(--text-card);
@@ -2157,14 +2243,14 @@ button.meta-chip:hover {
   padding: var(--space-5);
   text-align: left;
   cursor: pointer;
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  transition: transform var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
 }
 .goal-card:hover {
   transform: translate(-2px, -2px);
   box-shadow: var(--shadow-2);
 }
 .goal-card:active {
-  transform: translate(1px, 1px);
+  transform: translate(2px, 2px);
   box-shadow: none;
 }
 .goal-card-top {
@@ -2200,6 +2286,7 @@ button.meta-chip:hover {
   gap: var(--space-6);
 }
 .goal-detail-head {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
@@ -2229,6 +2316,7 @@ button.meta-chip:hover {
   margin-top: 0.7rem;
   font-size: var(--text-sm);
   color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
 }
 .goal-status-pill {
   padding: 0.18rem 0.55rem;
@@ -2273,13 +2361,13 @@ button.meta-chip:hover {
 .goal-step-reorder button {
   display: grid;
   place-items: center;
-  width: 24px;
-  height: 24px;
+  width: 30px;
+  height: 30px;
   border: 2px solid var(--line);
   border-radius: 7px;
   background: var(--card);
   cursor: pointer;
-  box-shadow: 2px 2px 0 0 var(--shadow-ink);
+  box-shadow: var(--shadow-0);
 }
 .goal-step-reorder button:disabled {
   opacity: 0.35;
@@ -2370,16 +2458,16 @@ button.meta-chip:hover {
   background: var(--card);
   text-align: left;
   cursor: pointer;
-  transition: border-color 0.1s ease, box-shadow 0.1s ease;
+  transition: border-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
 }
 .note-list-card:hover {
   border-color: var(--line);
-  box-shadow: 2px 2px 0 0 var(--shadow-ink);
+  box-shadow: var(--shadow-0);
 }
 .note-list-card.active {
   border-color: var(--line);
   background: var(--yellow-soft);
-  box-shadow: 3px 3px 0 0 var(--shadow-ink);
+  box-shadow: var(--shadow-1);
 }
 .note-list-card-head {
   display: flex;
@@ -2402,6 +2490,7 @@ button.meta-chip:hover {
   font-size: var(--text-label);
   font-weight: var(--fw-semibold);
   color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
 }
 .notes-view mark {
   background: var(--yellow);
@@ -2457,12 +2546,12 @@ button.meta-chip:hover {
   border-radius: 10px;
   background: var(--card);
   cursor: pointer;
-  box-shadow: 2px 2px 0 0 var(--shadow-ink);
-  transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.1s ease;
+  box-shadow: var(--shadow-0);
+  transition: transform var(--dur-fast) ease, box-shadow var(--dur-fast) ease, background-color var(--dur-fast) ease;
 }
 .icon-toggle:hover {
   transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 0 var(--shadow-ink);
+  box-shadow: var(--shadow-1);
 }
 .icon-toggle:active {
   transform: translate(2px, 2px);
@@ -2547,8 +2636,8 @@ button.meta-chip:hover {
 .note-link-unlink {
   display: grid;
   place-items: center;
-  width: 20px;
-  height: 20px;
+  width: 26px;
+  height: 26px;
   border: 1.5px solid var(--line);
   border-radius: 50%;
   background: var(--card);
@@ -2682,16 +2771,16 @@ button.meta-chip:hover {
   gap: 0.35rem;
 }
 .color-swatch {
-  width: 26px;
-  height: 26px;
+  width: 30px;
+  height: 30px;
   border: 2px solid var(--line);
   border-radius: 8px;
   cursor: pointer;
-  transition: transform 0.1s ease;
+  transition: transform var(--dur-fast) ease;
 }
 .color-swatch.active {
   transform: scale(1.15);
-  box-shadow: 2px 2px 0 0 var(--shadow-ink);
+  box-shadow: var(--shadow-0);
 }
 .project-add {
   display: flex;
@@ -2774,6 +2863,23 @@ button.meta-chip:hover {
   gap: var(--space-4);
   padding: var(--space-5);
 }
+.insights-module-wide {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+}
+.insights-chart-col {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1 1 300px;
+}
+.insights-chart {
+  width: 100%;
+  height: 200px;
+  margin-top: var(--space-4);
+}
 .insights-module h2 {
   font-size: var(--text-section);
 }
@@ -2824,7 +2930,7 @@ button.meta-chip:hover {
 .sheet-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 100;
+  z-index: var(--z-overlay-sheet);
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -2871,7 +2977,7 @@ button.meta-chip:hover {
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 110;
+  z-index: var(--z-overlay-modal);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2883,7 +2989,7 @@ button.meta-chip:hover {
   max-height: 85vh;
   overflow-y: auto;
   background: var(--card);
-  animation: ik-rise-in 0.18s ease both;
+  animation: ik-rise-in 0.16s ease both;
 }
 
 /* Composer / editor forms */
@@ -2917,6 +3023,16 @@ button.meta-chip:hover {
   font-size: var(--text-sm);
   font-weight: var(--fw-semibold);
 }
+.composer-error-inline {
+  padding: 0.3rem 0.6rem;
+}
+.project-add-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 1 1 200px;
+  min-width: 0;
+}
 .details-toggle {
   display: inline-flex;
   align-items: center;
@@ -2929,12 +3045,12 @@ button.meta-chip:hover {
   font-size: var(--text-sm);
   font-weight: var(--fw-bold);
   cursor: pointer;
-  box-shadow: 2px 2px 0 0 var(--shadow-ink);
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  box-shadow: var(--shadow-0);
+  transition: transform var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
 }
 .details-toggle:hover {
   transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 0 var(--shadow-ink);
+  box-shadow: var(--shadow-1);
 }
 .details-toggle:active {
   transform: translate(2px, 2px);
@@ -2988,7 +3104,7 @@ button.meta-chip:hover {
 .palette-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 120;
+  z-index: var(--z-overlay-palette);
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -3055,7 +3171,7 @@ button.meta-chip:hover {
   background: var(--yellow);
   color: var(--on-signal);
   border: 2px solid var(--line);
-  box-shadow: 2px 2px 0 0 var(--shadow-ink);
+  box-shadow: var(--shadow-0);
   padding: calc(0.6rem - 2px) calc(0.75rem - 2px);
 }
 .palette-item-main {
@@ -3088,7 +3204,7 @@ button.meta-chip:hover {
   position: fixed;
   left: 18px;
   bottom: calc(104px + env(safe-area-inset-bottom, 0px));
-  z-index: 95;
+  z-index: var(--z-focus-shell);
 }
 @media (min-width: 1024px) {
   .focus-timer-shell {
@@ -3105,7 +3221,7 @@ button.meta-chip:hover {
   width: min(300px, calc(100vw - 2rem));
   padding: var(--space-5);
   background: var(--card);
-  animation: ik-rise-in 0.18s ease both;
+  animation: ik-rise-in 0.16s ease both;
 }
 .focus-timer-head {
   display: flex;
@@ -3154,7 +3270,7 @@ button.meta-chip:hover {
   font-weight: var(--fw-bold);
   cursor: pointer;
   box-shadow: var(--shadow-1);
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  transition: transform var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
 }
 .focus-dock-button:hover {
   transform: translate(-2px, -2px);
@@ -3174,7 +3290,7 @@ button.meta-chip:hover {
 .onboarding-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 150;
+  z-index: var(--z-overlay-onboarding);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -3186,7 +3302,7 @@ button.meta-chip:hover {
   max-height: 90vh;
   overflow-y: auto;
   background: var(--card);
-  animation: ik-rise-in 0.2s ease both;
+  animation: ik-rise-in 0.16s ease both;
 }
 .setup-choice {
   display: flex;
@@ -3200,7 +3316,7 @@ button.meta-chip:hover {
   font-weight: var(--fw-bold);
   cursor: pointer;
   box-shadow: var(--shadow-1);
-  transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.12s ease;
+  transition: transform var(--dur-fast) ease, box-shadow var(--dur-fast) ease, background-color var(--dur-fast) ease;
 }
 .setup-choice:hover {
   transform: translate(-2px, -2px);
@@ -3348,7 +3464,7 @@ button.meta-chip:hover {
 .landing-nav {
   position: sticky;
   top: 0;
-  z-index: 50;
+  z-index: var(--z-nav);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -3526,7 +3642,7 @@ button.meta-chip:hover {
   height: 48px;
   border: 2px solid var(--line);
   border-radius: 12px;
-  box-shadow: 3px 3px 0 0 var(--shadow-ink);
+  box-shadow: var(--shadow-1);
 }
 .feature-card h3 {
   font-size: var(--text-section);
@@ -3776,6 +3892,83 @@ button.meta-chip:hover {
 }
 
 /* ========================== Polish layer ============================== */
+
+/* Confirmation dialog */
+.confirm-dialog {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-6);
+  padding-right: var(--space-8);
+  text-align: center;
+}
+.confirm-icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  background: var(--red-soft);
+  box-shadow: var(--shadow-0);
+}
+.confirm-message {
+  font-size: var(--text-body);
+  color: var(--ink-soft);
+  max-width: 42ch;
+}
+.confirm-actions {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+/* Post-focus cooldown modal */
+.cooldown-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-6);
+}
+.cooldown-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: var(--space-3) var(--space-4) 0;
+  text-align: center;
+}
+.cooldown-badge {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  margin-bottom: var(--space-3);
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  background: var(--green-soft);
+  box-shadow: var(--shadow-0);
+}
+.cooldown-hero h2 {
+  font-size: var(--text-title);
+}
+.cooldown-hero p {
+  margin-top: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+  max-width: 44ch;
+}
+.cooldown-task-list {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-height: 46vh;
+  overflow-y: auto;
+  padding-bottom: var(--space-2);
+}
 
 /* Mobile sheets read as bottom sheets: add a grab-handle affordance. */
 .sheet-handle {

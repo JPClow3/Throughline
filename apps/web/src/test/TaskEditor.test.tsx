@@ -59,9 +59,12 @@ describe("TaskEditor", () => {
       expect(onSave).toHaveBeenCalled();
     });
 
-    // Delete
-    fireEvent.click(screen.getByText(/Delete/i));
-    expect(onDelete).toHaveBeenCalledWith("1");
+    // Delete: opens a confirmation, then confirms
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Delete task" }));
+    await vi.waitFor(() => {
+      expect(onDelete).toHaveBeenCalledWith("1");
+    });
   });
 });
 

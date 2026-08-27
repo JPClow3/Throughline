@@ -3,4 +3,5 @@ export { Card, SectionHeading } from "./Card";
 export { Field, TextInput, TextArea, Select, ToggleRow } from "./Field";
 export { Chip, StaticChip, ProjectDot, UnlinkButton } from "./Chip";
 export { Sheet, Modal, ModalCloseButton } from "./Overlay";
+export { ConfirmDialog } from "./ConfirmDialog";
 export { Notice, EmptyState, Spinner, Skeleton, ViewSkeleton, Ring, Mark } from "./feedback";

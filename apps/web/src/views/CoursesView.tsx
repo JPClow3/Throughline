@@ -1,7 +1,7 @@
 import { Course, RpgAttribute, Task, createCourse, rpgAttributes } from "@throughline/domain";
-import { Check, PencilSimple, Plus, Trash, X } from "@phosphor-icons/react";
+import { Check, FolderOpen, PencilSimple, Plus, Trash, X } from "@phosphor-icons/react";
 import { FormEvent, useState } from "react";
-import { Button, Card, IconButton, Select, TextInput } from "../ui";
+import { Button, Card, ConfirmDialog, EmptyState, IconButton, Select, TextInput } from "../ui";
 
 const PROJECT_COLORS = ["#3d5afe", "#1fae67", "#e8a013", "#ff5d47", "#8f6bf5", "#2aa8c4"];
 
@@ -43,6 +43,10 @@ export function CoursesView({
   const [editColor, setEditColor] = useState(PROJECT_COLORS[0]);
   const [attribute, setAttribute] = useState<RpgAttribute | "">("");
   const [editAttribute, setEditAttribute] = useState<RpgAttribute | "">("");
+  const [deleteTarget, setDeleteTarget] = useState<Course | null>(null);
+  const [error, setError] = useState("");
+  const [editError, setEditError] = useState("");
+  const [busy, setBusy] = useState(false);
 
   const counts = new Map<string, number>();
   for (const task of tasks) {
@@ -55,15 +59,22 @@ export function CoursesView({
     event.preventDefault();
     const trimmed = name.trim();
     if (!trimmed) {
+      setError("Give the project a name first.");
       return;
     }
-    const course = createCourse({ name: trimmed, color, icon: trimmed.slice(0, 1).toUpperCase() });
-    if (attribute) {
-      course.defaultAttributes = [attribute as RpgAttribute];
+    setError("");
+    setBusy(true);
+    try {
+      const course = createCourse({ name: trimmed, color, icon: trimmed.slice(0, 1).toUpperCase() });
+      if (attribute) {
+        course.defaultAttributes = [attribute as RpgAttribute];
+      }
+      await onUpsertCourse(course);
+      setName("");
+      setAttribute("");
+    } finally {
+      setBusy(false);
     }
-    await onUpsertCourse(course);
-    setName("");
-    setAttribute("");
   }
 
   function startEdit(course: Course) {
@@ -71,20 +82,27 @@ export function CoursesView({
     setEditName(course.name);
     setEditColor(course.color ?? PROJECT_COLORS[0]);
     setEditAttribute(course.defaultAttributes?.[0] ?? "");
+    setEditError("");
   }
 
   async function saveEdit(course: Course) {
     const trimmed = editName.trim();
     if (!trimmed) {
+      setEditError("The project needs a name.");
       return;
     }
-    await onUpsertCourse({
-      ...course,
-      name: trimmed,
-      color: editColor,
-      defaultAttributes: editAttribute ? [editAttribute as RpgAttribute] : undefined
-    });
-    setEditingId(null);
+    setBusy(true);
+    try {
+      await onUpsertCourse({
+        ...course,
+        name: trimmed,
+        color: editColor,
+        defaultAttributes: editAttribute ? [editAttribute as RpgAttribute] : undefined
+      });
+      setEditingId(null);
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -112,11 +130,20 @@ export function CoursesView({
                 >
                   <TextInput
                     value={editName}
-                    onChange={(event) => setEditName(event.target.value)}
+                    onChange={(event) => {
+                      setEditName(event.target.value);
+                      if (editError) setEditError("");
+                    }}
                     aria-label={`Rename ${course.name}`}
+                    aria-invalid={editError ? true : undefined}
                     autoFocus
                     style={{ flex: "1 1 160px" }}
                   />
+                  {editError ? (
+                    <p className="composer-error composer-error-inline" role="alert">
+                      {editError}
+                    </p>
+                  ) : null}
                   <Select
                     value={editAttribute}
                     onChange={(event) => setEditAttribute(event.target.value as RpgAttribute | "")}
@@ -150,24 +177,40 @@ export function CoursesView({
                   <IconButton label={`Edit ${course.name}`} size="sm" onClick={() => startEdit(course)}>
                     <PencilSimple size={13} weight="bold" />
                   </IconButton>
-                  <IconButton label={`Delete ${course.name}`} size="sm" onClick={() => void onDeleteCourse(course.id)}>
+                  <IconButton label={`Delete ${course.name}`} size="sm" onClick={() => setDeleteTarget(course)}>
                     <Trash size={13} weight="bold" />
                   </IconButton>
                 </div>
               )
             )
           ) : (
-            <p className="text-sm text-[var(--ink-soft)]">No projects yet. Add one to group related tasks and goals.</p>
+            <EmptyState
+              variant="inline"
+              icon={<FolderOpen size={22} weight="bold" />}
+              title="No projects yet"
+              body="Add one below to group related tasks, goals, and notes."
+            />
           )}
         </div>
 
         <form className="project-add" onSubmit={addProject}>
-          <TextInput
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            placeholder="New project name"
-            aria-label="New project name"
-          />
+          <div className="project-add-field">
+            <TextInput
+              value={name}
+              onChange={(event) => {
+                setName(event.target.value);
+                if (error) setError("");
+              }}
+              placeholder="New project name"
+              aria-label="New project name"
+              aria-invalid={error ? true : undefined}
+            />
+            {error ? (
+              <p className="composer-error" role="alert">
+                {error}
+              </p>
+            ) : null}
+          </div>
           <Select
             value={attribute}
             onChange={(event) => setAttribute(event.target.value as RpgAttribute | "")}
@@ -182,11 +225,29 @@ export function CoursesView({
             ))}
           </Select>
           <ColorPicker value={color} onChange={setColor} label="Project colour" />
-          <Button variant="accent" type="submit">
-            <Plus size={15} weight="bold" /> Add project
+          <Button variant="accent" type="submit" disabled={busy}>
+            <Plus size={15} weight="bold" /> {busy ? "Adding…" : "Add project"}
           </Button>
         </form>
       </Card>
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="Delete this project?"
+        message={
+          counts.get(deleteTarget?.id ?? "")
+            ? `"${deleteTarget?.name}" will be removed. Its ${counts.get(deleteTarget?.id ?? "")} task${counts.get(deleteTarget?.id ?? "") === 1 ? "" : "s"} stay in your planner, ungrouped.`
+            : `"${deleteTarget?.name}" will be removed.`
+        }
+        confirmLabel="Delete project"
+        onConfirm={() => {
+          if (deleteTarget) {
+            void onDeleteCourse(deleteTarget.id);
+          }
+          setDeleteTarget(null);
+        }}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

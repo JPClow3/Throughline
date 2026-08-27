@@ -39,7 +39,7 @@ import {
   requestNotificationPermission,
   showLocalQuestNotification
 } from "../lib/notifications";
-import { Button, Card, Notice, TextInput, ToggleRow } from "../ui";
+import { Button, Card, ConfirmDialog, Notice, TextInput, ToggleRow } from "../ui";
 
 type AccountInfo = {
   email: string | null;
@@ -82,6 +82,8 @@ export function SettingsView({
   const [recoveryBusy, setRecoveryBusy] = useState(false);
   const [recoveryConfirmed, setRecoveryConfirmed] = useState(false);
   const [recoveryPartial, setRecoveryPartial] = useState("");
+  const [importPreview, setImportPreview] = useState<{ name: string; data: unknown } | null>(null);
+  const [confirmReset, setConfirmReset] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pushApi = pushApiDraft ?? syncState?.pushApiUrl ?? import.meta.env.VITE_PUSH_API_URL ?? "http://127.0.0.1:8787";
   const reminders = redactedRemindersForTasks(tasks);
@@ -164,17 +166,27 @@ export function SettingsView({
     }
     try {
       const parsed = JSON.parse(await file.text());
-      const counts = await importBackup(parsed);
+      setImportPreview({ name: file.name, data: parsed });
+    } catch {
+      setDataStatus("Import failed — that file is not valid JSON");
+    }
+  }
+
+  async function confirmImport() {
+    if (!importPreview) {
+      return;
+    }
+    try {
+      const counts = await importBackup(importPreview.data);
       setDataStatus(`Imported ${counts.tasks} tasks, ${counts.goals} goals, ${counts.notes} notes`);
     } catch {
       setDataStatus("Import failed — that file is not a valid Throughline backup");
+    } finally {
+      setImportPreview(null);
     }
   }
 
   async function resetData() {
-    if (!window.confirm("Replace everything with the sample data? This clears your current tasks, goals, and notes.")) {
-      return;
-    }
     await resetSampleData();
     setDataStatus("Sample data restored");
   }
@@ -465,13 +477,35 @@ export function SettingsView({
             onChange={importData}
           />
           <div>
-            <Button onClick={() => void resetData()}>
+            <Button variant="danger" onClick={() => setConfirmReset(true)}>
               Reset to sample data
             </Button>
           </div>
           {dataStatus ? <span className="status-pill self-start">{dataStatus}</span> : null}
         </Card>
       </section>
+
+      <ConfirmDialog
+        open={importPreview !== null}
+        title="Import this backup?"
+        message={`"${importPreview?.name ?? ""}" will be merged into your planner. Existing records with the same IDs are replaced.`}
+        confirmLabel="Import backup"
+        tone="primary"
+        onConfirm={() => void confirmImport()}
+        onCancel={() => setImportPreview(null)}
+      />
+
+      <ConfirmDialog
+        open={confirmReset}
+        title="Reset to sample data?"
+        message="This clears your current tasks, goals, and notes and restores the bundled sample planner. This can't be undone."
+        confirmLabel="Reset everything"
+        onConfirm={() => {
+          setConfirmReset(false);
+          void resetData();
+        }}
+        onCancel={() => setConfirmReset(false)}
+      />
     </div>
   );
 }

@@ -1,6 +1,5 @@
 import { CheckCircle, Info, Warning, WarningCircle } from "@phosphor-icons/react";
-import type { ReactNode } from "react";
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 
 /* ------------------------------- Notice -------------------------------- */
 
@@ -116,23 +115,27 @@ export function Ring({
   label?: string;
   color?: string;
 }) {
-  const clamped = Math.min(100, Math.max(0, Math.round(ratio)));
+  const target = Math.min(100, Math.max(0, Math.round(ratio)));
+  // The conic-gradient stop is registered as animatable in CSS
+  // (--ring-ratio via @property), so the browser tweens the sweep itself —
+  // no per-frame state updates needed. Reduced motion disables the
+  // transition in CSS.
   const thickness = Math.max(5, Math.round(size / 9));
   return (
     <div
       className="goal-ring"
       role="img"
-      aria-label={label ?? `${clamped}% complete`}
+      aria-label={label ?? `${target}% complete`}
       style={
         {
           "--ring-size": `${size}px`,
           "--ring-thickness": `${thickness}px`,
-          "--ring-ratio": clamped,
+          "--ring-ratio": target,
           ...(color ? { "--project-color": color } : {})
         } as CSSProperties
       }
     >
-      <span>{clamped}%</span>
+      <span>{target}%</span>
     </div>
   );
 }
