@@ -57,4 +57,25 @@ describe("AppShell", () => {
       expect(screen.getAllByRole("link", { name: label }).length).toBeGreaterThan(0);
     }
   });
+
+  it("dismisses the mobile More menu when focus moves outside or Escape is pressed", () => {
+    render(
+      <AppShell view="dashboard" onViewChange={vi.fn()}>
+        <h1>Today</h1>
+      </AppShell>
+    );
+
+    const more = screen.getByRole("button", { name: "More" });
+    fireEvent.click(more);
+    expect(screen.getByRole("menu", { name: "More views" })).toBeInTheDocument();
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("menu", { name: "More views" })).not.toBeInTheDocument();
+    expect(more).toHaveFocus();
+
+    fireEvent.click(more);
+    expect(screen.getByRole("menu", { name: "More views" })).toBeInTheDocument();
+    fireEvent.pointerDown(document.body);
+    expect(screen.queryByRole("menu", { name: "More views" })).not.toBeInTheDocument();
+  });
 });

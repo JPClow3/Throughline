@@ -17,26 +17,29 @@ const publicRoutes = [
   { name: "terms", url: "/terms" }
 ];
 const viewports = [
-  { name: "mobile", width: 430, height: 932 },
-  { name: "tablet", width: 900, height: 1000 },
-  { name: "desktop", width: 1366, height: 900 }
+  { name: "narrow", width: 320, height: 780 },
+  { name: "mobile", width: 390, height: 844 },
+  { name: "tablet", width: 768, height: 960 },
+  { name: "desktop", width: 1280, height: 900 }
 ];
 
 const browser = await chromium.launch({ channel: "chrome", headless: true });
 
-async function setupPage(viewport) {
+async function setupPage(viewport, authenticated = true) {
   const context = await browser.newContext({
     viewport: { width: viewport.width, height: viewport.height },
     deviceScaleFactor: 1
   });
-  await context.addInitScript(() => {
-    const raw = new Uint8Array(32).fill(7);
-    let binary = "";
-    for (const byte of raw) binary += String.fromCharCode(byte);
-    localStorage.setItem("tl_email", "layout@example.com");
-    localStorage.setItem("tl_dek", btoa(binary));
-    localStorage.setItem("pwa_banner_dismissed", "true");
-  });
+  if (authenticated) {
+    await context.addInitScript(() => {
+      const raw = new Uint8Array(32).fill(7);
+      let binary = "";
+      for (const byte of raw) binary += String.fromCharCode(byte);
+      localStorage.setItem("tl_email", "layout@example.com");
+      localStorage.setItem("tl_dek", btoa(binary));
+      localStorage.setItem("pwa_banner_dismissed", "true");
+    });
+  }
 
   const page = await context.newPage();
   await page.route("**/api/auth/me", (route) =>
@@ -55,7 +58,7 @@ async function setupPage(viewport) {
 }
 
 async function seedApp(page) {
-  await page.goto("http://127.0.0.1:5173/app?view=dashboard", { waitUntil: "networkidle", timeout: 20000 });
+  await page.goto("http://127.0.0.1:5173/app?view=dashboard", { waitUntil: "domcontentloaded", timeout: 20000 });
   await page.waitForSelector(".view-frame", { timeout: 15000 });
   await page.evaluate(async () => {
     const now = new Date("2026-06-30T12:00:00.000Z").toISOString();
@@ -145,10 +148,10 @@ async function measure(page) {
     return {
       viewport: { width: window.innerWidth, height: window.innerHeight, scrollWidth: document.documentElement.scrollWidth },
       bodyOverflow: document.documentElement.scrollWidth - window.innerWidth,
-      sidebar: rect(".shell-sidebar"),
+      tabs: rect(".shell-tabs"),
       main: rect("#main-content"),
       frame: rect(".view-frame"),
-      firstPanel: rect(".view-frame .glass-panel, .view-frame section, .view-frame article, main section, main article"),
+      firstPanel: rect(".view-frame .ik-card, .view-frame section, .view-frame article, main section, main article"),
       verticalGaps,
       spill,
       overlayText: document.body.innerText.includes("Start with one task") || document.body.innerText.includes("Application error") || document.body.innerText.includes("Install Throughline")
@@ -162,12 +165,8 @@ function issuesFor(kind, viewport, metrics) {
   if (metrics.bodyOverflow > 2) issues.push(`document horizontal overflow ${metrics.bodyOverflow}px`);
   if (metrics.spill.length) issues.push(`${metrics.spill.length} non-fixed visible elements spill outside viewport`);
   if (kind === "app") {
-    if (viewport.width < 1024 && metrics.sidebar?.display !== "none") issues.push("sidebar visible below lg breakpoint");
-    if (viewport.width >= 1024) {
-      const gap = metrics.main && metrics.sidebar ? metrics.main.left - metrics.sidebar.right : null;
-      if (gap !== null && gap < 32) issues.push(`sidebar/main gap only ${Math.round(gap)}px`);
-      if (metrics.frame && metrics.sidebar && metrics.frame.left - metrics.sidebar.right < 48) issues.push(`content frame too close to sidebar: ${Math.round(metrics.frame.left - metrics.sidebar.right)}px`);
-    }
+    if (viewport.width < 1024 && metrics.tabs?.display !== "none") issues.push("desktop tabs visible below lg breakpoint");
+    if (viewport.width >= 1024 && metrics.tabs?.display === "none") issues.push("desktop tabs missing at desktop breakpoint");
     if (viewport.width < 1024 && metrics.frame && metrics.frame.left < 16) issues.push(`mobile/tablet frame left gutter ${Math.round(metrics.frame.left)}px`);
   } else if (metrics.firstPanel && viewport.width <= 430 && metrics.firstPanel.left < 12) {
     issues.push(`public page first section gutter ${Math.round(metrics.firstPanel.left)}px`);
@@ -180,7 +179,7 @@ for (const viewport of viewports) {
   for (const view of appViews) {
     const { context, page } = await setupPage(viewport);
     await seedApp(page);
-    await page.goto(`http://127.0.0.1:5173/app?view=${view}`, { waitUntil: "networkidle", timeout: 20000 });
+    await page.goto(`http://127.0.0.1:5173/app?view=${view}`, { waitUntil: "domcontentloaded", timeout: 20000 });
     await page.waitForSelector(".view-frame", { timeout: 15000 });
     const metrics = await measure(page);
     const file = `app-${view}-${viewport.name}.png`;
@@ -191,8 +190,8 @@ for (const viewport of viewports) {
   }
 
   for (const route of publicRoutes) {
-    const { context, page } = await setupPage(viewport);
-    await page.goto(`http://127.0.0.1:5173${route.url}`, { waitUntil: "networkidle", timeout: 20000 });
+    const { context, page } = await setupPage(viewport, false);
+    await page.goto(`http://127.0.0.1:5173${route.url}`, { waitUntil: "domcontentloaded", timeout: 20000 });
     const metrics = await measure(page);
     const file = `public-${route.name}-${viewport.name}.png`;
     await page.screenshot({ path: path.join(outDir, file), fullPage: true });
@@ -216,7 +215,7 @@ const summary = {
     issues,
     metrics: {
       bodyOverflow: metrics.bodyOverflow,
-      sidebar: metrics.sidebar,
+      tabs: metrics.tabs,
       main: metrics.main,
       frame: metrics.frame,
       firstPanel: metrics.firstPanel,

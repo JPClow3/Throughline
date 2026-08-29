@@ -463,6 +463,7 @@ function Workspace(props: WorkspaceProps) {
                   onStatusChange={(taskId, status) => void updateTaskStatus(taskId, status)}
                   onEditTask={openTask}
                   onUpdateTask={(task) => void updateTask(task)}
+                  onStartFocus={props.setFocusTask}
                   onReorderTask={updateTask}
                 />
               ) : null}

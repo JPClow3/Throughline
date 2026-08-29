@@ -1,8 +1,8 @@
 import { Bell, Briefcase, Check, GraduationCap, House, Plus, SlidersHorizontal } from "@phosphor-icons/react";
 import { motion } from "motion/react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { Button, Field, Select, TextInput } from "../ui";
+import { Button, Field, Select, TextInput, useDialogA11y } from "../ui";
 
 export type OnboardingSetupKind = "school" | "work" | "personal";
 
@@ -36,6 +36,7 @@ function defaultDueValue() {
 }
 
 export function OnboardingOverlay({ onSetup, onComplete }: { onSetup: (input: OnboardingSetupInput) => void | Promise<void>; onComplete: () => void | Promise<void> }) {
+  const panelRef = useRef<HTMLDivElement>(null);
   const [step, setStep] = useState(0);
   const [kind, setKind] = useState<OnboardingSetupKind>("school");
   const [projectNames, setProjectNames] = useState<string[]>([DEFAULT_PROJECTS.school]);
@@ -48,6 +49,10 @@ export function OnboardingOverlay({ onSetup, onComplete }: { onSetup: (input: On
 
   const cleanedProjects = useMemo(() => projectNames.map((name) => name.trim()).filter(Boolean).slice(0, 3), [projectNames]);
   const canContinue = step === 1 ? cleanedProjects.length > 0 : step === 2 ? taskTitle.trim().length > 0 : true;
+
+  // Setup is intentionally required, so Escape does not dismiss it; the shared
+  // dialog helper still traps focus and restores it after setup finishes.
+  useDialogA11y(true, () => undefined, panelRef);
 
   function chooseKind(nextKind: OnboardingSetupKind) {
     setKind(nextKind);
@@ -93,15 +98,19 @@ export function OnboardingOverlay({ onSetup, onComplete }: { onSetup: (input: On
   return (
     <div className="onboarding-backdrop">
       <motion.div
+        ref={panelRef}
         initial={{ opacity: 0, scale: 0.97, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.22 }}
         className="ik-card onboarding-panel flex flex-col"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="onboarding-title"
       >
         <div className="flex flex-col gap-6 p-7 md:p-8">
           <div>
             <span className="eyebrow">Setup</span>
-            <h2 className="mt-1 text-xl font-bold">Make Today useful</h2>
+            <h2 id="onboarding-title" className="mt-1 text-xl font-bold">Make Today useful</h2>
             <p className="mt-2 text-sm text-[var(--ink-soft)]">
               Start with a real workspace, one project, and one task you can act on today.
             </p>
@@ -184,9 +193,9 @@ export function OnboardingOverlay({ onSetup, onComplete }: { onSetup: (input: On
           className="mt-auto flex items-center justify-between p-6"
           style={{ borderTop: "2px solid var(--line)", background: "var(--card-tinted)" }}
         >
-          <div className="flex gap-1.5" aria-label="Setup progress">
+          <div className="flex gap-1.5" aria-label={`Setup step ${step + 1} of 4`} role="progressbar" aria-valuemin={1} aria-valuemax={4} aria-valuenow={step + 1}>
             {[0, 1, 2, 3].map((index) => (
-              <span key={index} className={`setup-progress-dot${index === step ? " active" : ""}`} style={{ width: index === step ? 24 : 8 }} />
+              <span key={index} aria-hidden="true" className={`setup-progress-dot${index === step ? " active" : ""}`} style={{ width: index === step ? 24 : 8 }} />
             ))}
           </div>
           <div className="flex gap-3">

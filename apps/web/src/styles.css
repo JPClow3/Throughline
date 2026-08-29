@@ -3507,6 +3507,31 @@ button.meta-chip:hover {
   align-items: center;
   gap: 0.8rem;
 }
+@media (max-width: 400px) {
+  .landing-nav {
+    gap: 0.5rem;
+    padding-inline: 0.75rem;
+  }
+  .landing-brand {
+    min-width: 0;
+    gap: 0.4rem;
+    font-size: 0.95rem;
+  }
+  .landing-brand .shell-brand-mark {
+    width: 30px;
+    height: 30px;
+  }
+  .landing-nav-actions {
+    flex-shrink: 0;
+    gap: 0.4rem;
+  }
+  .landing-link {
+    font-size: 0.84rem;
+  }
+  .landing-nav-actions .btn {
+    padding-inline: 0.55rem;
+  }
+}
 .landing-link {
   font-weight: var(--fw-semibold);
   color: var(--ink);

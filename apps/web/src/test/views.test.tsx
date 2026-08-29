@@ -49,6 +49,34 @@ describe("GoalsView", () => {
     expect(screen.getByText("Build the first working version")).toBeInTheDocument();
     expect(screen.getByText("Linked notes")).toBeInTheDocument();
   });
+
+  it("keeps focus available from a goal step", () => {
+    const onStartFocus = vi.fn();
+    render(
+      <GoalsView
+        goals={sampleGoals}
+        tasks={sampleTasks}
+        courses={sampleCourses}
+        notes={sampleNotes}
+        selectedId={sampleGoals[0].id}
+        onSelectGoal={noop}
+        onNewGoal={noop}
+        onSetGoalStatus={asyncNoop}
+        onDeleteGoal={asyncNoop}
+        onEditGoal={noop}
+        onAddTask={asyncNoop}
+        onAddNote={vi.fn().mockResolvedValue(sampleNotes[0])}
+        onCompleteTask={noop}
+        onStatusChange={noop}
+        onEditTask={noop}
+        onStartFocus={onStartFocus}
+        onReorderTask={asyncNoop}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Start focus mode for Build the first working version/i }));
+    expect(onStartFocus).toHaveBeenCalledWith(expect.objectContaining({ title: "Build the first working version" }));
+  });
 });
 
 describe("NotesView", () => {

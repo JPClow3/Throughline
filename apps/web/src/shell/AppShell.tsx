@@ -243,11 +243,41 @@ export function AppShell({
 }) {
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
   const mainRef = useRef<HTMLElement | null>(null);
+  const mobileMoreToggleRef = useRef<HTMLButtonElement | null>(null);
+  const mobileMoreSheetRef = useRef<HTMLDivElement | null>(null);
 
   // Navigating between views reads like opening a page: start at the top.
   useEffect(() => {
     mainRef.current?.scrollTo?.({ top: 0 });
   }, [view]);
+
+  useEffect(() => {
+    if (!mobileMoreOpen) {
+      return;
+    }
+
+    function closeOnOutsidePointer(event: PointerEvent) {
+      const target = event.target as Node;
+      if (mobileMoreToggleRef.current?.contains(target) || mobileMoreSheetRef.current?.contains(target)) {
+        return;
+      }
+      setMobileMoreOpen(false);
+    }
+
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setMobileMoreOpen(false);
+        mobileMoreToggleRef.current?.focus();
+      }
+    }
+
+    document.addEventListener("pointerdown", closeOnOutsidePointer);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsidePointer);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [mobileMoreOpen]);
 
   function navigate(next: AppView) {
     setMobileMoreOpen(false);
@@ -359,10 +389,12 @@ export function AppShell({
         ))}
         <button
           type="button"
+          ref={mobileMoreToggleRef}
           onClick={() => setMobileMoreOpen((open) => !open)}
           className={`dock-link${mobileMoreOpen || mobileMoreItems.some((item) => item.view === view) ? " active" : ""}`}
           aria-label="More"
           aria-expanded={mobileMoreOpen}
+          aria-controls="mobile-more-menu"
         >
           <DotsThree size={20} weight="bold" />
           More
@@ -370,12 +402,13 @@ export function AppShell({
       </nav>
 
       {mobileMoreOpen ? (
-        <div className="dock-more-sheet">
+        <div id="mobile-more-menu" ref={mobileMoreSheetRef} className="dock-more-sheet" role="menu" aria-label="More views">
           {[...mobileMoreItems, { view: "settings" as AppView, label: "Settings", icon: <GearSix size={18} weight="bold" /> }].map(
             (item) => (
               <button
                 key={item.view}
                 type="button"
+                role="menuitem"
                 onClick={() => navigate(item.view)}
                 className={`dock-more-link${view === item.view ? " current" : ""}`}
               >
