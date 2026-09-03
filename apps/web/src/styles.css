@@ -503,7 +503,8 @@
   background: var(--card);
 }
 .input:focus-visible {
-  outline: none;
+  outline: 3px solid var(--focus);
+  outline-offset: 1px;
   background: var(--card);
   box-shadow:
     var(--shadow-1),
@@ -1070,6 +1071,11 @@ select.input {
   color: var(--ink);
   background: var(--card-tinted);
 }
+.shell-tab:active {
+  color: var(--ink);
+  background: var(--card-tinted);
+  transform: translateY(1px);
+}
 .shell-tab[aria-current="page"] {
   color: var(--on-signal);
   background: var(--yellow);
@@ -1137,7 +1143,14 @@ select.input {
   font-weight: var(--fw-bold);
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  transition: background-color var(--dur-fast) ease, color var(--dur-fast) ease;
+  transition: transform var(--dur-fast) ease, box-shadow var(--dur-fast) ease, background-color var(--dur-fast) ease, color var(--dur-fast) ease;
+}
+.dock-link:hover {
+  color: var(--ink);
+  background: var(--card-tinted);
+}
+.dock-link:active {
+  transform: translate(1px, 1px);
 }
 .dock-link.active {
   background: var(--yellow);
@@ -1469,6 +1482,10 @@ select.input {
   background: var(--card-tinted);
   box-shadow: var(--shadow-0);
 }
+.today-radar-row:active {
+  transform: translate(1px, 1px);
+  box-shadow: none;
+}
 .today-radar-title {
   font-weight: var(--fw-semibold);
   min-width: 0;
@@ -1484,6 +1501,17 @@ select.input {
   text-transform: uppercase;
   letter-spacing: var(--tracking-eyebrow);
   color: var(--ink-faint);
+}
+.today-radar-due {
+  flex-shrink: 0;
+  margin-left: auto;
+  font-size: var(--text-label);
+  font-weight: var(--fw-semibold);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+}
+.today-radar-due + .today-radar-course {
+  margin-left: 0.6rem;
 }
 .today-side {
   display: flex;
@@ -2031,6 +2059,14 @@ button.meta-chip:hover {
   background: var(--ink);
   color: var(--paper);
 }
+.kanban-mobile-tabs [role="tab"]:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: var(--shadow-1);
+}
+.kanban-mobile-tabs [role="tab"]:active {
+  transform: translate(1px, 1px);
+  box-shadow: none;
+}
 .kanban-mobile-tabs strong {
   font-variant-numeric: tabular-nums;
 }
@@ -2160,11 +2196,23 @@ button.meta-chip:hover {
   transform: translate(-1px, -1px);
   box-shadow: var(--shadow-1);
 }
+.day-chip:active {
+  transform: translate(1px, 1px);
+  box-shadow: none;
+}
 .day-chip.active {
   background: var(--yellow);
   color: var(--on-signal);
-  transform: translate(2px, 2px);
-  box-shadow: none;
+  box-shadow: var(--shadow-1);
+}
+.day-chip.active .day-chip-weekday {
+  color: var(--on-signal);
+}
+.day-chip.is-over {
+  background: var(--blue-soft);
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+  box-shadow: var(--shadow-1);
 }
 .day-chip-weekday {
   font-size: 10px;
@@ -2464,6 +2512,10 @@ button.meta-chip:hover {
   border-color: var(--line);
   box-shadow: var(--shadow-0);
 }
+.note-list-card:active {
+  transform: translate(1px, 1px);
+  box-shadow: none;
+}
 .note-list-card.active {
   border-color: var(--line);
   background: var(--yellow-soft);
@@ -2532,7 +2584,8 @@ button.meta-chip:hover {
   padding: 0.2rem 0;
 }
 .note-editor-title:focus-visible {
-  outline: none;
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
   box-shadow: var(--shadow-0);
   border-radius: 6px;
 }
@@ -2985,11 +3038,17 @@ button.meta-chip:hover {
   background: color-mix(in srgb, var(--shadow-ink) 45%, transparent);
 }
 .modal-panel {
+  position: relative;
   width: min(520px, 100%);
   max-height: 85vh;
   overflow-y: auto;
   background: var(--card);
   animation: ik-rise-in 0.16s ease both;
+}
+.modal-close-btn {
+  position: absolute;
+  top: 0.9rem;
+  right: 0.9rem;
 }
 
 /* Composer / editor forms */

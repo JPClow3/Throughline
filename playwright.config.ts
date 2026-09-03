@@ -4,6 +4,8 @@ export default defineConfig({
   testDir: "apps/web/tests",
   timeout: 30_000,
   fullyParallel: true,
+  retries: process.env.CI ? 2 : 0,
+  workers: process.env.CI ? 1 : undefined,
   use: {
     baseURL: "http://127.0.0.1:4173",
     trace: "on-first-retry"

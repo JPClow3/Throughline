@@ -569,14 +569,15 @@ export async function exportBackup(): Promise<Backup> {
 export async function importBackup(raw: unknown): Promise<{ tasks: number; goals: number; notes: number; courses: number; focusSessions: number }> {
   const backup = BackupSchema.parse(raw);
 
-  await db.transaction("rw", [db.tasks, db.courses, db.goals, db.notes, db.focusSessions, db.progress], async () => {
+  await db.transaction("rw", [db.tasks, db.courses, db.goals, db.notes, db.focusSessions, db.progress, db.tombstones], async () => {
     await Promise.all([
       db.tasks.clear(),
       db.courses.clear(),
       db.goals.clear(),
       db.notes.clear(),
       db.focusSessions.clear(),
-      db.progress.clear()
+      db.progress.clear(),
+      db.tombstones.clear()
     ]);
     await db.courses.bulkPut(backup.courses);
     await db.goals.bulkPut(backup.goals);

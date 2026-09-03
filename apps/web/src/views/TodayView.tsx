@@ -94,9 +94,16 @@ export function TodayView({
                 {radarTasks.map((task) => {
                   const course = courseMap.get(task.courseId ?? "");
                   return (
-                    <button key={task.id} type="button" className="today-radar-row" onClick={() => onEdit(task)}>
+                    <button
+                      key={task.id}
+                      type="button"
+                      className="today-radar-row"
+                      onClick={() => onEdit(task)}
+                      aria-label={`${task.title}${task.dueAt ? `, due ${formatRadarDue(task.dueAt)}` : ""}`}
+                    >
                       <span className="project-dot" aria-hidden="true" style={{ "--project-color": course?.color ?? "var(--ink-faint)" } as CSSProperties} />
                       <span className="today-radar-title">{task.title}</span>
+                      {task.dueAt ? <span className="today-radar-due">{formatRadarDue(task.dueAt)}</span> : null}
                       {course ? <span className="today-radar-course">{course.code ?? course.name}</span> : null}
                     </button>
                   );
@@ -214,5 +221,26 @@ function formatMinutes(minutes: number) {
 
 function formatClock(iso: string) {
   return new Date(iso).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+}
+
+function formatRadarDue(iso: string) {
+  const due = new Date(iso);
+  if (Number.isNaN(due.getTime())) {
+    return "";
+  }
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfDue = new Date(due.getFullYear(), due.getMonth(), due.getDate());
+  const dayDiff = Math.round((startOfDue.getTime() - startOfToday.getTime()) / 86_400_000);
+  if (dayDiff < 0) {
+    return dayDiff === -1 ? "Yesterday" : `${Math.abs(dayDiff)}d overdue`;
+  }
+  if (dayDiff === 0) {
+    return "Today";
+  }
+  if (dayDiff === 1) {
+    return "Tomorrow";
+  }
+  return due.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 

@@ -239,7 +239,7 @@ function DayChip({ date, active, onClick }: { date: Date; active: boolean; onCli
       type="button"
       role="tab"
       aria-selected={active}
-      className={`day-chip${active ? " active" : ""}${isOver ? " ring-2 ring-[var(--blue)] ring-inset" : ""}`}
+      className={`day-chip${active ? " active" : ""}${isOver ? " is-over" : ""}`}
       onClick={onClick}
     >
       <span className="day-chip-weekday">{capitalizeFirst(date.toLocaleDateString(APP_LOCALE, { weekday: "short" }))}</span>

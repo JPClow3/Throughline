@@ -167,7 +167,7 @@ The web app uses `vite-plugin-pwa` configured with `injectManifest`.
 - Unredacted task data reaching push API.
 - Offline app shell failure.
 - Broken IndexedDB migration.
-- Unreadable text over glass.
+- Inkline contrast failure (text below AA on paper/ink surfaces).
 - Backup export/import that loses data.
 
 ### Release Notes Template

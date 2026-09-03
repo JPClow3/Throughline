@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased (v1 release hardening)
+
+### Fixed
+- Backup import now clears deletion tombstones so restored tasks/goals/notes do not ghost-delete on the next encrypted sync.
+- Settings import dialog copy now correctly says import replaces planner content (was: merged).
+- Release blocker wording updated from glass to Inkline contrast (AA on paper/ink).
+
+### Verification
+- `npm run lint` (0 errors, 2 fast-refresh warnings)
+- `npm run typecheck`
+- `npm run test` (40 files, 155 tests passed)
+- `npm run build` (web PWA + push-api + domain)
+- `npx playwright test --project=desktop/mobile apps/web/tests/smoke.e2e.spec.ts` (7 passed each)
+
 ## 0.1.0-beta.1
 
 First public beta of **Throughline** — a calm, local-first planner where goals hold the work.

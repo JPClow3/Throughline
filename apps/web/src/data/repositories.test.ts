@@ -144,6 +144,30 @@ describe("web data repositories", () => {
     expect(await listFocusSessions()).toEqual([session]);
   });
 
+  it("clears tombstones on backup import so restored records do not ghost-delete on sync", async () => {
+    const task = await addTask({
+      title: "Restored task",
+      priority: "low",
+      energy: 1,
+      difficulty: 1,
+      attributes: ["focus"]
+    });
+    const backup = await exportBackup();
+    await db.tasks.delete(task.id);
+    await db.tombstones.put({
+      key: `task:${task.id}`,
+      entity: "task",
+      id: task.id,
+      deletedAt: new Date().toISOString()
+    });
+    expect(await db.tombstones.count()).toBeGreaterThan(0);
+
+    await importBackup(backup);
+
+    expect(await db.tombstones.count()).toBe(0);
+    expect(await listTasks()).toHaveLength(1);
+  });
+
   it("persists task filter settings locally", async () => {
     await saveFilterSettings({
       current: {

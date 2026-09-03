@@ -122,13 +122,14 @@ function AccountMenu({
         onClick={() => setOpen((value) => !value)}
         aria-haspopup="menu"
         aria-expanded={open}
+        aria-controls="account-menu"
         aria-label={`Account menu for ${email ?? "account"}`}
         title={email ?? undefined}
       >
         <span aria-hidden="true">{initialFromEmail(email)}</span>
       </button>
       {open ? (
-        <div className={`account-menu ${align === "left" ? "align-left" : ""}`} role="menu" aria-label="Account">
+        <div id="account-menu" className={`account-menu ${align === "left" ? "align-left" : ""}`} role="menu" aria-label="Account">
           <div className="account-menu-header">
             <span className="account-menu-avatar" aria-hidden="true">
               {initialFromEmail(email)}
@@ -179,18 +180,20 @@ function AccountMenu({
                 Settings
               </button>
             ) : null}
-            <button
-              type="button"
-              role="menuitem"
-              className="account-menu-item is-danger"
-              onClick={() => {
-                close();
-                onSignOut?.();
-              }}
-            >
-              <SignOut size={15} weight="bold" />
-              Sign out
-            </button>
+            {onSignOut ? (
+              <button
+                type="button"
+                role="menuitem"
+                className="account-menu-item is-danger"
+                onClick={() => {
+                  close();
+                  onSignOut();
+                }}
+              >
+                <SignOut size={15} weight="bold" />
+                Sign out
+              </button>
+            ) : null}
           </div>
         </div>
       ) : null}
@@ -307,30 +310,36 @@ export function AppShell({
           <span>Throughline</span>
         </a>
 
-        <button type="button" className="shell-search-trigger hidden md:inline-flex" onClick={onOpenCommandPalette} aria-label="Open global search">
-          <MagnifyingGlass size={16} weight="bold" />
-          <span className="w-52 truncate text-left lg:w-64">Search tasks, notes, goals…</span>
-          <kbd className="shell-search-kbd">Ctrl K</kbd>
-        </button>
+        {onOpenCommandPalette ? (
+          <button type="button" className="shell-search-trigger hidden md:inline-flex" onClick={onOpenCommandPalette} aria-label="Open global search">
+            <MagnifyingGlass size={16} weight="bold" />
+            <span className="w-52 truncate text-left lg:w-64">Search tasks, notes, goals…</span>
+            <kbd className="shell-search-kbd">Ctrl K</kbd>
+          </button>
+        ) : null}
 
         <div className="shell-actions">
-          <button
-            type="button"
-            className="icon-toggle md:hidden"
-            onClick={onOpenCommandPalette}
-            aria-label="Open global search"
-            title="Search"
-          >
-            <MagnifyingGlass size={16} weight="bold" />
-          </button>
-          <button
-            type="button"
-            className="btn btn-accent btn-sm hidden lg:inline-flex"
-            onClick={onNewTask}
-          >
-            <Plus size={15} weight="bold" />
-            New Task
-          </button>
+          {onOpenCommandPalette ? (
+            <button
+              type="button"
+              className="icon-toggle md:hidden"
+              onClick={onOpenCommandPalette}
+              aria-label="Open global search"
+              title="Search"
+            >
+              <MagnifyingGlass size={16} weight="bold" />
+            </button>
+          ) : null}
+          {onNewTask ? (
+            <button
+              type="button"
+              className="btn btn-accent btn-sm hidden lg:inline-flex"
+              onClick={onNewTask}
+            >
+              <Plus size={15} weight="bold" />
+              New Task
+            </button>
+          ) : null}
           <SyncPill sync={sync} />
           <AccountMenu email={email} sync={sync} onNavigateSettings={() => navigate("settings")} onSignOut={onSignOut} />
         </div>

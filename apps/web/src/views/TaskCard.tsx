@@ -151,8 +151,8 @@ export function TaskCard({
         <button
           className={`complete-button${done ? " is-done" : ""}`}
           type="button"
-          aria-label={done ? `${task.title} complete` : `Complete ${task.title}`}
-          title={done ? "Complete" : "Mark complete"}
+          aria-label={done ? `${task.title} completed` : `Complete ${task.title}`}
+          title={done ? "Completed" : "Mark complete"}
           disabled={done}
           onPointerDown={(event) => event.stopPropagation()}
           onClick={() => {

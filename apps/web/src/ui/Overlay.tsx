@@ -82,7 +82,7 @@ export function Modal({ title, onClose, children }: ModalProps) {
 
 export function ModalCloseButton({ onClose }: { onClose: () => void }) {
   return (
-    <button type="button" className="icon-toggle" aria-label="Close" onClick={onClose} style={{ position: "absolute", top: "0.9rem", right: "0.9rem" }}>
+    <button type="button" className="icon-toggle modal-close-btn" aria-label="Close" onClick={onClose}>
       <X size={16} weight="bold" />
     </button>
   );

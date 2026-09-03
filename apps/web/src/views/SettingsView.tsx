@@ -488,7 +488,7 @@ export function SettingsView({
       <ConfirmDialog
         open={importPreview !== null}
         title="Import this backup?"
-        message={`"${importPreview?.name ?? ""}" will be merged into your planner. Existing records with the same IDs are replaced.`}
+        message={`"${importPreview?.name ?? ""}" will replace your planner. Existing tasks, goals, and notes are cleared before the backup is restored.`}
         confirmLabel="Import backup"
         tone="primary"
         onConfirm={() => void confirmImport()}

@@ -115,3 +115,11 @@ Decision: Kanban columns sort by the task's explicit order field with most-recen
 Reason: Same-column drags previously did nothing because column order was derived from recency, so the board's primary workflow felt broken. Quick capture needed a keyboard path to match the fast-capture requirement.
 
 Consequence: Cards keep their hand-arranged sequence across sessions and sync; legacy tasks with default order = 0 still render by recency until first reordered. Status-only fallback remains when no batch handler is provided.
+
+## 015 - Backup Import Replaces Content And Clears Tombstones
+
+Decision: JSON backup import is a full replace (clear tasks, courses, goals, notes, focusSessions, progress, and tombstones), not a merge.
+
+Reason: Leaving tombstones behind caused restored records to ghost-delete on the next encrypted sync. The Settings confirm copy previously said "merged", which misdescribed the replace behavior.
+
+Consequence: `importBackup` clears `tombstones` alongside planner tables; Settings copy says import replaces planner content.
