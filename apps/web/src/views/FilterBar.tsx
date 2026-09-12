@@ -3,7 +3,7 @@ import { BookmarkSimple, FunnelSimple, MagnifyingGlass as Search, Tag } from "@p
 import { useEffect, useState, type CSSProperties } from "react";
 import { FilterState } from "../hooks/useFilters";
 import type { SavedFilterPreset } from "../data/types";
-import { Button, Chip, TextInput } from "../ui";
+import { Button, Chip, Modal, ModalCloseButton, TextInput } from "../ui";
 
 type FilterBarProps = {
   courses: Course[];
@@ -42,6 +42,9 @@ export function FilterBar({
 }: FilterBarProps) {
   const isCompact = useCompactFilters();
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [isSavingPreset, setIsSavingPreset] = useState(false);
+  const [presetNameInput, setPresetNameInput] = useState("");
+  const [presetError, setPresetError] = useState("");
   const showAdvanced = !isCompact || filtersOpen;
   const activeTagSet = new Set(filters.tags);
   const hasActiveFilters =
@@ -58,17 +61,27 @@ export function FilterBar({
     setFilter("tags", nextTags);
   }
 
-  function handleSavePreset() {
-    const name = window.prompt("Name this filter preset");
-    if (name?.trim()) {
-      onSavePreset?.(name.trim());
+  function handleOpenSavePreset() {
+    setPresetNameInput("");
+    setPresetError("");
+    setIsSavingPreset(true);
+  }
+
+  function handleSavePresetSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    const trimmed = presetNameInput.trim();
+    if (!trimmed) {
+      setPresetError("Please enter a name for this preset");
+      return;
     }
+    onSavePreset?.(trimmed);
+    setIsSavingPreset(false);
   }
 
   return (
     <div className="view-toolbar">
-      {!isCompact && presets.length ? (
-        <div className="filter-chip-row" aria-label="Filter presets">
+      {presets.length ? (
+        <div className="filter-presets-row" role="region" aria-label="Filter presets">
           {presets.map((preset) => (
             <Chip key={preset.id} onClick={() => onApplyPreset?.(preset)}>
               <BookmarkSimple size={12} weight="bold" />
@@ -182,7 +195,7 @@ export function FilterBar({
             <div className="active-filter-bar">
               <span>{activeFilterCount(filters)} active</span>
               {onSavePreset ? (
-                <Button size="sm" onClick={handleSavePreset}>
+                <Button size="sm" onClick={handleOpenSavePreset}>
                   <BookmarkSimple size={13} weight="bold" />
                   Save preset
                 </Button>
@@ -193,6 +206,56 @@ export function FilterBar({
             </div>
           ) : null}
         </>
+      ) : null}
+
+      {isSavingPreset ? (
+        <Modal title="Save filter preset" onClose={() => setIsSavingPreset(false)}>
+          <form onSubmit={handleSavePresetSubmit} className="save-preset-modal">
+            <ModalCloseButton onClose={() => setIsSavingPreset(false)} />
+            <div className="save-preset-head">
+              <div className="save-preset-icon" aria-hidden="true">
+                <BookmarkSimple size={20} weight="bold" />
+              </div>
+              <div>
+                <h2 className="save-preset-title">Save filter preset</h2>
+                <p className="save-preset-sub">
+                  Save current active filters as a quick preset for 1-tap access.
+                </p>
+              </div>
+            </div>
+
+            <label className="save-preset-field">
+              <span className="save-preset-label">Preset Name</span>
+              <TextInput
+                autoFocus
+                value={presetNameInput}
+                onChange={(event) => {
+                  setPresetNameInput(event.target.value);
+                  if (presetError) setPresetError("");
+                }}
+                placeholder="e.g. Bio 101 Labs, Urgent Overdue"
+                aria-label="Filter preset name"
+                aria-invalid={Boolean(presetError)}
+                aria-describedby={presetError ? "preset-name-error" : undefined}
+              />
+            </label>
+
+            {presetError ? (
+              <div id="preset-name-error" className="composer-error composer-error-inline" role="alert">
+                {presetError}
+              </div>
+            ) : null}
+
+            <div className="save-preset-actions">
+              <Button type="button" onClick={() => setIsSavingPreset(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" variant="accent" disabled={!presetNameInput.trim()}>
+                Save preset
+              </Button>
+            </div>
+          </form>
+        </Modal>
       ) : null}
     </div>
   );

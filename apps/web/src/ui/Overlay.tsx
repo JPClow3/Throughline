@@ -30,6 +30,7 @@ export function Sheet({ open, title, onClose, children }: SheetProps) {
         ref={panelRef}
         className="sheet"
         role="dialog"
+        tabIndex={-1}
         aria-modal="true"
         aria-label={title}
         onClick={(event) => event.stopPropagation()}
@@ -70,6 +71,7 @@ export function Modal({ title, onClose, children }: ModalProps) {
         ref={panelRef}
         className="modal-panel ik-card"
         role="dialog"
+        tabIndex={-1}
         aria-modal="true"
         aria-label={title}
         onClick={(event) => event.stopPropagation()}

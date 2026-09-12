@@ -31,11 +31,12 @@ type AgendaRowProps = {
   task: Task;
   courseMap: Map<string, Course>;
   onStartFocus?: (task: Task) => void;
+  onEdit?: (task: Task) => void;
   isGhost?: boolean;
 };
 
 const AgendaRow = React.forwardRef<HTMLDivElement, AgendaRowProps & React.HTMLAttributes<HTMLDivElement>>(
-  ({ task, courseMap, onStartFocus, isGhost, className = "", ...rest }, ref) => {
+  ({ task, courseMap, onStartFocus, onEdit, isGhost, className = "", ...rest }, ref) => {
     const course = courseMap.get(task.courseId ?? "");
     const start = new Date(task.dueAt as string);
     const end = new Date(start.getTime() + (task.estimatedMinutes ?? 0) * 60_000);
@@ -55,7 +56,25 @@ const AgendaRow = React.forwardRef<HTMLDivElement, AgendaRowProps & React.HTMLAt
                 {task.estimatedMinutes ? ` – ${formatTime(end)}` : ""}
                 {course ? ` · ${course.name}` : ""}
               </span>
-              <h3 className="mt-0.5">{task.title}</h3>
+              <h3 className="mt-0.5">
+                {onEdit && !isGhost ? (
+                  <button
+                    type="button"
+                    className="task-card-edit"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onEdit(task);
+                    }}
+                    onPointerDown={(event) => {
+                      event.stopPropagation();
+                    }}
+                  >
+                    {task.title}
+                  </button>
+                ) : (
+                  task.title
+                )}
+              </h3>
               <span className="agenda-status">{kanbanColumns[task.status]}</span>
             </div>
             {onStartFocus && task.status !== "done" && !isGhost ? (
@@ -83,11 +102,13 @@ AgendaRow.displayName = "AgendaRow";
 export function TimelineView({
   onNewTask,
   onStartFocus,
-  onUpdateTask
+  onUpdateTask,
+  onEdit
 }: {
   onNewTask?: (date?: Date) => void;
   onStartFocus?: (task: Task) => void;
   onUpdateTask?: (task: Task) => void;
+  onEdit?: (task: Task) => void;
 }) {
   const { tasks, courses, goals, tags, courseById } = usePlanner();
   const today = new Date();
@@ -207,7 +228,13 @@ export function TimelineView({
         {dayTasks.length ? (
           <div className="agenda relative">
             {dayTasks.map((task) => (
-              <DraggableAgendaRow key={task.id} task={task} courseMap={courseById} onStartFocus={onStartFocus} />
+              <DraggableAgendaRow
+                key={task.id}
+                task={task}
+                courseMap={courseById}
+                onStartFocus={onStartFocus}
+                onEdit={onEdit}
+              />
             ))}
           </div>
         ) : (
@@ -215,6 +242,13 @@ export function TimelineView({
             icon={<CalendarBlank size={24} weight="bold" />}
             title="Nothing scheduled"
             body="No tasks due on this day. Pick another day, or give a task a due time."
+            action={
+              onNewTask ? (
+                <Button variant="accent" onClick={() => onNewTask?.(selectedDate)}>
+                  <Plus size={15} weight="bold" /> Schedule a task
+                </Button>
+              ) : undefined
+            }
           />
         )}
       </div>
@@ -251,11 +285,13 @@ function DayChip({ date, active, onClick }: { date: Date; active: boolean; onCli
 function DraggableAgendaRow({
   task,
   courseMap,
-  onStartFocus
+  onStartFocus,
+  onEdit
 }: {
   task: Task;
   courseMap: Map<string, Course>;
   onStartFocus?: (task: Task) => void;
+  onEdit?: (task: Task) => void;
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: task.id,
@@ -270,6 +306,7 @@ function DraggableAgendaRow({
       task={task}
       courseMap={courseMap}
       onStartFocus={onStartFocus}
+      onEdit={onEdit}
       className={`cursor-grab active:cursor-grabbing${isDragging ? " opacity-30" : ""}`}
     />
   );

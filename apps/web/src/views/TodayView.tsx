@@ -2,7 +2,7 @@ import { FocusSession, Task, deriveTodayBriefing } from "@throughline/domain";
 import { CheckCircle, Clock, LockKey, Plus, Timer, WarningCircle } from "@phosphor-icons/react";
 import { useMemo, type CSSProperties, type ReactNode } from "react";
 import { usePlanner } from "../state/PlannerProvider";
-import { Button, Card } from "../ui";
+import { Button, Card, EmptyState } from "../ui";
 import { TaskCard } from "./TaskCard";
 
 export function TodayView({
@@ -78,13 +78,18 @@ export function TodayView({
               ))}
             </div>
           ) : (
-            <div className="empty-state-card today-empty">
-              <p>No urgent work is asking for you right now.</p>
-              <Button variant="primary" onClick={() => onNewTask()}>
-                <Plus size={15} weight="bold" />
-                Capture a task
-              </Button>
-            </div>
+            <EmptyState
+              className="today-empty"
+              icon={<CheckCircle size={24} weight="bold" />}
+              title="All clear for today"
+              body="No urgent work is asking for you right now."
+              action={
+                <Button variant="accent" onClick={() => onNewTask()}>
+                  <Plus size={15} weight="bold" />
+                  Capture a task
+                </Button>
+              }
+            />
           )}
 
           {radarTasks.length ? (

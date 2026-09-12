@@ -22,6 +22,7 @@ type TaskCardProps = {
   showGameLayer?: boolean;
   goalLabel?: string;
   noteCount?: number;
+  justCompleted?: boolean;
   onComplete?: (task: Task) => void;
   onStatusChange?: (taskId: string, status: TaskStatus) => void;
   onEdit?: (task: Task) => void;
@@ -78,6 +79,7 @@ export function TaskCard({
   showGameLayer = false,
   goalLabel,
   noteCount = 0,
+  justCompleted = false,
   onComplete,
   onStatusChange,
   onEdit,
@@ -93,18 +95,29 @@ export function TaskCard({
 
   const [expanded, setExpanded] = useState(false);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
-  const [justCompleted, setJustCompleted] = useState(false);
+  const [localJustCompleted, setLocalJustCompleted] = useState(false);
+  const isJustCompleted = justCompleted || localJustCompleted;
   const wasDoneRef = useRef(task.status === "done");
   const showSubtaskEditor = Boolean(onUpdateTask && (expanded || totalSubtasks === 0));
 
   useEffect(() => {
     if (task.status === "done" && !wasDoneRef.current) {
-      setJustCompleted(true);
-      const timer = setTimeout(() => setJustCompleted(false), 2000);
+      setLocalJustCompleted(true);
+      const timer = setTimeout(() => setLocalJustCompleted(false), 2000);
       return () => clearTimeout(timer);
     }
     wasDoneRef.current = task.status === "done";
   }, [task.status]);
+
+  function handleComplete() {
+    if (done) return;
+    setLocalJustCompleted(true);
+    setTimeout(() => setLocalJustCompleted(false), 2000);
+    if (onStatusChange) {
+      onStatusChange(task.id, "done");
+    }
+    onComplete?.(task);
+  }
 
   function toggleSubtask(index: number) {
     if (!onUpdateTask) return;
@@ -131,12 +144,16 @@ export function TaskCard({
       style={{ "--project-color": course?.color ?? "var(--ink-faint)" } as CSSProperties}
       layout
       initial={{ opacity: 0, y: 6 }}
-      animate={justCompleted ? { scale: [1, 1.03, 1] } : { opacity: 1, y: 0, scale: 1 }}
-      whileHover={justCompleted ? undefined : { translateX: -2, translateY: -2 }}
-      whileTap={{ scale: 0.985 }}
-      transition={{ type: "spring", stiffness: 380, damping: 28 }}
+      animate={isJustCompleted ? { scale: [1, 1.03, 1] } : { opacity: 1, y: 0, scale: 1 }}
+      whileHover={isJustCompleted ? undefined : { translateX: -2, translateY: -2 }}
+      whileTap={isJustCompleted ? undefined : { translateX: 2, translateY: 2 }}
+      transition={
+        isJustCompleted
+          ? { duration: 0.4, ease: "easeOut" }
+          : { type: "spring", stiffness: 380, damping: 28 }
+      }
     >
-      <AnimatePresence>{justCompleted ? <CompletionBurst task={task} /> : null}</AnimatePresence>
+      <AnimatePresence>{isJustCompleted ? <CompletionBurst task={task} /> : null}</AnimatePresence>
 
       <div className="task-card-top">
         <h3 className={`task-card-title ${compact ? "line-clamp-2" : ""}`}>
@@ -155,13 +172,7 @@ export function TaskCard({
           title={done ? "Completed" : "Mark complete"}
           disabled={done}
           onPointerDown={(event) => event.stopPropagation()}
-          onClick={() => {
-            if (onStatusChange) {
-              onStatusChange(task.id, "done");
-              return;
-            }
-            onComplete?.(task);
-          }}
+          onClick={handleComplete}
         >
           <motion.span initial={false} animate={done ? { rotate: [0, -12, 0] } : { rotate: 0 }} transition={{ duration: 0.3 }}>
             <Check size={15} weight="bold" />

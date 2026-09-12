@@ -12,8 +12,41 @@
   --color-on-surface-variant: var(--ink-soft);
   --color-outline: var(--ink-faint);
   --color-outline-variant: var(--line-soft);
+
+  --color-yellow: var(--yellow);
+  --color-yellow-soft: var(--yellow-soft);
+  --color-blue: var(--blue);
+  --color-blue-soft: var(--blue-soft);
+  --color-green: var(--green);
+  --color-green-soft: var(--green-soft);
+  --color-red: var(--red);
+  --color-red-soft: var(--red-soft);
+  --color-violet: var(--violet);
+  --color-violet-soft: var(--violet-soft);
+
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-faint: var(--ink-faint);
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-card: var(--card);
+  --color-card-tinted: var(--card-tinted);
+  --color-line: var(--line);
+  --color-line-soft: var(--line-soft);
+  --color-shadow-ink: var(--shadow-ink);
+  --color-on-signal: var(--on-signal);
+  --color-on-accent: var(--on-accent);
+  --color-warn: var(--warn);
+  --color-danger: var(--danger);
+
+  --shadow-0: var(--shadow-0);
+  --shadow-1: var(--shadow-1);
+  --shadow-2: var(--shadow-2);
+  --shadow-3: var(--shadow-3);
+
   --font-sans: "Geist Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
+
 
 /* =========================================================================
    INKLINE — Throughline's design language.
@@ -425,6 +458,11 @@
 .btn-sm:active:not(:disabled) {
   box-shadow: none;
 }
+@media (pointer: coarse), (max-width: 640px) {
+  .btn-sm {
+    min-height: 44px;
+  }
+}
 .btn-primary {
   background: var(--ink);
   color: var(--paper);
@@ -571,6 +609,15 @@ select.input {
 .chip.active {
   background: var(--ink);
   color: var(--paper);
+}
+@media (pointer: coarse), (max-width: 640px) {
+  .chip {
+    min-height: 44px;
+    padding: 0 0.85rem;
+  }
+  .filter-segmented > button {
+    min-height: 44px;
+  }
 }
 .chip-static {
   display: inline-flex;
@@ -1690,6 +1737,10 @@ select.input {
   transform: translate(-2px, -2px);
   box-shadow: var(--shadow-2);
 }
+.task-card:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
 .task-card.is-done {
   background: var(--paper-2);
   box-shadow: none;
@@ -2109,6 +2160,29 @@ button.meta-chip:hover {
   padding-left: 2.1rem;
   min-height: 38px;
 }
+.filter-presets-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+}
+@media (max-width: 720px) {
+  .filter-presets-row {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 3px;
+    padding-top: 1px;
+  }
+  .filter-presets-row::-webkit-scrollbar {
+    display: none;
+  }
+  .filter-presets-row .chip {
+    flex-shrink: 0;
+  }
+}
 .filter-chip-row {
   display: flex;
   flex-wrap: wrap;
@@ -2437,6 +2511,21 @@ button.meta-chip:hover {
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
+  text-align: left;
+  width: 100%;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  background: var(--card);
+  transition: transform var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
+}
+.goal-note-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: var(--shadow-1);
+}
+.goal-note-card:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
 }
 .goal-note-card strong {
   font-size: var(--text-sm);
@@ -2613,6 +2702,12 @@ button.meta-chip:hover {
 .icon-toggle.active {
   background: var(--yellow);
   color: var(--on-signal);
+}
+@media (pointer: coarse), (max-width: 640px) {
+  .icon-toggle {
+    min-width: 44px;
+    min-height: 44px;
+  }
 }
 .note-editor-body {
   min-height: 280px;
@@ -3043,7 +3138,11 @@ button.meta-chip:hover {
   max-height: 85vh;
   overflow-y: auto;
   background: var(--card);
+  box-shadow: var(--shadow-3);
   animation: ik-rise-in 0.16s ease both;
+}
+.modal-panel.ik-card {
+  box-shadow: var(--shadow-3);
 }
 .modal-close-btn {
   position: absolute;
@@ -3361,7 +3460,11 @@ button.meta-chip:hover {
   max-height: 90vh;
   overflow-y: auto;
   background: var(--card);
+  box-shadow: var(--shadow-3);
   animation: ik-rise-in 0.16s ease both;
+}
+.onboarding-panel.ik-card {
+  box-shadow: var(--shadow-3);
 }
 .setup-choice {
   display: flex;
@@ -4121,6 +4224,58 @@ button.meta-chip:hover {
 }
 .task-card.has-priority.is-done {
   border-left-color: var(--line-soft);
+}
+
+/* Save filter preset modal */
+.save-preset-modal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5);
+}
+.save-preset-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.save-preset-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 2px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--yellow-soft);
+  box-shadow: var(--shadow-0);
+  flex-shrink: 0;
+}
+.save-preset-title {
+  font-size: var(--text-section);
+  font-weight: var(--fw-bold);
+  margin: 0;
+}
+.save-preset-sub {
+  margin: 0.15rem 0 0 0;
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+}
+.save-preset-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.save-preset-label {
+  font-size: var(--text-label);
+  font-weight: var(--fw-bold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-eyebrow);
+  color: var(--ink-soft);
+}
+.save-preset-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
 }
 
 } /* end @layer components */

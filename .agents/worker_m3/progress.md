@@ -1,0 +1,31 @@
+# Progress — Worker M3
+Last visited: 2026-09-10T17:20:00Z
+
+- Feature 11 (TimelineView onEdit affordance): COMPLETED
+  - Added `onEdit?: (task: Task) => void` prop to TimelineView, AgendaRowProps, and DraggableAgendaRow.
+  - Interactive `.task-card-edit` button triggers `onEdit(task)` while stopping drag propagation.
+  - Passed `onEdit={openTask}` from `App.tsx`.
+  - Added unit test in `CalendarTimeline.test.tsx`.
+- Feature 12 (GoalsView linked notes navigation): COMPLETED
+  - Added `onOpenNote?: (noteId: string) => void` and optional `selectedId?: string | null = null` to `GoalsView`.
+  - Forwarded `onOpenNote` to `GoalDetail` and rendered `.goal-note-card` as clickable button with hover/active press physics.
+  - Passed `onOpenNote={(noteId) => { props.setSelectedNoteId(noteId); props.setView("notes"); }}` from `App.tsx`.
+- Feature 13 (Board View celebration trigger in TaskCard): COMPLETED
+  - Fixed `.complete-button` click handler to always call `onComplete?.(task)` even when `onStatusChange` is provided.
+  - Added `justCompleted` prop and local burst animation state to `TaskCard` and `BoardView`.
+  - Wired live ARIA announcement and completion timer in `BoardView`.
+  - Passed `showGameLayer` prop down through `BoardView` -> `SortableQuest` -> `TaskCard`.
+- Feature 14 (Complete empty states with actionable CTAs across all 8 planner views): COMPLETED
+  - Enhanced `EmptyState` in `feedback.tsx` with `className` and `role="status"`.
+  - Added actionable CTAs to empty states in `BoardView`, `TimelineView`, `InsightsView`, `TodayView`, `GoalsView`, `NotesView`, `CoursesView`.
+  - Passed `onNewTask={props.onOpenComposer}` from `App.tsx` to `BoardView` and `InsightsView`.
+- Feature 15 (FilterBar accessible modal preset saving & mobile compact preset UX): COMPLETED
+  - Replaced `window.prompt` with Inkline `<Modal>` dialog featuring accessible autoFocus `TextInput`, validation error display, and Cancel/Save buttons.
+  - Presets displayed on compact/mobile viewports (`<= 720px`) inside `.filter-presets-row` with horizontal swipe and hidden scrollbars.
+  - Added coarse touch target sizes (min 44px) in `styles.css`.
+  - Updated and expanded tests in `FilterBar.test.tsx`.
+- Verification:
+  - `npm run typecheck`: PASSED (0 errors across @throughline/web, @throughline/push-api, @throughline/domain)
+  - `npm run lint`: PASSED (0 errors)
+  - `npm run build`: PASSED (production client build, PWA service worker build, domain, push-api)
+  - `npm run test`: PASSED (46/46 test files passed, 325/325 tests passed)

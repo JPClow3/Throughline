@@ -160,6 +160,17 @@ export function NotesView({
                   icon={<FileText size={22} weight="bold" />}
                   title={query ? "No matches" : "No notes yet"}
                   body={query ? "Try a different search." : "Capture a thought and link it to a task or goal."}
+                  action={
+                    query ? (
+                      <Button size="sm" onClick={() => setQuery("")}>
+                        Clear search
+                      </Button>
+                    ) : (
+                      <Button variant="accent" size="sm" onClick={() => void createNote()}>
+                        <Plus size={14} weight="bold" /> New note
+                      </Button>
+                    )
+                  }
                 />
               )}
             </div>

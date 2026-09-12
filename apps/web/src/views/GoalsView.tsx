@@ -12,7 +12,7 @@ export function GoalsView({
   tasks,
   courses,
   notes,
-  selectedId,
+  selectedId = null,
   onSelectGoal,
   onNewGoal,
   onSetGoalStatus,
@@ -25,13 +25,14 @@ export function GoalsView({
   onEditTask,
   onUpdateTask,
   onStartFocus,
+  onOpenNote,
   onReorderTask
 }: {
   goals: Goal[];
   tasks: Task[];
   courses: Course[];
   notes: Note[];
-  selectedId: string | null;
+  selectedId?: string | null;
   onSelectGoal: (goalId: string | null) => void;
   onNewGoal: () => void;
   onSetGoalStatus: (goalId: string, status: GoalStatus) => Promise<void>;
@@ -44,6 +45,7 @@ export function GoalsView({
   onEditTask: (task: Task) => void;
   onUpdateTask?: (task: Task) => void;
   onStartFocus?: (task: Task) => void;
+  onOpenNote?: (noteId: string) => void;
   onReorderTask: (task: Task) => Promise<void>;
 }) {
   const selected = selectedId ? goals.find((goal) => goal.id === selectedId) : undefined;
@@ -64,6 +66,7 @@ export function GoalsView({
         onUpdateTask={onUpdateTask}
         onStartFocus={onStartFocus}
         onEditGoal={onEditGoal}
+        onOpenNote={onOpenNote}
         onReorderTask={onReorderTask}
         onSetGoalStatus={onSetGoalStatus}
         onDeleteGoal={async (id) => {
@@ -149,6 +152,7 @@ function GoalDetail({
   onUpdateTask,
   onStartFocus,
   onEditGoal,
+  onOpenNote,
   onReorderTask,
   onSetGoalStatus,
   onDeleteGoal
@@ -166,6 +170,7 @@ function GoalDetail({
   onUpdateTask?: (task: Task) => void;
   onStartFocus?: (task: Task) => void;
   onEditGoal: (goal: Goal) => void;
+  onOpenNote?: (noteId: string) => void;
   onReorderTask: (task: Task) => Promise<void>;
   onSetGoalStatus: (goalId: string, status: GoalStatus) => Promise<void>;
   onDeleteGoal: (goalId: string) => Promise<void>;
@@ -351,6 +356,17 @@ function GoalDetail({
               icon={<CheckCircle size={22} weight="bold" />}
               title="No steps yet"
               body="Break this goal into a few small tasks."
+              action={
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    const input = document.querySelector<HTMLInputElement>('input[aria-label="New step"]');
+                    input?.focus();
+                  }}
+                >
+                  <Plus size={14} weight="bold" /> Add step
+                </Button>
+              }
             />
           )}
         </div>
@@ -368,10 +384,15 @@ function GoalDetail({
         <div className="goal-note-list">
           {linkedNotes.length ? (
             linkedNotes.map((note) => (
-              <Card key={note.id} flat className="goal-note-card">
+              <button
+                key={note.id}
+                type="button"
+                className="ik-card-flat goal-note-card"
+                onClick={() => onOpenNote?.(note.id)}
+              >
                 <strong>{noteDisplayTitle(note)}</strong>
                 <p>{noteExcerpt(note.body, 100) || "Empty note — open Notes to write it."}</p>
-              </Card>
+              </button>
             ))
           ) : (
             <EmptyState
@@ -379,6 +400,14 @@ function GoalDetail({
               icon={<FileText size={22} weight="bold" />}
               title="No notes linked yet"
               body="Add one to capture context for this goal."
+              action={
+                <Button
+                  size="sm"
+                  onClick={() => void onAddNote({ goalIds: [goal.id], projectId: goal.projectId })}
+                >
+                  <Plus size={14} weight="bold" /> Add linked note
+                </Button>
+              }
             />
           )}
         </div>

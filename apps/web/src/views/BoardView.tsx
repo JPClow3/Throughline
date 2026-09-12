@@ -2,13 +2,14 @@ import { Course, Task, TaskStatus, kanbanColumns, taskStatuses } from "@throughl
 import { DndContext, KeyboardSensor, PointerSensor, closestCorners, useDroppable, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { DotsSixVertical as GripVertical } from "@phosphor-icons/react";
+import { FunnelSimple, Kanban, Plus, DotsSixVertical as GripVertical } from "@phosphor-icons/react";
 import { useState, type ReactNode } from "react";
 import { FilterBar } from "./FilterBar";
 import { useCompactFilters } from "./FilterBar";
 import { useFilters } from "../hooks/useFilters";
 import { compareBoardTasks, planBoardMove } from "../lib/board";
 import { usePlanner } from "../state/PlannerProvider";
+import { Button, EmptyState } from "../ui";
 import { TaskCard } from "./TaskCard";
 
 /** Per-status accent used by the column header dot. */
@@ -26,7 +27,9 @@ export function BoardView({
   onUpdateTasks,
   onEdit,
   onOpenNotes,
-  onStartFocus
+  onStartFocus,
+  onNewTask,
+  showGameLayer = false
 }: {
   onComplete: (task: Task) => void;
   onStatusChange: (taskId: string, status: TaskStatus) => void;
@@ -35,11 +38,14 @@ export function BoardView({
   onEdit: (task: Task) => void;
   onOpenNotes?: () => void;
   onStartFocus?: (task: Task) => void;
+  onNewTask?: () => void;
+  showGameLayer?: boolean;
 }) {
   const { tasks, courses, goals, courseById, noteCountByTask, tags } = usePlanner();
   const { filters, presets, setFilter, applyFilters, applyPreset, clearFilters, saveCurrentPreset } = useFilters();
   const [announcement, setAnnouncement] = useState("");
   const [mobileStatus, setMobileStatus] = useState<TaskStatus>("backlog");
+  const [recentlyCompletedIds, setRecentlyCompletedIds] = useState<Set<string>>(new Set());
   const isMobileBoard = useCompactFilters("(max-width: 1100px)");
   const filteredTasks = applyFilters(tasks, false, false).sort(compareBoardTasks);
 
@@ -49,6 +55,19 @@ export function BoardView({
       coordinateGetter: sortableKeyboardCoordinates
     })
   );
+
+  const handleCompleteTask = (target: Task) => {
+    setRecentlyCompletedIds((prev) => new Set(prev).add(target.id));
+    setTimeout(() => {
+      setRecentlyCompletedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(target.id);
+        return next;
+      });
+    }, 2000);
+    onComplete(target);
+    setAnnouncement(`Moved ${target.title} to Done.`);
+  };
 
   function commitPlan(entries: ReturnType<typeof planBoardMove>, movedTask: Task) {
     if (!entries.length) {
@@ -133,7 +152,30 @@ export function BoardView({
       </header>
       <div className="sr-only" aria-live="polite">{announcement}</div>
 
-      {isMobileBoard ? (
+      {onNewTask && tasks.length === 0 ? (
+        <EmptyState
+          icon={<Kanban size={24} weight="bold" />}
+          title="No tasks on your board"
+          body="Plan your assignments and projects with a tactile Kanban board."
+          action={
+            <Button variant="accent" onClick={onNewTask}>
+              <Plus size={16} weight="bold" />
+              Capture a task
+            </Button>
+          }
+        />
+      ) : tasks.length > 0 && filteredTasks.length === 0 ? (
+        <EmptyState
+          icon={<FunnelSimple size={24} weight="bold" />}
+          title="No matching tasks"
+          body="No tasks match the active filters or search terms."
+          action={
+            <Button variant="primary" onClick={clearFilters}>
+              Clear filters
+            </Button>
+          }
+        />
+      ) : isMobileBoard ? (
         <section className="kanban-mobile" aria-label="Kanban board">
           <div className="kanban-mobile-tabs" role="tablist" aria-label="Choose workflow status">
             {taskStatuses.map((status) => {
@@ -165,11 +207,10 @@ export function BoardView({
                     task={task}
                     course={courseById.get(task.courseId ?? "")}
                     compact
+                    showGameLayer={showGameLayer}
                     noteCount={noteCountByTask.get(task.id) ?? 0}
-                    onComplete={(target) => {
-                      onComplete(target);
-                      setAnnouncement(`Moved ${task.title} to Done.`);
-                    }}
+                    justCompleted={recentlyCompletedIds.has(task.id)}
+                    onComplete={handleCompleteTask}
                     onStatusChange={(taskId, status) => {
                       const target = tasks.find((item) => item.id === taskId) ?? task;
                       moveTo(target.id, status);
@@ -200,7 +241,9 @@ export function BoardView({
                         task={task}
                         course={courseById.get(task.courseId ?? "")}
                         noteCount={noteCountByTask.get(task.id) ?? 0}
-                        onComplete={onComplete}
+                        showGameLayer={showGameLayer}
+                        justCompleted={recentlyCompletedIds.has(task.id)}
+                        onComplete={handleCompleteTask}
                         onStatusChange={(taskId, nextStatus) => {
                           const target = tasks.find((item) => item.id === taskId) ?? task;
                           moveTo(target.id, nextStatus);
@@ -212,7 +255,7 @@ export function BoardView({
                     ))}
                   </SortableContext>
                   {columnTasks.length === 0 ? (
-                    <p className="kanban-empty-state">Nothing here.</p>
+                    <p className="kanban-empty-state">No tasks in {kanbanColumns[status].toLowerCase()}.</p>
                   ) : null}
                 </KanbanColumn>
               );
@@ -252,6 +295,8 @@ function SortableQuest({
   task,
   course,
   noteCount,
+  showGameLayer,
+  justCompleted,
   onComplete,
   onStatusChange,
   onEdit,
@@ -261,6 +306,8 @@ function SortableQuest({
   task: Task;
   course?: Course;
   noteCount?: number;
+  showGameLayer?: boolean;
+  justCompleted?: boolean;
   onComplete: (task: Task) => void;
   onStatusChange: (taskId: string, status: TaskStatus) => void;
   onEdit: (task: Task) => void;
@@ -355,7 +402,9 @@ function SortableQuest({
         task={task}
         course={course}
         compact
+        showGameLayer={showGameLayer}
         noteCount={noteCount}
+        justCompleted={justCompleted}
         onComplete={onComplete}
         onStatusChange={onStatusChange}
         onEdit={onEdit}

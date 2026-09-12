@@ -43,11 +43,29 @@ type OnboardingSetupInput = {
   openSyncSettings: boolean;
 };
 
+const VALID_VIEWS: AppView[] = [
+  "dashboard",
+  "goals",
+  "kanban",
+  "timeline",
+  "notes",
+  "courses",
+  "insights",
+  "settings"
+];
+
+const VIEW_ALIASES: Record<string, AppView> = {
+  today: "dashboard"
+};
+
 function initialView(): AppView {
   const params = new URLSearchParams(window.location.search);
-  const view = params.get("view");
-  const views: AppView[] = ["goals", "kanban", "timeline", "notes", "courses", "insights", "settings"];
-  return views.includes(view as AppView) ? (view as AppView) : "dashboard";
+  const rawView = params.get("view")?.toLowerCase();
+  if (!rawView) {
+    return "dashboard";
+  }
+  const resolved = VIEW_ALIASES[rawView] ?? (rawView as AppView);
+  return VALID_VIEWS.includes(resolved) ? resolved : "dashboard";
 }
 
 export function App() {
@@ -187,6 +205,47 @@ type WorkspaceProps = {
   onOpenComposer: (date?: Date) => void;
 };
 
+function getDeepActiveElement(): Element | null {
+  let el = document.activeElement;
+  while (el && el.shadowRoot && el.shadowRoot.activeElement) {
+    el = el.shadowRoot.activeElement;
+  }
+  return el;
+}
+
+function isTextEntryElement(target: unknown): boolean {
+  if (!target || typeof target !== "object" || !("nodeType" in target)) {
+    return false;
+  }
+  let curr: Node | null = target as Node;
+  while (curr && curr.nodeType !== 9) {
+    if (curr.nodeType === 1) {
+      const el = curr as HTMLElement;
+      const tag = el.tagName ? el.tagName.toUpperCase() : "";
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") {
+        return true;
+      }
+      if (
+        el.isContentEditable === true ||
+        el.contentEditable === "true" ||
+        (el.contentEditable as unknown) === true ||
+        (typeof el.getAttribute === "function" &&
+          (el.getAttribute("contenteditable") === "true" || el.getAttribute("contenteditable") === ""))
+      ) {
+        return true;
+      }
+      if (
+        typeof el.closest === "function" &&
+        el.closest("input, textarea, select, [contenteditable='true'], [contenteditable='']")
+      ) {
+        return true;
+      }
+    }
+    curr = curr.parentNode ?? (curr instanceof ShadowRoot ? (curr as ShadowRoot).host : null);
+  }
+  return false;
+}
+
 /**
  * Everything under the planner provider: shell, views, and overlays. Views read
  * planner data from context; this component only orchestrates which surfaces are open.
@@ -266,7 +325,11 @@ function Workspace(props: WorkspaceProps) {
   const primaryActionLabel =
     props.view === "notes"
       ? "New note"
-      : props.view === "dashboard" || props.view === "kanban" || props.view === "timeline" || props.view === "courses"
+      : props.view === "dashboard" ||
+        props.view === "kanban" ||
+        props.view === "timeline" ||
+        props.view === "courses" ||
+        props.view === "goals"
         ? "New task"
         : undefined;
 
@@ -294,8 +357,9 @@ function Workspace(props: WorkspaceProps) {
       if (event.metaKey || event.ctrlKey || event.altKey) {
         return;
       }
-      const target = event.target as HTMLElement | null;
-      if (target?.isContentEditable || target?.closest("input, textarea, select, [contenteditable='true']")) {
+      const target = (event.composedPath?.()[0] ?? event.target) as HTMLElement | null;
+      const activeEl = getDeepActiveElement();
+      if (isTextEntryElement(target) || isTextEntryElement(activeEl)) {
         return;
       }
       const dialogOpen =
@@ -312,8 +376,8 @@ function Workspace(props: WorkspaceProps) {
       event.preventDefault();
       void handlePrimaryAction();
     };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
   }, [
     props.commandPaletteOpen,
     props.composerOpen,
@@ -430,12 +494,14 @@ function Workspace(props: WorkspaceProps) {
               ) : null}
               {props.view === "kanban" ? (
                 <BoardView
+                  showGameLayer={props.showGameLayer}
                   onComplete={(task) => completeTask(task)}
                   onStatusChange={(taskId, status) => void updateTaskStatus(taskId, status)}
                   onUpdateTasks={(updates) => void updateTasks(updates)}
                   onEdit={openTask}
                   onOpenNotes={() => props.setView("notes")}
                   onStartFocus={props.setFocusTask}
+                  onNewTask={props.onOpenComposer}
                 />
               ) : null}
               {props.view === "timeline" ? (
@@ -443,6 +509,7 @@ function Workspace(props: WorkspaceProps) {
                   onNewTask={props.onOpenComposer}
                   onStartFocus={props.setFocusTask}
                   onUpdateTask={(task) => void updateTask(task)}
+                  onEdit={openTask}
                 />
               ) : null}
               {props.view === "goals" ? (
@@ -464,6 +531,10 @@ function Workspace(props: WorkspaceProps) {
                   onEditTask={openTask}
                   onUpdateTask={(task) => void updateTask(task)}
                   onStartFocus={props.setFocusTask}
+                  onOpenNote={(noteId) => {
+                    props.setSelectedNoteId(noteId);
+                    props.setView("notes");
+                  }}
                   onReorderTask={updateTask}
                 />
               ) : null}
@@ -491,7 +562,7 @@ function Workspace(props: WorkspaceProps) {
                   highlightedProjectId={props.highlightedProjectId}
                 />
               ) : null}
-              {props.view === "insights" ? <InsightsView /> : null}
+              {props.view === "insights" ? <InsightsView onNewTask={props.onOpenComposer} /> : null}
               {props.view === "settings" ? (
                 <SettingsView
                   tasks={tasks}
@@ -643,6 +714,15 @@ function Workspace(props: WorkspaceProps) {
 
 function useStateWithUrl(initializer: () => AppView): [AppView, (view: AppView) => void] {
   const [view, setView] = React.useState<AppView>(initializer);
+
+  React.useEffect(() => {
+    const url = new URL(window.location.href);
+    const currentParam = url.searchParams.get("view");
+    if (currentParam && VIEW_ALIASES[currentParam.toLowerCase()]) {
+      url.searchParams.set("view", VIEW_ALIASES[currentParam.toLowerCase()]);
+      window.history.replaceState({}, "", url);
+    }
+  }, []);
 
   const update = React.useCallback((next: AppView) => {
     setView(next);

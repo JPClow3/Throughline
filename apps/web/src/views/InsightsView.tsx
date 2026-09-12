@@ -1,12 +1,12 @@
-import { Books, ChartLineUp, Clock, Target, WarningCircle } from "@phosphor-icons/react";
+import { Books, ChartLineUp, Clock, Plus, Target, WarningCircle } from "@phosphor-icons/react";
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 import { useMemo, type CSSProperties, type ReactNode } from "react";
 import { deriveCoachingInsights } from "@throughline/domain";
-import { ViewSkeleton } from "../ui";
+import { Button, EmptyState, ViewSkeleton } from "../ui";
 import { useFocusSessions } from "../hooks/useFocusSessions";
 import { useTasks } from "../hooks/useTasks";
 
-export function InsightsView() {
+export function InsightsView({ onNewTask }: { onNewTask?: () => void } = {}) {
   const { tasks, courses } = useTasks();
   const { focusSessions } = useFocusSessions();
 
@@ -136,6 +136,33 @@ export function InsightsView() {
     return (
       <div className="view-layout">
         <ViewSkeleton />
+      </div>
+    );
+  }
+
+  if (onNewTask && tasks.length === 0 && focusSessions.length === 0) {
+    return (
+      <div className="view-layout">
+        <header className="view-head">
+          <div>
+            <span className="eyebrow">Coaching</span>
+            <h1 className="view-title">Insights</h1>
+            <p className="view-head-sub">Signals from your tasks, courses, and focus sessions.</p>
+          </div>
+        </header>
+        <EmptyState
+          icon={<ChartLineUp size={24} weight="bold" />}
+          title="No activity recorded yet"
+          body="Insights, coaching, and focus trends will appear here once you capture tasks and complete study sessions."
+          action={
+            onNewTask ? (
+              <Button variant="accent" onClick={onNewTask}>
+                <Plus size={15} weight="bold" />
+                Capture a task
+              </Button>
+            ) : undefined
+          }
+        />
       </div>
     );
   }

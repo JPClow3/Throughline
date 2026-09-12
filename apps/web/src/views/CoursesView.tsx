@@ -185,10 +185,20 @@ export function CoursesView({
             )
           ) : (
             <EmptyState
-              variant="inline"
-              icon={<FolderOpen size={22} weight="bold" />}
+              icon={<FolderOpen size={24} weight="bold" />}
               title="No projects yet"
               body="Add one below to group related tasks, goals, and notes."
+              action={
+                <Button
+                  variant="accent"
+                  onClick={() => {
+                    const input = document.querySelector<HTMLInputElement>('input[aria-label="New project name"]');
+                    input?.focus();
+                  }}
+                >
+                  <Plus size={15} weight="bold" /> Create project
+                </Button>
+              }
             />
           )}
         </div>

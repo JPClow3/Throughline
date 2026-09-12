@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#f1ede3" />
     <meta name="description" content="Throughline is a calm place to plan. A task manager and planner that helps you focus." />
     <link rel="icon" href="/favicon.ico" sizes="32x32" />
@@ -13,7 +13,10 @@
       // Apply the saved theme before paint to avoid a flash of the wrong theme.
       (function () {
         try {
-          var pref = localStorage.getItem("lg-theme") || "light";
+          var pref =
+            localStorage.getItem("throughline-theme") ||
+            localStorage.getItem("lg-theme") ||
+            "light";
           var dark =
             pref === "dark" ||
             (pref === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);

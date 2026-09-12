@@ -43,16 +43,18 @@ export function EmptyState({
   title,
   body,
   action,
-  variant = "card"
+  variant = "card",
+  className = ""
 }: {
   icon: ReactNode;
   title: string;
   body?: string;
   action?: ReactNode;
   variant?: "card" | "inline";
+  className?: string;
 }) {
   return (
-    <div className={`empty-state-${variant}`}>
+    <div className={`empty-state-${variant}${className ? ` ${className}` : ""}`} role="status">
       <div className="empty-state-icon" aria-hidden="true">
         {icon}
       </div>

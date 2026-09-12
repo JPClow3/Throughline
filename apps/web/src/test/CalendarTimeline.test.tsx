@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { CourseSchema, TaskSchema } from "@throughline/domain";
 import { TimelineView } from "../views/TimelineView";
@@ -58,5 +58,37 @@ describe("TimelineView", () => {
     expect(screen.getByRole("heading", { name: "Timeline" })).toBeInTheDocument();
     expect(screen.getByText("Nothing scheduled")).toBeInTheDocument();
   });
-});
 
+  it("triggers onEdit callback when task title is clicked", () => {
+    const onEdit = vi.fn();
+    const timestamp = new Date().toISOString();
+    const dueAt = new Date();
+    dueAt.setHours(14, 0, 0, 0);
+    const mockTask = TaskSchema.parse({
+      id: "task-edit-1",
+      title: "Interactive Timeline Task",
+      status: "ready",
+      courseId: "course-1",
+      tags: [],
+      subtasks: [],
+      dueAt: dueAt.toISOString(),
+      createdAt: timestamp,
+      updatedAt: timestamp
+    });
+
+    renderWithPlanner(
+      <TimelineView onNewTask={vi.fn()} onStartFocus={vi.fn()} onUpdateTask={vi.fn()} onEdit={onEdit} />,
+      {
+        planner: {
+          tasks: [mockTask],
+          courses: [],
+          courseById: new Map()
+        }
+      }
+    );
+
+    const editBtn = screen.getByRole("button", { name: "Interactive Timeline Task" });
+    fireEvent.click(editBtn);
+    expect(onEdit).toHaveBeenCalledWith(expect.objectContaining({ id: "task-edit-1" }));
+  });
+});
