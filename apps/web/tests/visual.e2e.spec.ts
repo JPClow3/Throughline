@@ -66,6 +66,10 @@ test.describe("Visual Regression", () => {
   test.use({ viewport: { width: 1280, height: 800 } });
 
   test.beforeEach(async ({ page }) => {
+    // Freeze the clock: the masthead date, "Today · 06:00 PM" due chips, and the
+    // time-derived guidance cards would otherwise drift between runs.
+    await page.clock.setFixedTime(new Date("2026-09-12T14:00:00"));
+
     // Prevent vite proxy ECONNREFUSED logs by mocking API routes
     await page.route("**/auth/me", route => route.fulfill({ status: 200 }));
     await page.route("**/sync/pull*", route => route.fulfill({ status: 200, json: { tasks: [], goals: [], notes: [], courses: [] } }));

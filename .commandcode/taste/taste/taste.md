@@ -1,5 +1,5 @@
 # Taste
-- Development machine is Windows: shell commands must use PowerShell syntax (`Select-Object -Last N`, `$env:VAR`, `Get-ChildItem`), not Unix utilities like `tail`. Confidence: 0.9
+- Development machine is Windows: shell commands must use PowerShell syntax (`Select-Object -Last N`, `$env:VAR`, `Get-ChildItem`), not Unix utilities like `tail`. Note the generic shell command runs cmd.exe, so PowerShell cmdlets/pipelines (`Select-String`, `$LASTEXITCODE`, redirection) must go through the dedicated PowerShell tool. Confidence: 0.9
 - Host machine sets `NODE_ENV=production` globally, which silently breaks tooling that needs development builds (e.g., React `act()` in component tests). Pin `NODE_ENV` explicitly inside test configs so suites are immune to inherited environment. Confidence: 0.85
 - Prefer semantic CSS classes backed by design tokens over inline `style={{}}` props and ad-hoc utility-classname soup; when touching a component, migrate inline layout/shadow/z-index values into stylesheet classes and named custom properties. Confidence: 0.8
 - Normalize repeated raw values into tokens: one duration token (~120ms) for micro-transitions, a single entrance-animation duration, hard-offset shadow tokens, and a named z-index ladder instead of scattered magic numbers. Confidence: 0.8
@@ -11,3 +11,9 @@
 - For broad UI/refactor work: survey/read the relevant conventions and code first, run structured audits, then execute fixes in planned waves tracked via todo lists. Confidence: 0.7
 - Immediately verify with a build/typecheck after bulk or regex-based edits to shared files before moving on. Confidence: 0.7
 - Before declaring a goal complete, run the full documented quality gate (typecheck → lint → tests → build → coverage → e2e) and record non-obvious environment traps in the repo's troubleshooting docs. Confidence: 0.7
+- Test infrastructure must be deterministic: freeze the wall clock (e.g., Playwright `page.clock.setFixedTime`) so date/time-derived UI doesn't drift snapshots, and cap parallel test workers so a loaded dev machine doesn't produce false timeouts or "failed to start worker" failures. Confidence: 0.7
+- Loading states must be honest: data hooks surface `undefined`/loading until the store resolves so views render skeletons, never flash an empty state that implies "there is nothing here". Confidence: 0.7
+- No dead affordances: a rendered control either does something or shouldn't exist, empty states ship a real call-to-action, and the same action shouldn't appear twice on one screen. Confidence: 0.7
+- Tab-like switchers (status tabs, day/date strips) are implemented as real tablists — `role="tab"`/`tabpanel`, `aria-controls`, roving tabindex, Arrow/Home/End keys — rather than plain buttons. Confidence: 0.6
+- Views read shared application state from one provider/context instead of each view instantiating its own data hooks, so optimistic updates reconcile through a single source. Confidence: 0.6
+- Gives terse, high-level direction ("finish the ui and ux, polish, refinement") and expects autonomous end-to-end execution — audit, implement, verify, and update the project ledger/changelog/decision log — with the working tree left uncommitted for review. Confidence: 0.6

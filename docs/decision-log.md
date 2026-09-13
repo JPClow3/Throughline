@@ -123,3 +123,29 @@ Decision: JSON backup import is a full replace (clear tasks, courses, goals, not
 Reason: Leaving tombstones behind caused restored records to ghost-delete on the next encrypted sync. The Settings confirm copy previously said "merged", which misdescribed the replace behavior.
 
 Consequence: `importBackup` clears `tombstones` alongside planner tables; Settings copy says import replaces planner content.
+
+## 016 - Loading Is Honest; Views Render Skeletons, Not False Empties
+
+Decision: `useTasks`, `useFocusSessions`, and friends no longer pass `[]` as the `useLiveQuery` default. They expose `undefined` until IndexedDB resolves, and `loading` is derived from that, so `App` renders `ViewSkeleton` on first paint.
+
+Reason: The `[]` default made `loading` permanently false: every view flashed its empty state ("All clear for today", "No activity recorded yet") for a frame before data arrived, and the skeleton components were unreachable. Insights also read its own copies of `useTasks`/`useFocusSessions`, which meant board moves and optimistic updates reconciled through a different store.
+
+Reason for the Insights change: one data source per view. Insights now reads `usePlanner()` like Today, Board, and Timeline.
+
+Consequence: Views can assume arrays are real once rendered; anything outside the loading gate must still tolerate `undefined` from the hooks. `ViewSkeleton` is a live code path again and should stay coverable by tests.
+
+## 017 - Inline Step Input Is Opt-In On Dense Cards
+
+Decision: `TaskCard` keeps the always-available "Add subtask..." input only where decomposition is the point (goal steps). Dense lists (Today, the Board) pass `offerEmptyStepInput={false}`, so the editor appears once the card already has steps and the user expands `.subtask-progress`.
+
+Reason: Wiring `onUpdateTask` into Today/Board made every step-less card render a persistent text input, which competed with Focus and made screenshots/tests ambiguous (`getByLabel("Title")` matched "New subtask title"). The alternative — leaving `onUpdateTask` off — left the existing progress bar as a dead control.
+
+Consequence: Cards without steps expose step editing through the task editor sheet; cards with steps expand inline everywhere. Playwright and unit coverage expect the empty-step input only when a card opts in.
+
+## 018 - Deterministic Visual Snapshots And A Worker Cap
+
+Decision: `apps/web/tests/visual.e2e.spec.ts` freezes the clock (`page.clock.setFixedTime`) before navigation, and `vitest.config.ts` caps `maxWorkers` at 50% of cores with `minWorkers: 1`.
+
+Reason: The snapshots captured the wall-clock date and time-derived guidance ("1h 50m clear block"), so baselines drifted daily — the mobile baselines were weeks stale and failed for reasons unrelated to the code under test. On this Windows host, letting Vitest spawn one fork per core starved the pool: workers failed to start and the push-api suite (whose first case pays a Fastify/web-push/`node:sqlite` import) tripped the 15s timeout.
+
+Consequence: Regenerate snapshots only for intentional UI changes; the clock is fixed at `2026-09-12T14:00:00`. `apps/push-api/src/server.test.ts` documents its own 30s timeout for the first case. Raise the worker cap only after confirming the machine can absorb the import cost.

@@ -25,7 +25,7 @@ export function Notice({
 }) {
   return (
     <div className={`notice notice-${variant} ${className}`.trim()} role={variant === "error" ? "alert" : "status"}>
-      <div className="notice-icon" style={{ color: `var(--${variant === "info" ? "blue" : variant === "warning" ? "warn" : variant})` }} aria-hidden="true">
+      <div className={`notice-icon notice-icon-${variant}`} aria-hidden="true">
         {NOTICE_ICON[variant]}
       </div>
       <div>
@@ -59,7 +59,7 @@ export function EmptyState({
         {icon}
       </div>
       <h3>{title}</h3>
-      {body ? <p className="text-sm" style={{ maxWidth: "38ch" }}>{body}</p> : null}
+      {body ? <p className="empty-state-body">{body}</p> : null}
       {action ? <div className="empty-state-action">{action}</div> : null}
     </div>
   );

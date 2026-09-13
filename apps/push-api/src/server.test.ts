@@ -12,6 +12,11 @@ let directory: string;
 let config: PushApiConfig;
 let store: JsonPushStore;
 
+// The first case in this file pays the one-time module import (Fastify,
+// web-push, node:sqlite) before the server can be built, which can exceed the
+// default timeout on a loaded machine.
+vi.setConfig({ testTimeout: 30_000 });
+
 beforeEach(async () => {
   directory = await mkdtemp(join(tmpdir(), "liquidglass-push-api-"));
   config = {

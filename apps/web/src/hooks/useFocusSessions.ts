@@ -16,7 +16,8 @@ type FocusSessionOptimisticAction =
   | { type: "delete"; payload: string };
 
 export function useFocusSessions() {
-  const baseFocusSessions = useLiveQuery(() => listFocusSessions(), [], []);
+  // `undefined` until IndexedDB resolves, so `loading` reflects the real first paint.
+  const baseFocusSessions = useLiveQuery(() => listFocusSessions(), []);
   const [focusSessions, dispatchOptimistic] = useOptimistic(
     baseFocusSessions ?? [],
     (state, action: FocusSessionOptimisticAction) => {

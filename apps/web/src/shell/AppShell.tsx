@@ -24,6 +24,10 @@ const NAV_ITEMS: Array<{ view: AppView; label: string; icon: ReactNode }> = [
 
 const MOBILE_PRIMARY_VIEWS: AppView[] = ["dashboard", "kanban", "timeline", "notes"];
 
+/** The palette listens for Ctrl+K everywhere; only the hint text changes per platform. */
+const IS_APPLE_PLATFORM = typeof navigator !== "undefined" && /Mac|iPhone|iPad|iPod/.test(navigator.userAgent);
+const SHORTCUT_HINT = IS_APPLE_PLATFORM ? "⌘ K" : "Ctrl K";
+
 function initialFromEmail(email: string | null): string {
   const source = email?.trim();
   return source ? source[0].toUpperCase() : "?";
@@ -314,7 +318,7 @@ export function AppShell({
           <button type="button" className="shell-search-trigger hidden md:inline-flex" onClick={onOpenCommandPalette} aria-label="Open global search">
             <MagnifyingGlass size={16} weight="bold" />
             <span className="w-52 truncate text-left lg:w-64">Search tasks, notes, goals…</span>
-            <kbd className="shell-search-kbd">Ctrl K</kbd>
+            <kbd className="shell-search-kbd">{SHORTCUT_HINT}</kbd>
           </button>
         ) : null}
 
@@ -370,7 +374,7 @@ export function AppShell({
         </div>
       </main>
 
-      {primaryActionLabel && onNewTask ? (
+      {primaryActionLabel && onNewTask && !mobileMoreOpen ? (
         <button
           type="button"
           onClick={onNewTask}

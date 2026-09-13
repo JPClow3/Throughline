@@ -25,6 +25,7 @@ export function BoardView({
   onComplete,
   onStatusChange,
   onUpdateTasks,
+  onUpdateTask,
   onEdit,
   onOpenNotes,
   onStartFocus,
@@ -35,6 +36,8 @@ export function BoardView({
   onStatusChange: (taskId: string, status: TaskStatus) => void;
   /** Persists board moves in one batch; when absent the board falls back to status-only moves. */
   onUpdateTasks?: (updates: Task[]) => void;
+  /** Enables inline subtask editing on the cards (Today/Board parity). */
+  onUpdateTask?: (task: Task) => void;
   onEdit: (task: Task) => void;
   onOpenNotes?: () => void;
   onStartFocus?: (task: Task) => void;
@@ -55,6 +58,27 @@ export function BoardView({
       coordinateGetter: sortableKeyboardCoordinates
     })
   );
+
+  /** Arrow/Home/End move between status tabs on the touch board, like a real tablist. */
+  function handleStatusTabKeys(event: React.KeyboardEvent<HTMLDivElement>) {
+    const index = taskStatuses.indexOf(mobileStatus);
+    let nextIndex: number;
+    if (event.key === "ArrowRight") {
+      nextIndex = (index + 1) % taskStatuses.length;
+    } else if (event.key === "ArrowLeft") {
+      nextIndex = (index - 1 + taskStatuses.length) % taskStatuses.length;
+    } else if (event.key === "Home") {
+      nextIndex = 0;
+    } else if (event.key === "End") {
+      nextIndex = taskStatuses.length - 1;
+    } else {
+      return;
+    }
+    event.preventDefault();
+    const nextStatus = taskStatuses[nextIndex];
+    setMobileStatus(nextStatus);
+    document.getElementById(`kanban-tab-${nextStatus}`)?.focus();
+  }
 
   const handleCompleteTask = (target: Task) => {
     setRecentlyCompletedIds((prev) => new Set(prev).add(target.id));
@@ -177,16 +201,19 @@ export function BoardView({
         />
       ) : isMobileBoard ? (
         <section className="kanban-mobile" aria-label="Kanban board">
-          <div className="kanban-mobile-tabs" role="tablist" aria-label="Choose workflow status">
+          <div className="kanban-mobile-tabs" role="tablist" aria-label="Choose workflow status" onKeyDown={handleStatusTabKeys}>
             {taskStatuses.map((status) => {
               const count = filteredTasks.filter((task) => task.status === status).length;
               const active = mobileStatus === status;
               return (
                 <button
                   key={status}
+                  id={`kanban-tab-${status}`}
                   type="button"
                   role="tab"
                   aria-selected={active}
+                  aria-controls="kanban-mobile-panel"
+                  tabIndex={active ? 0 : -1}
                   onClick={() => setMobileStatus(status)}
                 >
                   <span>{kanbanColumns[status]}</span>
@@ -195,7 +222,13 @@ export function BoardView({
               );
             })}
           </div>
-          <div className="kanban-mobile-list" role="tabpanel" aria-label={`${kanbanColumns[mobileStatus]} tasks`}>
+          <div
+            id="kanban-mobile-panel"
+            className="kanban-mobile-list"
+            role="tabpanel"
+            aria-labelledby={`kanban-tab-${mobileStatus}`}
+            tabIndex={0}
+          >
             <header>
               <h2>{kanbanColumns[mobileStatus]}</h2>
               <span className="today-count">{filteredTasks.filter((task) => task.status === mobileStatus).length}</span>
@@ -216,13 +249,15 @@ export function BoardView({
                       moveTo(target.id, status);
                     }}
                     onEdit={onEdit}
+                    onUpdateTask={onUpdateTask}
+                    offerEmptyStepInput={false}
                     onOpenNotes={onOpenNotes}
                     onStartFocus={onStartFocus}
                   />
                 </div>
               ))}
               {filteredTasks.filter((task) => task.status === mobileStatus).length === 0 ? (
-                <p className="kanban-empty-state">No tasks in {kanbanColumns[mobileStatus].toLowerCase()}.</p>
+                <ColumnEmpty status={mobileStatus} onNewTask={onNewTask} />
               ) : null}
             </div>
           </div>
@@ -249,14 +284,13 @@ export function BoardView({
                           moveTo(target.id, nextStatus);
                         }}
                         onEdit={onEdit}
+                        onUpdateTask={onUpdateTask}
                         onOpenNotes={onOpenNotes}
                         onStartFocus={onStartFocus}
                       />
                     ))}
                   </SortableContext>
-                  {columnTasks.length === 0 ? (
-                    <p className="kanban-empty-state">No tasks in {kanbanColumns[status].toLowerCase()}.</p>
-                  ) : null}
+                  {columnTasks.length === 0 ? <ColumnEmpty status={status} onNewTask={onNewTask} /> : null}
                 </KanbanColumn>
               );
             })}
@@ -291,6 +325,20 @@ function KanbanColumn({ status, count, children }: { status: TaskStatus; count: 
   );
 }
 
+/** Empty column placeholder: state plus a real next step, per the "no dead affordances" rule. */
+function ColumnEmpty({ status, onNewTask }: { status: TaskStatus; onNewTask?: () => void }) {
+  return (
+    <div className="kanban-empty">
+      <p className="kanban-empty-state">No tasks in {kanbanColumns[status].toLowerCase()}.</p>
+      {onNewTask ? (
+        <Button size="sm" onClick={onNewTask} aria-label={`Add a task to ${kanbanColumns[status]}`}>
+          <Plus size={14} weight="bold" /> Add task
+        </Button>
+      ) : null}
+    </div>
+  );
+}
+
 function SortableQuest({
   task,
   course,
@@ -300,6 +348,7 @@ function SortableQuest({
   onComplete,
   onStatusChange,
   onEdit,
+  onUpdateTask,
   onOpenNotes,
   onStartFocus
 }: {
@@ -311,6 +360,7 @@ function SortableQuest({
   onComplete: (task: Task) => void;
   onStatusChange: (taskId: string, status: TaskStatus) => void;
   onEdit: (task: Task) => void;
+  onUpdateTask?: (task: Task) => void;
   onOpenNotes?: () => void;
   onStartFocus?: (task: Task) => void;
 }) {
@@ -408,6 +458,8 @@ function SortableQuest({
         onComplete={onComplete}
         onStatusChange={onStatusChange}
         onEdit={onEdit}
+        onUpdateTask={onUpdateTask}
+        offerEmptyStepInput={false}
         onOpenNotes={onOpenNotes}
         onStartFocus={onStartFocus}
       />

@@ -1,9 +1,8 @@
 import { Course, RpgAttribute, Task, createCourse, rpgAttributes } from "@throughline/domain";
 import { Check, FolderOpen, PencilSimple, Plus, Trash, X } from "@phosphor-icons/react";
-import { FormEvent, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
+import { PROJECT_COLORS } from "../lib/palette";
 import { Button, Card, ConfirmDialog, EmptyState, IconButton, Select, TextInput } from "../ui";
-
-const PROJECT_COLORS = ["#3d5afe", "#1fae67", "#e8a013", "#ff5d47", "#8f6bf5", "#2aa8c4"];
 
 function ColorPicker({ value, onChange, label }: { value: string; onChange: (color: string) => void; label: string }) {
   return (
@@ -47,6 +46,7 @@ export function CoursesView({
   const [error, setError] = useState("");
   const [editError, setEditError] = useState("");
   const [busy, setBusy] = useState(false);
+  const nameInputRef = useRef<HTMLInputElement>(null);
 
   const counts = new Map<string, number>();
   for (const task of tasks) {
@@ -137,7 +137,7 @@ export function CoursesView({
                     aria-label={`Rename ${course.name}`}
                     aria-invalid={editError ? true : undefined}
                     autoFocus
-                    style={{ flex: "1 1 160px" }}
+                    className="project-edit-name"
                   />
                   {editError ? (
                     <p className="composer-error composer-error-inline" role="alert">
@@ -148,7 +148,7 @@ export function CoursesView({
                     value={editAttribute}
                     onChange={(event) => setEditAttribute(event.target.value as RpgAttribute | "")}
                     aria-label="Default attribute"
-                    style={{ width: "auto", minHeight: 38 }}
+                    className="project-attribute-select"
                   >
                     <option value="">No attribute</option>
                     {rpgAttributes.map((item) => (
@@ -158,7 +158,7 @@ export function CoursesView({
                     ))}
                   </Select>
                   <ColorPicker value={editColor} onChange={setEditColor} label="Project colour" />
-                  <IconButton label={`Save ${course.name}`} size="sm" type="submit" className="!bg-[var(--green)]">
+                  <IconButton label={`Save ${course.name}`} size="sm" type="submit" className="is-confirm">
                     <Check size={14} weight="bold" />
                   </IconButton>
                   <IconButton label="Cancel edit" size="sm" onClick={() => setEditingId(null)}>
@@ -189,13 +189,7 @@ export function CoursesView({
               title="No projects yet"
               body="Add one below to group related tasks, goals, and notes."
               action={
-                <Button
-                  variant="accent"
-                  onClick={() => {
-                    const input = document.querySelector<HTMLInputElement>('input[aria-label="New project name"]');
-                    input?.focus();
-                  }}
-                >
+                <Button variant="accent" onClick={() => nameInputRef.current?.focus()}>
                   <Plus size={15} weight="bold" /> Create project
                 </Button>
               }
@@ -206,6 +200,7 @@ export function CoursesView({
         <form className="project-add" onSubmit={addProject}>
           <div className="project-add-field">
             <TextInput
+              ref={nameInputRef}
               value={name}
               onChange={(event) => {
                 setName(event.target.value);
@@ -225,7 +220,7 @@ export function CoursesView({
             value={attribute}
             onChange={(event) => setAttribute(event.target.value as RpgAttribute | "")}
             aria-label="Default attribute"
-            style={{ width: "auto" }}
+            className="project-attribute-select"
           >
             <option value="">No attribute</option>
             {rpgAttributes.map((item) => (

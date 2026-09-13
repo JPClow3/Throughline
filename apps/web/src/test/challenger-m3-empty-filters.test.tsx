@@ -27,36 +27,19 @@ import { DEFAULT_PLANNER, PlannerStub, renderWithPlanner } from "./planner-test-
 import { PlannerContext } from "../state/PlannerProvider";
 import { Modal } from "../ui";
 
-// Dynamic mocks for InsightsView dependencies
+// InsightsView reads planner data from context; swap these holders per test.
 const mockTasksData = { current: [] as Task[] };
 const mockCoursesData = { current: [] as Course[] };
 const mockFocusSessionsData = { current: [] as FocusSession[] };
 
-vi.mock("../hooks/useTasks", () => ({
-  useTasks: () => ({
+function insightsPlanner() {
+  return {
     tasks: mockTasksData.current,
     courses: mockCoursesData.current,
-    progress: undefined,
-    addTask: vi.fn(),
-    updateTask: vi.fn(),
-    updateTaskStatus: vi.fn(),
-    deleteTask: vi.fn(),
-    completeTask: vi.fn(),
-    upsertCourse: vi.fn(),
-    deleteCourse: vi.fn(),
-    recordFocusSession: vi.fn(),
-    loading: false
-  })
-}));
-
-vi.mock("../hooks/useFocusSessions", () => ({
-  useFocusSessions: () => ({
     focusSessions: mockFocusSessionsData.current,
-    activeSession: null,
-    recordSession: vi.fn(),
     loading: false
-  })
-}));
+  };
+}
 
 function stubMatchMedia(matchingQuery?: string | ((query: string) => boolean)) {
   const originalMatchMedia = window.matchMedia;
@@ -557,7 +540,7 @@ describe("Feature 14 Adversarial: Zero-state edge cases across all 8 views", () 
       mockFocusSessionsData.current = [];
 
       const onNewTask = vi.fn();
-      render(<InsightsView onNewTask={onNewTask} />);
+      renderWithPlanner(<InsightsView onNewTask={onNewTask} />, { planner: insightsPlanner() });
 
       expect(screen.getByText("No activity recorded yet")).toBeInTheDocument();
       expect(
@@ -593,7 +576,7 @@ describe("Feature 14 Adversarial: Zero-state edge cases across all 8 views", () 
         }
       ];
 
-      render(<InsightsView onNewTask={vi.fn()} />);
+      renderWithPlanner(<InsightsView onNewTask={vi.fn()} />, { planner: insightsPlanner() });
 
       expect(screen.queryByText("No activity recorded yet")).not.toBeInTheDocument();
       expect(screen.getByText("Completions, last 7 days")).toBeInTheDocument();

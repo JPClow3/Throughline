@@ -58,6 +58,7 @@ Depth is communicated by displacement, not blur:
 - **Input Fields:** Inset paper-toned fields with 2px borders; focus replaces the shadow with a yellow offset glow.
 - **Chips:** Pill-shaped, bordered, hard-shadowed toggles; active chips invert to ink fill.
 - **Cards & Modules:** Solid card fills with 2px borders; project colour appears as left edge bars or dots, never as large washes.
+- **Task Cards:** Completion is always one press. Inline step editing opens from the step-progress control once a card has steps; goal steps additionally keep an always-visible "Add subtask" field because decomposition is the point there. Dense lists stay quiet. On touch, card titles keep a visible "open task" affordance instead of relying on hover.
 - **Progress rings:** Conic-gradient ring with a card-coloured inner disc and a bold percentage readout.
 - **Install Banner:** The PWA install prompt is a bordered card chip (icon tile, title, subtitle, primary Install action, quiet dismiss). Dismissal persists in appearance settings in IndexedDB, not ad hoc localStorage.
 
@@ -76,7 +77,8 @@ Depth is communicated by displacement, not blur:
 - **Mobile Filters:** Board and task filters collapse on small screens into visible search plus a Filters disclosure, preserving project, goal, date, tag, status, and priority behavior.
 - **Filter Presets:** Filters use native chips for built-in presets, tag chips for existing tags, saved custom presets in IndexedDB settings, and a visible Clear filters command.
 - **Focus Sessions:** A single focus system supports untitled focus and task-attached focus via a dockable square timer. Completed sessions are stored as first-class focus records and feed Today/Insights instead of synthetic completed tasks.
-- **Board Accessibility:** Kanban cards support keyboard movement, focus restoration, clear labels, and live announcements when a task changes columns.
+- **Board Accessibility:** Kanban cards support keyboard movement, focus restoration, clear labels, and live announcements when a task changes columns. The mobile status switcher and the Timeline day strip are real tablists (`aria-controls`/`tabpanel`, Arrow/Home/End keys). Empty columns offer an "Add task" action instead of a dead placeholder.
+- **Honest Loading:** Views render the skeleton until IndexedDB resolves. An empty state always means "there is nothing here", never "data has not arrived yet".
 
 ## 10. Optional Gamification (Momentum Layer)
 

@@ -28,12 +28,12 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     if (this.state.error) {
       return (
         <div className="crash-screen" role="alert">
-          <div className="ik-card flex max-w-[400px] flex-col items-center gap-4 p-8 text-center">
-            <span className="empty-state-icon" style={{ background: "var(--red-soft)" }}>
+          <div className="ik-card crash-card">
+            <span className="empty-state-icon is-danger">
               <Warning size={26} weight="bold" />
             </span>
-            <h1 className="text-base font-bold">Something went sideways</h1>
-            <p className="text-sm text-[var(--ink-soft)]">
+            <h1 className="crash-title">Something went sideways</h1>
+            <p className="crash-body">
               An unexpected error interrupted the view. Your data is saved locally and is safe.
             </p>
             <button className="btn btn-primary" type="button" onClick={() => window.location.reload()}>

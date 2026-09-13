@@ -272,9 +272,8 @@ function SortableSubtask({
     <div ref={setNodeRef} style={style} className="subtask-edit-row">
       <button
         type="button"
-        className="drag-handle"
+        className="drag-handle is-inline"
         aria-label={`Reorder ${subtask.title}`}
-        style={{ position: "static", width: 30, height: 30, opacity: 1 }}
         {...attributes}
         {...listeners}
       >

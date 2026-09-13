@@ -29,6 +29,12 @@ type TaskCardProps = {
   onUpdateTask?: (task: Task) => void;
   onOpenNotes?: () => void;
   onStartFocus?: (task: Task) => void;
+  /**
+   * Dense lists (Today, the Board) keep cards quiet: the inline step input
+   * only appears once the card has steps to expand. Goal steps keep the
+   * always-available input so decomposition stays frictionless.
+   */
+  offerEmptyStepInput?: boolean;
 };
 
 type DueTone = "done" | "overdue" | "soon" | "normal";
@@ -85,7 +91,8 @@ export function TaskCard({
   onEdit,
   onUpdateTask,
   onOpenNotes,
-  onStartFocus
+  onStartFocus,
+  offerEmptyStepInput = true
 }: TaskCardProps) {
   const done = task.status === "done";
   const due = task.dueAt ? new Date(task.dueAt) : undefined;
@@ -98,7 +105,7 @@ export function TaskCard({
   const [localJustCompleted, setLocalJustCompleted] = useState(false);
   const isJustCompleted = justCompleted || localJustCompleted;
   const wasDoneRef = useRef(task.status === "done");
-  const showSubtaskEditor = Boolean(onUpdateTask && (expanded || totalSubtasks === 0));
+  const showSubtaskEditor = Boolean(onUpdateTask && (expanded || (offerEmptyStepInput && totalSubtasks === 0)));
 
   useEffect(() => {
     if (task.status === "done" && !wasDoneRef.current) {
@@ -244,6 +251,7 @@ export function TaskCard({
                     onChange={(event) => setNewSubtaskTitle(event.target.value)}
                     onKeyDown={handleAddSubtask}
                     placeholder="Add subtask..."
+                    aria-label="New subtask title"
                   />
                 </div>
               </motion.div>
@@ -260,7 +268,7 @@ export function TaskCard({
           </span>
         ) : null}
         {task.recurrence ? (
-          <span className="meta-chip" title={`Repeats ${task.recurrence.pattern}`}>
+          <span className="meta-chip" role="img" aria-label={`Repeats ${task.recurrence.pattern}`} title={`Repeats ${task.recurrence.pattern}`}>
             <ArrowsClockwise size={12} weight="bold" />
           </span>
         ) : null}

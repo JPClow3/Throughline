@@ -1,18 +1,8 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { InsightsView } from "../views/InsightsView";
 import { CourseSchema, TaskSchema } from "@throughline/domain";
-import * as useTasksHook from "../hooks/useTasks";
-import * as useFocusSessionsHook from "../hooks/useFocusSessions";
-
-// Mock the useTasks hook
-vi.mock("../hooks/useTasks", () => ({
-  useTasks: vi.fn(),
-}));
-
-vi.mock("../hooks/useFocusSessions", () => ({
-  useFocusSessions: vi.fn(),
-}));
+import { renderWithPlanner } from "./planner-test-utils";
 
 describe("InsightsView", () => {
   afterEach(() => {
@@ -45,33 +35,9 @@ describe("InsightsView", () => {
       })
     ];
 
-    vi.mocked(useTasksHook.useTasks).mockReturnValue({
-      tasks: mockTasks,
-      courses: mockCourses,
-      progress: undefined,
-      addTask: vi.fn(),
-      updateTask: vi.fn(),
-      updateTaskStatus: vi.fn(),
-      deleteTask: vi.fn(),
-      completeTask: vi.fn(),
-      upsertCourse: vi.fn(),
-      deleteCourse: vi.fn(),
-      recordFocusSession: vi.fn(),
-      loading: false
+    renderWithPlanner(<InsightsView />, {
+      planner: { tasks: mockTasks, courses: mockCourses, focusSessions: [], loading: false }
     });
-    vi.mocked(useFocusSessionsHook.useFocusSessions).mockReturnValue({
-      focusSessions: [],
-      loading: false,
-      recordFocusSession: vi.fn(),
-      updateFocusSession: vi.fn(),
-      deleteFocusSession: vi.fn()
-    });
-
-    render(
-      <div>
-        <InsightsView />
-      </div>
-    );
 
     expect(screen.getByText("What to adjust this week")).toBeInTheDocument();
     expect(screen.getByText("Completed")).toBeInTheDocument();
@@ -91,55 +57,36 @@ describe("InsightsView", () => {
       createdAt: timestamp,
       updatedAt: timestamp
     });
-    vi.mocked(useTasksHook.useTasks).mockReturnValue({
-      tasks: [
-        TaskSchema.parse({
-          id: "1",
-          title: "Bio lab",
-          status: "done",
-          courseId: biology.id,
-          completedAt: "2026-06-28T09:00:00.000Z",
-          estimatedMinutes: 60,
-          tags: [],
-          createdAt: timestamp,
-          updatedAt: timestamp
-        }),
-        TaskSchema.parse({
-          id: "2",
-          title: "Bio quiz",
-          status: "done",
-          courseId: biology.id,
-          completedAt: "2026-06-27T10:00:00.000Z",
-          estimatedMinutes: 45,
-          tags: [],
-          createdAt: timestamp,
-          updatedAt: timestamp
-        })
-      ],
-      courses: [biology],
-      progress: undefined,
-      addTask: vi.fn(),
-      updateTask: vi.fn(),
-      updateTaskStatus: vi.fn(),
-      deleteTask: vi.fn(),
-      completeTask: vi.fn(),
-      upsertCourse: vi.fn(),
-      deleteCourse: vi.fn(),
-      recordFocusSession: vi.fn(),
-      loading: false
-    });
-    vi.mocked(useFocusSessionsHook.useFocusSessions).mockReturnValue({
-      focusSessions: [],
-      loading: false,
-      recordFocusSession: vi.fn(),
-      updateFocusSession: vi.fn(),
-      deleteFocusSession: vi.fn()
-    });
+    const tasks = [
+      TaskSchema.parse({
+        id: "1",
+        title: "Bio lab",
+        status: "done",
+        courseId: biology.id,
+        completedAt: "2026-06-28T09:00:00.000Z",
+        estimatedMinutes: 60,
+        tags: [],
+        createdAt: timestamp,
+        updatedAt: timestamp
+      }),
+      TaskSchema.parse({
+        id: "2",
+        title: "Bio quiz",
+        status: "done",
+        courseId: biology.id,
+        completedAt: "2026-06-27T10:00:00.000Z",
+        estimatedMinutes: 45,
+        tags: [],
+        createdAt: timestamp,
+        updatedAt: timestamp
+      })
+    ];
 
-    render(<InsightsView />);
+    renderWithPlanner(<InsightsView />, {
+      planner: { tasks, courses: [biology], focusSessions: [], loading: false }
+    });
 
     expect(screen.getByText("Biology is carrying most of this week.")).toBeInTheDocument();
     expect(screen.getByText("You complete more tasks before noon.")).toBeInTheDocument();
   });
 });
-

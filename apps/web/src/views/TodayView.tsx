@@ -8,11 +8,15 @@ import { TaskCard } from "./TaskCard";
 export function TodayView({
   onNewTask,
   onEdit,
-  onStartFocus
+  onStartFocus,
+  onUpdateTask,
+  showGameLayer = false
 }: {
   onNewTask: (date?: Date) => void;
   onEdit: (task: Task) => void;
   onStartFocus?: (task: Task) => void;
+  onUpdateTask?: (task: Task) => void;
+  showGameLayer?: boolean;
 }) {
   const { tasks, courses, focusSessions, completeTask } = usePlanner();
 
@@ -71,8 +75,11 @@ export function TodayView({
                   key={task.id}
                   task={task}
                   course={courseMap.get(task.courseId ?? "")}
+                  showGameLayer={showGameLayer}
                   onComplete={(target) => completeTask(target)}
                   onEdit={onEdit}
+                  onUpdateTask={onUpdateTask}
+                  offerEmptyStepInput={false}
                   onStartFocus={onStartFocus}
                 />
               ))}

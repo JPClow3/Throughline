@@ -26,6 +26,7 @@ import { GoalsView } from "../views/GoalsView";
 import { InsightsView } from "../views/InsightsView";
 import { NoteEditor, NotesView } from "../views/NotesView";
 import { SettingsView } from "../views/SettingsView";
+import { PlannerProvider } from "../state/PlannerProvider";
 import { TaskCard } from "../views/TaskCard";
 import { TaskComposer } from "../views/TaskComposer";
 import { TimelineView } from "../views/TimelineView";
@@ -745,7 +746,11 @@ describe("Throughline Inkline E2E Test Suite", () => {
           createFocusSession({ id: "fs_1", startedAt: now, durationMinutes: 45 })
         ]);
 
-        render(<InsightsView />);
+        render(
+          <PlannerProvider>
+            <InsightsView />
+          </PlannerProvider>
+        );
 
         expect(await screen.findByText("Completed")).toBeInTheDocument();
         expect(await screen.findByText("Focus time")).toBeInTheDocument();
@@ -753,14 +758,22 @@ describe("Throughline Inkline E2E Test Suite", () => {
       });
 
       it("T1.32: renders 28-day completion heatmap with intensity values", async () => {
-        render(<InsightsView />);
+        render(
+          <PlannerProvider>
+            <InsightsView />
+          </PlannerProvider>
+        );
         const heatmap = await screen.findByLabelText("Completed tasks over the last 28 days");
         expect(heatmap).toBeInTheDocument();
         expect(heatmap.children.length).toBe(28);
       });
 
       it("T1.33: renders weekly completions chart structure", async () => {
-        render(<InsightsView />);
+        render(
+          <PlannerProvider>
+            <InsightsView />
+          </PlannerProvider>
+        );
         expect(await screen.findByText("Completions, last 7 days")).toBeInTheDocument();
         expect(screen.getByText("Weekly rhythm")).toBeInTheDocument();
       });
@@ -788,7 +801,11 @@ describe("Throughline Inkline E2E Test Suite", () => {
           createTask({ id: "c_task_1", title: "Done 1", courseId: course.id, status: "done", completedAt: new Date().toISOString() })
         ]);
 
-        render(<InsightsView />);
+        render(
+          <PlannerProvider>
+            <InsightsView />
+          </PlannerProvider>
+        );
         expect(await screen.findByText("Where completions landed")).toBeInTheDocument();
         expect(await screen.findByText(course.name)).toBeInTheDocument();
         expect(screen.getByText("1 tasks")).toBeInTheDocument();
@@ -1421,7 +1438,11 @@ describe("Throughline Inkline E2E Test Suite", () => {
       expect(screen.getByText("1 of 2 tasks done. Keep it quiet and steady.")).toBeInTheDocument();
       unmount();
 
-      render(<InsightsView />);
+      render(
+        <PlannerProvider>
+          <InsightsView />
+        </PlannerProvider>
+      );
       expect(await screen.findByText("Completed")).toBeInTheDocument();
       expect((await screen.findAllByText(/1/)).length).toBeGreaterThan(0);
     });

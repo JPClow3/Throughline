@@ -30,6 +30,12 @@ Throughline is a local-first, offline-capable student and power-planner web appl
 | 18 | E2E Test Passing & Validation | Verify 100% of E2E test cases pass against the completed application | M5 | System spec |
 | 19 | Adversarial Coverage Hardening (Tier 5) | White-box adversarial testing with Challengers to uncover edge cases and harden test coverage | M5 | System spec |
 | 20 | Automated Verification (Build, Lint, Test, Typecheck) | Ensure `npm run typecheck`, `npm run lint`, `npm run test`, and `npm run build` pass with 0 errors | M5 | ORIGINAL_REQUEST |
+| 21 | Real First-Paint Loading States | Stop masking `undefined` with `[]` in `useTasks`/`useFocusSessions` so the shell renders the skeleton instead of flashing an empty state; Insights reads planner context instead of ad-hoc hooks | M6 | Polish pass |
+| 22 | Dead-Affordance Cleanup | Inline step editing wired on Today/Board behind `.subtask-progress` (goal steps keep the always-on input), per-column "Add task" CTAs, duplicate goal "Add linked note" CTA removed, `Notice` error icon uses the real `--danger` token | M6 | Polish pass |
+| 23 | Shell Polish | Dark-mode brand-mark contrast fixed, dock "More" sheet no longer collides with the FAB, `shell-main` bottom padding clears the FAB, 40px sync pill + 44px tabs, platform-aware ⌘K hint | M6 | Polish pass |
+| 24 | Tablist & Live-Region Semantics | Mobile board status tabs and timeline day chips are real tablists (`aria-controls`/`tabpanel` + Arrow/Home/End), goal completion and step reorder announced via `aria-live`, labelled subtask/recurrence controls, visible touch affordance on card titles | M6 | Polish pass |
+| 25 | Token & Inline-Style Consolidation | One entrance-duration token (`--dur-enter`), `--tracking-eyebrow` on tabs/dock/sheet/pill, project palette restricted to Inkline hexes (`lib/palette.ts`), inline layout styles replaced with classes (Onboarding, FocusTimer, TaskEditor, CoursesView, ErrorBoundary) | M6 | Polish pass |
+| 26 | Deterministic Test Infrastructure | Visual snapshots freeze the clock (`page.clock.setFixedTime`), Vitest worker cap (`maxWorkers: "50%"`) and a documented push-api suite timeout remove false timeouts/worker-start failures | M6 | Polish pass |
 
 ## Milestones
 | # | Name | Scope | Dependencies | Status |
@@ -38,7 +44,8 @@ Throughline is a local-first, offline-capable student and power-planner web appl
 | M2 | Shell, Navigation & Keyboard Workflows | Features 7, 8, 9, 10: Goals 'N' shortcut, Command Palette Insights, URL alias `view=today`, A11y focus traps & dialog escapes | M1 | DONE |
 | M3 | Core Planner Views & UX Affordances | Features 11, 12, 13, 14, 15: Timeline edit affordance, Goals note navigation, Board completion confetti, complete empty states, filter preset UX | M1 | DONE |
 | M4 | E2E Testing Track (Dual Track) | Features 16, 17: Requirement-driven test infrastructure, Tiers 1-4 test cases covering all 8 planner views and responsive/keyboard requirements; publish `TEST_READY.md` | none (Parallel) | DONE |
-| M5 | Final Milestone: E2E Pass & Adversarial Hardening | Features 18, 19, 20: Pass 100% E2E tests, Tier 5 adversarial hardening, and full automated suite verification (`typecheck`, `lint`, `test`, `build`) | M1, M2, M3, M4 | IN_PROGRESS |
+| M5 | Final Milestone: E2E Pass & Adversarial Hardening | Features 18, 19, 20: Pass 100% E2E tests, Tier 5 adversarial hardening, and full automated suite verification (`typecheck`, `lint`, `test`, `build`) | M1, M2, M3, M4 | DONE |
+| M6 | Inkline Polish & Release Hardening | Features 21-26: real loading states, dead-affordance cleanup, shell polish, tablist/live-region semantics, token consolidation, deterministic test infrastructure | M1-M5 | DONE |
 
 ## Interface Contracts
 ### `TimelineView` ↔ `App`
@@ -67,7 +74,9 @@ interface TaskCardProps {
   onComplete?: (task: Task) => void; // Must always be called when completion checkbox is clicked
   onStatusChange?: (taskId: string, status: TaskStatus) => void; // For drag-and-drop or select moves
   onEdit?: (task: Task) => void;
+  onUpdateTask?: (task: Task) => void; // Enables inline step editing once the card has steps
   onStartFocus?: (task: Task) => void;
+  offerEmptyStepInput?: boolean; // Dense lists (Today/Board) pass false; goal steps default true
 }
 ```
 

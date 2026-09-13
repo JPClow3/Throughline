@@ -3,16 +3,21 @@ import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 import { useMemo, type CSSProperties, type ReactNode } from "react";
 import { deriveCoachingInsights } from "@throughline/domain";
 import { Button, EmptyState, ViewSkeleton } from "../ui";
-import { useFocusSessions } from "../hooks/useFocusSessions";
-import { useTasks } from "../hooks/useTasks";
+import { usePlanner } from "../state/PlannerProvider";
+
+/** Hard-edged tooltip shared by every chart, per the Inkline elevation rules. */
+const CHART_TOOLTIP_STYLE = {
+  borderRadius: "10px",
+  border: "2px solid var(--line)",
+  background: "var(--card)",
+  color: "var(--ink)",
+  fontWeight: 600
+} as const;
 
 export function InsightsView({ onNewTask }: { onNewTask?: () => void } = {}) {
-  const { tasks, courses } = useTasks();
-  const { focusSessions } = useFocusSessions();
+  const { tasks, courses, focusSessions, loading } = usePlanner();
 
   const stats = useMemo(() => {
-    if (!tasks || !courses) return null;
-
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -132,7 +137,7 @@ export function InsightsView({ onNewTask }: { onNewTask?: () => void } = {}) {
     };
   }, [tasks, courses, focusSessions]);
 
-  if (!stats) {
+  if (loading) {
     return (
       <div className="view-layout">
         <ViewSkeleton />
@@ -226,20 +231,15 @@ export function InsightsView({ onNewTask }: { onNewTask?: () => void } = {}) {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={stats.dailyFocusHistory}>
                   <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "var(--ink-faint)" }} />
-                  <Tooltip
-                    cursor={{ fill: "var(--paper-2)" }}
-                    contentStyle={{
-                      borderRadius: "10px",
-                      border: "2px solid var(--line)",
-                      background: "var(--card)",
-                      color: "var(--ink)",
-                      fontWeight: 600
-                    }}
-                  />
+                  <Tooltip cursor={{ fill: "var(--paper-2)" }} contentStyle={CHART_TOOLTIP_STYLE} />
                   <Bar dataKey="focusHours" fill="var(--blue)" stroke="var(--line)" strokeWidth={2} radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
+            <p className="sr-only">
+              Focus hours per day, last 7 days:{" "}
+              {stats.dailyFocusHistory.map((entry) => `${entry.date} ${entry.focusHours}h`).join(", ")}.
+            </p>
           </div>
 
           <div className="insights-chart-col">
@@ -249,20 +249,15 @@ export function InsightsView({ onNewTask }: { onNewTask?: () => void } = {}) {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={stats.weeklyFocusHistory}>
                   <XAxis dataKey="weekLabel" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "var(--ink-faint)" }} />
-                  <Tooltip
-                    cursor={{ fill: "var(--paper-2)" }}
-                    contentStyle={{
-                      borderRadius: "10px",
-                      border: "2px solid var(--line)",
-                      background: "var(--card)",
-                      color: "var(--ink)",
-                      fontWeight: 600
-                    }}
-                  />
+                  <Tooltip cursor={{ fill: "var(--paper-2)" }} contentStyle={CHART_TOOLTIP_STYLE} />
                   <Bar dataKey="focusHours" fill="var(--violet)" stroke="var(--line)" strokeWidth={2} radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
+            <p className="sr-only">
+              Focus hours per week, last 4 weeks:{" "}
+              {stats.weeklyFocusHistory.map((entry) => `${entry.weekLabel} ${entry.focusHours}h`).join(", ")}.
+            </p>
           </div>
         </article>
 
@@ -275,20 +270,15 @@ export function InsightsView({ onNewTask }: { onNewTask?: () => void } = {}) {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={stats.weeklyCompletionsData}>
                 <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "var(--ink-faint)" }} />
-                <Tooltip
-                  cursor={{ fill: "var(--paper-2)" }}
-                  contentStyle={{
-                    borderRadius: "10px",
-                    border: "2px solid var(--line)",
-                    background: "var(--card)",
-                    color: "var(--ink)",
-                    fontWeight: 600
-                  }}
-                />
+                <Tooltip cursor={{ fill: "var(--paper-2)" }} contentStyle={CHART_TOOLTIP_STYLE} />
                 <Bar dataKey="completed" fill="var(--green)" stroke="var(--line)" strokeWidth={2} radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
+          <p className="sr-only">
+            Completed tasks per day, last 7 days:{" "}
+            {stats.weeklyCompletionsData.map((entry) => `${entry.date} ${entry.completed}`).join(", ")}.
+          </p>
         </article>
 
         <article className="ik-card insights-module">
@@ -328,7 +318,19 @@ export function InsightsView({ onNewTask }: { onNewTask?: () => void } = {}) {
               ))}
             </div>
           ) : (
-            <p className="insights-empty-copy">Complete a few tasks to see course balance.</p>
+            <EmptyState
+              variant="inline"
+              icon={<Books size={22} weight="bold" />}
+              title="No completions yet"
+              body="Complete a few tasks to see how your course load is distributed."
+              action={
+                onNewTask ? (
+                  <Button size="sm" onClick={onNewTask}>
+                    <Plus size={14} weight="bold" /> Capture a task
+                  </Button>
+                ) : undefined
+              }
+            />
           )}
         </article>
       </section>

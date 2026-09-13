@@ -154,9 +154,9 @@ export function FocusTimer({
               role="timer"
             >
               {showSuccess ? (
-                <span className="relative flex flex-col items-center gap-0.5 text-[var(--green)]">
+                <span className="focus-timer-success">
                   <CheckCircle size={30} weight="bold" />
-                  <strong className="text-xs font-bold">Logged</strong>
+                  <strong>Logged</strong>
                 </span>
               ) : (
                 <span className="focus-ring-time tabular">
@@ -166,12 +166,12 @@ export function FocusTimer({
             </div>
 
             {!showSuccess ? (
-              <div className="flex items-center gap-2.5">
+              <div className="focus-timer-actions">
                 <Button
                   variant="primary"
+                  className="focus-timer-toggle"
                   aria-label={isActive ? "Pause focus session" : "Start focus session"}
                   onClick={toggleTimer}
-                  style={{ width: 46, height: 46, padding: 0, borderRadius: "50%" }}
                 >
                   {isActive ? <Pause size={18} weight="bold" /> : <Play size={18} weight="bold" />}
                 </Button>

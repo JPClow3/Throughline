@@ -1,5 +1,5 @@
 import { useLiveQuery } from "dexie-react-hooks";
-import { useCallback, useOptimistic, startTransition } from "react";
+import { useCallback, useMemo, useOptimistic, startTransition } from "react";
 import { Task, TaskStatus } from "@throughline/domain";
 import { syncRedactedRemindersFromLocalState } from "../data/reminderSync";
 import { registerBackgroundSync } from "../lib/syncRegistration";
@@ -22,9 +22,13 @@ type TaskOptimisticAction =
   | { type: 'delete'; payload: string };
 
 export function useTasks() {
-  const baseTasks = useLiveQuery(() => listTasks(), [], []);
-  const courses = useLiveQuery(() => listCourses(), [], []);
+  // No `[]` defaults here: `undefined` is the honest first paint, so the shell
+  // can show a skeleton instead of flashing an empty state before Dexie resolves.
+  const baseTasks = useLiveQuery(() => listTasks(), []);
+  const courseRecords = useLiveQuery(() => listCourses(), []);
   const progress = useLiveQuery(() => getProgress(), []);
+  const courses = useMemo(() => courseRecords ?? [], [courseRecords]);
+  const loading = baseTasks === undefined || courseRecords === undefined;
 
   const [optimisticTasks, dispatchOptimisticTask] = useOptimistic(
     baseTasks ?? [],
@@ -96,7 +100,7 @@ export function useTasks() {
     tasks: optimisticTasks,
     courses,
     progress,
-    loading: !baseTasks || !courses,
+    loading,
     addTask,
     updateTask,
     deleteTask,

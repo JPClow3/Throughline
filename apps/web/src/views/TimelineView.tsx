@@ -125,6 +125,27 @@ export function TimelineView({
     })
   );
 
+  /** Arrow/Home/End move between day chips, matching tablist expectations. */
+  function handleDayStripKeys(event: React.KeyboardEvent<HTMLDivElement>) {
+    const index = days.findIndex((date) => localDayKey(date) === selectedKey);
+    let nextIndex: number;
+    if (event.key === "ArrowRight") {
+      nextIndex = Math.min(days.length - 1, index + 1);
+    } else if (event.key === "ArrowLeft") {
+      nextIndex = Math.max(0, index - 1);
+    } else if (event.key === "Home") {
+      nextIndex = 0;
+    } else if (event.key === "End") {
+      nextIndex = days.length - 1;
+    } else {
+      return;
+    }
+    event.preventDefault();
+    const nextKey = localDayKey(days[nextIndex]);
+    setSelectedKey(nextKey);
+    document.getElementById(`timeline-day-${nextKey}`)?.focus();
+  }
+
   const days = useMemo(() => {
     return Array.from({ length: 10 }, (_, index) => {
       const date = new Date(today);
@@ -201,7 +222,7 @@ export function TimelineView({
           />
         </header>
 
-        <div className="day-strip" role="tablist" aria-label="Select a day">
+        <div className="day-strip" role="tablist" aria-label="Select a day" onKeyDown={handleDayStripKeys}>
           {days.map((date) => (
             <DayChip
               key={localDayKey(date)}
@@ -212,45 +233,53 @@ export function TimelineView({
           ))}
         </div>
 
-        <div className="view-head agenda-day-head">
-          <div>
-            <span className="eyebrow">Selected day</span>
-            <h2 className="agenda-day-title">
-              {capitalizeFirst(selectedDate.toLocaleDateString(APP_LOCALE, { weekday: "long", month: "long", day: "numeric" }))}
-            </h2>
+        <div
+          id="timeline-day-panel"
+          role="tabpanel"
+          aria-labelledby={`timeline-day-${selectedKey}`}
+          tabIndex={0}
+          className="timeline-day-panel"
+        >
+          <div className="view-head agenda-day-head">
+            <div>
+              <span className="eyebrow">Selected day</span>
+              <h2 className="agenda-day-title">
+                {capitalizeFirst(selectedDate.toLocaleDateString(APP_LOCALE, { weekday: "long", month: "long", day: "numeric" }))}
+              </h2>
+            </div>
+            <Button variant="accent" onClick={() => onNewTask?.(selectedDate)}>
+              <Plus size={15} weight="bold" />
+              New Task for {capitalizeFirst(selectedDate.toLocaleDateString(APP_LOCALE, { weekday: "short" }))}
+            </Button>
           </div>
-          <Button variant="accent" onClick={() => onNewTask?.(selectedDate)}>
-            <Plus size={15} weight="bold" />
-            New Task for {capitalizeFirst(selectedDate.toLocaleDateString(APP_LOCALE, { weekday: "short" }))}
-          </Button>
-        </div>
 
-        {dayTasks.length ? (
-          <div className="agenda relative">
-            {dayTasks.map((task) => (
-              <DraggableAgendaRow
-                key={task.id}
-                task={task}
-                courseMap={courseById}
-                onStartFocus={onStartFocus}
-                onEdit={onEdit}
-              />
-            ))}
-          </div>
-        ) : (
-          <EmptyState
-            icon={<CalendarBlank size={24} weight="bold" />}
-            title="Nothing scheduled"
-            body="No tasks due on this day. Pick another day, or give a task a due time."
-            action={
-              onNewTask ? (
-                <Button variant="accent" onClick={() => onNewTask?.(selectedDate)}>
-                  <Plus size={15} weight="bold" /> Schedule a task
-                </Button>
-              ) : undefined
-            }
-          />
-        )}
+          {dayTasks.length ? (
+            <div className="agenda relative">
+              {dayTasks.map((task) => (
+                <DraggableAgendaRow
+                  key={task.id}
+                  task={task}
+                  courseMap={courseById}
+                  onStartFocus={onStartFocus}
+                  onEdit={onEdit}
+                />
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              icon={<CalendarBlank size={24} weight="bold" />}
+              title="Nothing scheduled"
+              body="No tasks due on this day. Pick another day, or give a task a due time."
+              action={
+                onNewTask ? (
+                  <Button variant="accent" onClick={() => onNewTask?.(selectedDate)}>
+                    <Plus size={15} weight="bold" /> Schedule a task
+                  </Button>
+                ) : undefined
+              }
+            />
+          )}
+        </div>
       </div>
 
       <DragOverlay dropAnimation={{ duration: 220, easing: "cubic-bezier(0.18, 0.67, 0.6, 1.22)" }}>
@@ -270,9 +299,12 @@ function DayChip({ date, active, onClick }: { date: Date; active: boolean; onCli
   return (
     <button
       ref={setNodeRef}
+      id={`timeline-day-${key}`}
       type="button"
       role="tab"
       aria-selected={active}
+      aria-controls="timeline-day-panel"
+      tabIndex={active ? 0 : -1}
       className={`day-chip${active ? " active" : ""}${isOver ? " is-over" : ""}`}
       onClick={onClick}
     >

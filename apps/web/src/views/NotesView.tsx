@@ -1,7 +1,7 @@
 import { Goal, Note, Task, noteDisplayTitle, noteExcerpt } from "@throughline/domain";
 import { ArrowLeft, Eye, LinkSimple, MagnifyingGlass, Note as FileText, Plus, PushPin, Trash } from "@phosphor-icons/react";
 import ReactMarkdown from "react-markdown";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { NoteInput } from "../data/repositories";
 import { useNotesSearch } from "../hooks/useNotesSearch";
 import { useCompactFilters } from "./FilterBar";
@@ -255,6 +255,17 @@ export function NoteEditor({
   const [title, setTitle] = useState(note.title);
   const [body, setBody] = useState(note.body);
   const [mode, setMode] = useState<"write" | "preview">("write");
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
+  const savedTimerRef = useRef<number | null>(null);
+
+  useEffect(
+    () => () => {
+      if (savedTimerRef.current !== null) {
+        window.clearTimeout(savedTimerRef.current);
+      }
+    },
+    []
+  );
 
   const taskMap = new Map(tasks.map((task) => [task.id, task]));
   const goalMap = new Map(goals.map((goal) => [goal.id, goal]));
@@ -264,7 +275,14 @@ export function NoteEditor({
   const unlinkedGoals = goals.filter((goal) => !note.goalIds.includes(goal.id));
 
   function commit(next: Partial<Pick<Note, "title" | "body" | "pinned">>) {
-    onSave({ ...note, title, body, ...next });
+    setSaveState("saving");
+    void Promise.resolve(onSave({ ...note, title, body, ...next })).finally(() => {
+      setSaveState("saved");
+      if (savedTimerRef.current !== null) {
+        window.clearTimeout(savedTimerRef.current);
+      }
+      savedTimerRef.current = window.setTimeout(() => setSaveState("idle"), 1600);
+    });
   }
 
   function addLink(value: string) {
@@ -294,6 +312,9 @@ export function NoteEditor({
         >
           <PushPin size={15} weight={note.pinned ? "fill" : "regular"} />
         </IconButton>
+        <span className="note-save-state" role="status" aria-live="polite">
+          {saveState === "saving" ? "Saving…" : saveState === "saved" ? "Saved" : ""}
+        </span>
         <IconButton label="Delete note" onClick={() => onDelete(note.id)}>
           <Trash size={15} weight="bold" />
         </IconButton>

@@ -9,6 +9,7 @@ import { clearAllData, getAppearanceSettings, saveAppearanceSettings, syncRecurr
 import type { GlobalSearchResult } from "./hooks/useGlobalSearch";
 import { usePwaInstall } from "./hooks/usePwaInstall";
 import { useTheme } from "./hooks/useTheme";
+import { PROJECT_COLORS } from "./lib/palette";
 import { requestNotificationPermission } from "./lib/notifications";
 import { AppShell, AppView, ShellSync } from "./shell/AppShell";
 import { PlannerProvider, usePlanner } from "./state/PlannerProvider";
@@ -120,7 +121,7 @@ export function App() {
 
   const toggleTheme = React.useCallback(() => {
     const current = appearanceSettings?.theme;
-    const next = current === "dark" ? "light" : current === "system" ? "dark" : "dark";
+    const next = current === "dark" ? "light" : "dark";
     void saveAppearanceSettings({ theme: next });
   }, [appearanceSettings?.theme]);
 
@@ -334,6 +335,16 @@ function Workspace(props: WorkspaceProps) {
         : undefined;
 
   const { view, setSelectedNoteId, setView, onOpenComposer } = props;
+  const cooldownTimerRef = React.useRef<number | null>(null);
+
+  React.useEffect(
+    () => () => {
+      if (cooldownTimerRef.current !== null) {
+        window.clearTimeout(cooldownTimerRef.current);
+      }
+    },
+    []
+  );
 
   const handlePrimaryAction = React.useCallback(async () => {
     if (view === "notes") {
@@ -392,7 +403,7 @@ function Workspace(props: WorkspaceProps) {
   const completeOnboardingSetup = async (input: OnboardingSetupInput) => {
     await clearAllData();
 
-    const palette = ["#3d5afe", "#1fae67", "#e8a013"];
+    const palette = PROJECT_COLORS;
     const icons = input.kind === "school" ? ["B", "M", "H"] : input.kind === "work" ? ["W", "S", "P"] : ["P", "H", "A"];
     const createdCourses = input.projectNames.map((name, index) =>
       createCourse({
@@ -490,7 +501,13 @@ function Workspace(props: WorkspaceProps) {
           ) : (
             <React.Suspense fallback={<ViewSkeleton />}>
               {props.view === "dashboard" ? (
-                <TodayView onNewTask={props.onOpenComposer} onEdit={openTask} onStartFocus={props.setFocusTask} />
+                <TodayView
+                  onNewTask={props.onOpenComposer}
+                  onEdit={openTask}
+                  onStartFocus={props.setFocusTask}
+                  onUpdateTask={(task) => void updateTask(task)}
+                  showGameLayer={props.showGameLayer}
+                />
               ) : null}
               {props.view === "kanban" ? (
                 <BoardView
@@ -498,6 +515,7 @@ function Workspace(props: WorkspaceProps) {
                   onComplete={(task) => completeTask(task)}
                   onStatusChange={(taskId, status) => void updateTaskStatus(taskId, status)}
                   onUpdateTasks={(updates) => void updateTasks(updates)}
+                  onUpdateTask={(task) => void updateTask(task)}
                   onEdit={openTask}
                   onOpenNotes={() => props.setView("notes")}
                   onStartFocus={props.setFocusTask}
@@ -675,7 +693,7 @@ function Workspace(props: WorkspaceProps) {
             );
             if (backlogTasks.length > 0) {
               const suggestions = backlogTasks.sort((a, b) => a.energy - b.energy).slice(0, 3);
-              setTimeout(() => props.setCooldownTasks(suggestions), 3000);
+              cooldownTimerRef.current = window.setTimeout(() => props.setCooldownTasks(suggestions), 3000);
             }
           }}
         />

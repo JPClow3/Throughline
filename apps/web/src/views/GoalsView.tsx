@@ -1,7 +1,7 @@
 import { Course, Goal, GoalStatus, Note, Task, TaskStatus, deriveGoalProgress, nextGoalTaskOrder, noteDisplayTitle, noteExcerpt, notesForGoal, tasksForGoal } from "@throughline/domain";
 import { ArrowLeft, CaretDown, CaretUp, CheckCircle, Confetti, Note as FileText, PencilSimple, Plus, Target, Trash } from "@phosphor-icons/react";
 import { AnimatePresence, motion } from "motion/react";
-import { FormEvent, useState } from "react";
+import { FormEvent, useRef, useState } from "react";
 import type { NoteInput, TaskInput } from "../data/repositories";
 import { APP_LOCALE } from "../lib/format";
 import { Button, Card, ConfirmDialog, EmptyState, Ring, SectionHeading, TextInput } from "../ui";
@@ -178,6 +178,8 @@ function GoalDetail({
   const [stepTitle, setStepTitle] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [celebrate, setCelebrate] = useState(false);
+  const [announcement, setAnnouncement] = useState("");
+  const stepInputRef = useRef<HTMLInputElement>(null);
   const courseMap = new Map(courses.map((course) => [course.id, course]));
   const children = tasksForGoal(goal.id, tasks);
   const linkedNotes = notesForGoal(goal.id, notes);
@@ -191,6 +193,7 @@ function GoalDetail({
   async function markComplete() {
     await onSetGoalStatus(goal.id, "done");
     setCelebrate(true);
+    setAnnouncement(`Goal "${goal.title}" marked complete.`);
     window.setTimeout(() => setCelebrate(false), 2600);
   }
 
@@ -227,10 +230,12 @@ function GoalDetail({
         void onReorderTask({ ...task, order: position });
       }
     });
+    setAnnouncement(`Moved ${moved.title} to step ${target + 1} of ${children.length}.`);
   }
 
   return (
     <section className="goal-detail" style={{ "--project-color": accent } as React.CSSProperties}>
+      <div className="sr-only" aria-live="polite">{announcement}</div>
       <Card className="goal-detail-head">
         <AnimatePresence>
           {celebrate ? (
@@ -308,6 +313,7 @@ function GoalDetail({
         <SectionHeading icon={<Target size={17} weight="bold" style={{ color: "var(--ink-soft)" }} />} eyebrow="Steps" title="Tasks toward this goal" />
         <form className="goal-add-step" onSubmit={addStep}>
           <TextInput
+            ref={stepInputRef}
             value={stepTitle}
             onChange={(event) => setStepTitle(event.target.value)}
             placeholder="Add a step…"
@@ -357,13 +363,7 @@ function GoalDetail({
               title="No steps yet"
               body="Break this goal into a few small tasks."
               action={
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    const input = document.querySelector<HTMLInputElement>('input[aria-label="New step"]');
-                    input?.focus();
-                  }}
-                >
+                <Button size="sm" onClick={() => stepInputRef.current?.focus()}>
                   <Plus size={14} weight="bold" /> Add step
                 </Button>
               }
@@ -375,11 +375,11 @@ function GoalDetail({
       <div className="goal-notes">
         <SectionHeading icon={<FileText size={17} weight="bold" style={{ color: "var(--ink-soft)" }} />} eyebrow="Notes" title="Linked notes" />
         <div>
-          <Button
-            onClick={() => void onAddNote({ goalIds: [goal.id], projectId: goal.projectId })}
-          >
-            <Plus size={14} weight="bold" /> Add linked note
-          </Button>
+          {linkedNotes.length ? (
+            <Button onClick={() => void onAddNote({ goalIds: [goal.id], projectId: goal.projectId })}>
+              <Plus size={14} weight="bold" /> Add linked note
+            </Button>
+          ) : null}
         </div>
         <div className="goal-note-list">
           {linkedNotes.length ? (

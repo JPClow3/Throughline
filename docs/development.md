@@ -50,13 +50,13 @@ npm run test -w packages/domain
 
 ### Coverage Tracking
 Vitest coverage uses the V8 provider. Reports are generated in `coverage/` (ignored by Git).
-Current global thresholds:
+Current global thresholds (see `vitest.config.ts`):
 - Branches: 50%
 - Functions: 50%
-- Lines: 58%
-- Statements: 58%
+- Lines: 50%
+- Statements: 50%
 
-*Ratchet policy:* Do not lower thresholds unless a large generated surface is added. Raise them as coverage improves. For critical privacy/data logic, prefer direct tests over relying on global coverage numbers.
+The suite currently reports roughly 65% on each metric. *Ratchet policy:* Do not lower thresholds unless a large generated surface is added. Raise them as coverage improves. For critical privacy/data logic, prefer direct tests over relying on global coverage numbers.
 
 ### Quality Gates
 **Default completion gate:**
@@ -95,4 +95,7 @@ Do not commit: `node_modules/`, `apps/web/dist/`, `apps/web/dev-dist/`, `test-re
 
 If dependency install is interrupted, delete generated dependency artifacts (`node_modules`, `package-lock.json`) and reinstall. Never delete source folders to fix package-manager state.
 If component tests fail with `TypeError: React.act is not a function`, the host machine likely sets `NODE_ENV=production`; `vitest.config.ts` pins `NODE_ENV=test` so this should not recur.
+If the suite reports `Failed to start forks worker` or tests time out before running, the machine is oversubscribed: every fork pays a heavy Vite/node_modules import cost, so `vitest.config.ts` caps `maxWorkers` at 50% of cores. Raise it only after confirming the host can absorb the import cost.
+If `apps/push-api/src/server.test.ts` times out on its first case, that is the one-time Fastify/web-push/`node:sqlite` import; the file sets its own 30s `testTimeout`.
 If browser notifications do not appear, check browser permission, HTTPS/PWA context, service worker support, and platform-specific PWA notification support.
+Visual baselines (`apps/web/tests/visual.e2e.spec.ts-snapshots/`) freeze the clock at `2026-09-12T14:00:00` via `page.clock.setFixedTime`. Regenerate them with `npx playwright test apps/web/tests/visual.e2e.spec.ts --update-snapshots` only for intentional UI changes; a diff caused by today's date or a time-derived guidance card means the clock freeze was bypassed.
