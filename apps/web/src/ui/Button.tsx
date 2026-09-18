@@ -1,6 +1,6 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
-type ButtonVariant = "primary" | "accent" | "blue" | "danger" | "quiet";
+type ButtonVariant = "primary" | "accent" | "blue" | "danger" | "quiet" | "ghost";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: ButtonVariant;
@@ -13,7 +13,8 @@ const VARIANT_CLASS: Record<ButtonVariant, string> = {
   accent: "btn-accent",
   blue: "btn-blue",
   danger: "btn-danger",
-  quiet: ""
+  quiet: "",
+  ghost: "btn-ghost"
 };
 
 export function Button({ variant = "quiet", size = "md", className = "", type = "button", ...rest }: ButtonProps) {

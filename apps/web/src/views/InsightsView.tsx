@@ -11,7 +11,8 @@ const CHART_TOOLTIP_STYLE = {
   border: "2px solid var(--line)",
   background: "var(--card)",
   color: "var(--ink)",
-  fontWeight: 600
+  fontWeight: 600,
+  boxShadow: "3px 3px 0 0 var(--shadow-ink)"
 } as const;
 
 export function InsightsView({ onNewTask }: { onNewTask?: () => void } = {}) {

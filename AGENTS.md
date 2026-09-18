@@ -5,7 +5,7 @@ Use this file first, then `docs/README.md`. The docs in `docs/` are the source o
 ## Required Reading By Task
 
 - Any task: `docs/README.md`, `docs/product.md`, `docs/development.md`.
-- UI task: `docs/ui-ux.md`, `docs/product.md`.
+- UI task: `DESIGN.md`, `docs/ui-ux.md`, `docs/product.md`.
 - Data/storage task: `docs/architecture.md`.
 - Notification task: `docs/notifications.md`.
 - Release task: `docs/deployment.md`, `docs/development.md`.

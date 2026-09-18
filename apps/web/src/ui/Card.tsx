@@ -3,12 +3,15 @@ import type { HTMLAttributes, ReactNode } from "react";
 type CardProps = HTMLAttributes<HTMLDivElement> & {
   /** Flat cards keep the border but drop the hard shadow (for dense stacks). */
   flat?: boolean;
+  /** Inset wells use recessed paper-2 background and control radius. */
+  inset?: boolean;
   children?: ReactNode;
 };
 
-export function Card({ flat = false, className = "", children, ...rest }: CardProps) {
+export function Card({ flat = false, inset = false, className = "", children, ...rest }: CardProps) {
+  const baseClass = inset ? "ik-inset" : flat ? "ik-card-flat" : "ik-card";
   return (
-    <div className={`${flat ? "ik-card-flat" : "ik-card"} ${className}`.trim()} {...rest}>
+    <div className={`${baseClass} ${className}`.trim()} {...rest}>
       {children}
     </div>
   );
