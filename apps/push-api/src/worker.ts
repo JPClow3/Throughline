@@ -1,4 +1,6 @@
 import { RedactedReminder } from "@throughline/domain";
+import * as Sentry from "@sentry/cloudflare";
+import type { ExportedHandler } from "@cloudflare/workers-types";
 import { OAuth2Client } from "google-auth-library";
 import postgres, { type Sql } from "postgres";
 import webpush from "web-push";
@@ -44,6 +46,8 @@ export interface WorkerEnv {
   SESSION_SECRET?: string;
   COOKIE_SECURE?: string;
   GOOGLE_CLIENT_ID?: string;
+  SENTRY_DSN?: string;
+  SENTRY_ENVIRONMENT?: string;
 }
 
 export const SESSION_COOKIE = "tl_session";
@@ -470,7 +474,7 @@ export async function handleRequest(request: Request, env: WorkerEnv, ctx?: Exec
   }
 }
 
-export default {
+const worker = {
   async fetch(request: Request, env: WorkerEnv, ctx: ExecutionContext): Promise<Response> {
     return handleRequest(request, env, ctx);
   },
@@ -479,3 +483,13 @@ export default {
     ctx.waitUntil(dispatchDueReminders(env));
   }
 };
+
+export default Sentry.withSentry<WorkerEnv>(
+  (env) => env.SENTRY_DSN ? {
+    dsn: env.SENTRY_DSN,
+    environment: env.SENTRY_ENVIRONMENT ?? "production",
+    tracesSampleRate: 0.1,
+    sendDefaultPii: false,
+  } : undefined,
+  worker as unknown as ExportedHandler<WorkerEnv>,
+);
