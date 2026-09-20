@@ -2,6 +2,7 @@ import { Course, RpgAttribute, Task, createCourse, rpgAttributes } from "@throug
 import { Check, FolderOpen, PencilSimple, Plus, Trash, X } from "@phosphor-icons/react";
 import { FormEvent, useRef, useState } from "react";
 import { PROJECT_COLORS } from "../lib/palette";
+import { reportError } from "../sentry";
 import { Button, Card, ConfirmDialog, EmptyState, IconButton, Select, TextInput } from "../ui";
 
 function ColorPicker({ value, onChange, label }: { value: string; onChange: (color: string) => void; label: string }) {
@@ -72,6 +73,9 @@ export function CoursesView({
       await onUpsertCourse(course);
       setName("");
       setAttribute("");
+    } catch (error) {
+      reportError(error, { source: "project-save" });
+      setError("Couldn't save this project — storage is unavailable. Try again.");
     } finally {
       setBusy(false);
     }
@@ -100,6 +104,9 @@ export function CoursesView({
         defaultAttributes: editAttribute ? [editAttribute as RpgAttribute] : undefined
       });
       setEditingId(null);
+    } catch (error) {
+      reportError(error, { source: "project-save" });
+      setEditError("Couldn't save — storage is unavailable. Try again.");
     } finally {
       setBusy(false);
     }

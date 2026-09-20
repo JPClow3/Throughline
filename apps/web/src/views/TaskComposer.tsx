@@ -2,6 +2,7 @@ import { Course, Goal, Priority, RpgAttribute, priorities, rpgAttributes } from 
 import { CaretDown, Plus, Trash } from "@phosphor-icons/react";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import type { TaskInput } from "../data/repositories";
+import { reportError } from "../sentry";
 import { Button, Field, Select, TextArea, TextInput } from "../ui";
 
 function toLocalInput(date?: Date) {
@@ -39,6 +40,7 @@ export function TaskComposer({
   const [expanded, setExpanded] = useState(false);
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
   const submittingRef = useRef(false);
   const canSubmit = title.trim().length > 0 && !isSubmitting;
 
@@ -61,6 +63,7 @@ export function TaskComposer({
     }
     submittingRef.current = true;
     setIsSubmitting(true);
+    setSubmitError("");
     try {
       await onAddTask({
         title: title.trim(),
@@ -89,6 +92,9 @@ export function TaskComposer({
       setPriority("medium");
       setRecurrence("");
       setAttemptedSubmit(false);
+    } catch (error) {
+      reportError(error, { source: "task-create" });
+      setSubmitError("Couldn't save this task — storage is unavailable. Try again.");
     } finally {
       submittingRef.current = false;
       setIsSubmitting(false);
@@ -114,6 +120,11 @@ export function TaskComposer({
       {attemptedSubmit && !canSubmit ? (
         <p id="task-title-error" className="composer-error" role="alert">
           Add a title before saving this task.
+        </p>
+      ) : null}
+      {submitError ? (
+        <p className="composer-error" role="alert">
+          {submitError}
         </p>
       ) : null}
       <div className="composer-grid">

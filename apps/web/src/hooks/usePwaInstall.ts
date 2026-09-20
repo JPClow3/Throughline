@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { reportError } from "../sentry";
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
@@ -42,15 +43,19 @@ export function usePwaInstall() {
 
   const promptToInstall = async () => {
     if (!deferredPrompt) return;
-    
-    await deferredPrompt.prompt();
-    const choiceResult = await deferredPrompt.userChoice;
-    
-    if (choiceResult.outcome === "accepted") {
-      setIsInstallable(false);
+
+    try {
+      await deferredPrompt.prompt();
+      const choiceResult = await deferredPrompt.userChoice;
+
+      if (choiceResult.outcome === "accepted") {
+        setIsInstallable(false);
+      }
+
+      setDeferredPrompt(null);
+    } catch (error) {
+      reportError(error, { source: "pwa-install" });
     }
-    
-    setDeferredPrompt(null);
   };
 
   return { isInstallable, isInstalled, promptToInstall };

@@ -64,4 +64,76 @@ describe("ICS export", () => {
     expect(ics).toContain("HIST101: Read chapter 5");
     expect(ics).toContain("END:VCALENDAR");
   });
+
+  it("skips tasks with invalid due dates instead of failing the export", () => {
+    const tasks = [
+      {
+        id: "good",
+        title: "Good task",
+        description: "",
+        status: "doing",
+        xp: 10,
+        dueAt: "2026-10-31T23:59:00.000Z",
+        tags: [],
+        attributes: [],
+        createdAt: "2026-10-01T00:00:00.000Z",
+        updatedAt: "2026-10-01T00:00:00.000Z",
+        goalId: null,
+        order: 0,
+        energy: 1,
+        priority: "medium",
+        estimatedMinutes: 30,
+        difficulty: 1
+      },
+      {
+        id: "bad",
+        title: "Bad task",
+        description: "",
+        status: "doing",
+        xp: 10,
+        dueAt: "not-a-date",
+        tags: [],
+        attributes: [],
+        createdAt: "2026-10-01T00:00:00.000Z",
+        updatedAt: "2026-10-01T00:00:00.000Z",
+        goalId: null,
+        order: 0,
+        energy: 1,
+        priority: "medium",
+        estimatedMinutes: 30,
+        difficulty: 1
+      }
+    ] as unknown as import("../src/types").Task[];
+
+    const ics = exportTasksToIcs(tasks, {});
+    expect(ics).toContain("Good task");
+    expect(ics).not.toContain("Bad task");
+  });
+
+  it("emits DTEND and folds long lines per RFC 5545", () => {
+    const tasks = [
+      {
+        id: "long",
+        title: "A".repeat(200),
+        description: "",
+        status: "doing",
+        xp: 10,
+        dueAt: "2026-10-31T23:59:00.000Z",
+        tags: [],
+        attributes: [],
+        createdAt: "2026-10-01T00:00:00.000Z",
+        updatedAt: "2026-10-01T00:00:00.000Z",
+        goalId: null,
+        order: 0,
+        energy: 1,
+        priority: "medium",
+        estimatedMinutes: 30,
+        difficulty: 1
+      }
+    ] as unknown as import("../src/types").Task[];
+
+    const ics = exportTasksToIcs(tasks, {});
+    expect(ics).toContain("DTEND:");
+    expect(ics).toContain("\r\n ");
+  });
 });

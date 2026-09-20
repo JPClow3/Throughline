@@ -1,6 +1,6 @@
 import { RedactedReminder } from "@throughline/domain";
 import { createHash } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 
 export type StoredSubscription = {
@@ -175,10 +175,37 @@ export class JsonPushStore implements PushStore {
   }
 
   private async read(): Promise<StoreShape> {
+    let raw: string;
     try {
-      return JSON.parse(await readFile(this.filePath, "utf8")) as StoreShape;
+      raw = await readFile(this.filePath, "utf8");
+    } catch (error: unknown) {
+      if ((error as NodeJS.ErrnoException)?.code === "ENOENT") {
+        return emptyStore();
+      }
+      throw error;
+    }
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(raw) as StoreShape;
     } catch {
-      return emptyStore();
+      await this.quarantineCorruptFile("invalid-json");
+      throw new Error("push-store-corrupt");
+    }
+    if (!isStoreShape(parsed)) {
+      await this.quarantineCorruptFile("invalid-shape");
+      throw new Error("push-store-corrupt");
+    }
+    return parsed;
+  }
+
+  private async quarantineCorruptFile(reason: string) {
+    try {
+      const backupPath = `${this.filePath}.corrupt-${Date.now()}`;
+      await mkdir(dirname(this.filePath), { recursive: true });
+      await rename(this.filePath, backupPath);
+      console.error(`[push-api] quarantined corrupt store (${reason}) to ${backupPath}`);
+    } catch {
+      // Best effort: never mask the original corruption error.
     }
   }
 
@@ -190,4 +217,10 @@ export class JsonPushStore implements PushStore {
 
 export function hashEndpoint(endpoint: string) {
   return createHash("sha256").update(endpoint).digest("hex");
+}
+
+function isStoreShape(value: unknown): value is StoreShape {
+  if (typeof value !== "object" || value === null) return false;
+  const candidate = value as { subscriptions?: unknown; reminders?: unknown };
+  return Array.isArray(candidate.subscriptions) && Array.isArray(candidate.reminders);
 }

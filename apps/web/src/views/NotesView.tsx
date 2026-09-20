@@ -3,6 +3,7 @@ import { ArrowLeft, Eye, LinkSimple, MagnifyingGlass, Note as FileText, Plus, Pu
 import ReactMarkdown from "react-markdown";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { NoteInput } from "../data/repositories";
+import { reportError } from "../sentry";
 import { useNotesSearch } from "../hooks/useNotesSearch";
 import { useCompactFilters } from "./FilterBar";
 import { Button, Card, ConfirmDialog, EmptyState, IconButton, TextInput } from "../ui";
@@ -255,7 +256,7 @@ export function NoteEditor({
   const [title, setTitle] = useState(note.title);
   const [body, setBody] = useState(note.body);
   const [mode, setMode] = useState<"write" | "preview">("write");
-  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const savedTimerRef = useRef<number | null>(null);
 
   useEffect(
@@ -276,13 +277,23 @@ export function NoteEditor({
 
   function commit(next: Partial<Pick<Note, "title" | "body" | "pinned">>) {
     setSaveState("saving");
-    void Promise.resolve(onSave({ ...note, title, body, ...next })).finally(() => {
-      setSaveState("saved");
-      if (savedTimerRef.current !== null) {
-        window.clearTimeout(savedTimerRef.current);
+    void Promise.resolve(onSave({ ...note, title, body, ...next })).then(
+      () => {
+        setSaveState("saved");
+        if (savedTimerRef.current !== null) {
+          window.clearTimeout(savedTimerRef.current);
+        }
+        savedTimerRef.current = window.setTimeout(() => setSaveState("idle"), 1600);
+      },
+      (error) => {
+        reportError(error, { source: "note-save" });
+        setSaveState("error");
+        if (savedTimerRef.current !== null) {
+          window.clearTimeout(savedTimerRef.current);
+        }
+        savedTimerRef.current = window.setTimeout(() => setSaveState("idle"), 3000);
       }
-      savedTimerRef.current = window.setTimeout(() => setSaveState("idle"), 1600);
-    });
+    );
   }
 
   function addLink(value: string) {
@@ -313,7 +324,7 @@ export function NoteEditor({
           <PushPin size={15} weight={note.pinned ? "fill" : "regular"} />
         </IconButton>
         <span className="note-save-state" role="status" aria-live="polite">
-          {saveState === "saving" ? "Saving…" : saveState === "saved" ? "Saved" : ""}
+          {saveState === "saving" ? "Saving…" : saveState === "saved" ? "Saved" : saveState === "error" ? "Couldn't save — will retry" : ""}
         </span>
         <IconButton label="Delete note" onClick={() => onDelete(note.id)}>
           <Trash size={15} weight="bold" />

@@ -1,6 +1,7 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getCloudSyncState, saveCloudSyncState } from "../data/repositories";
+import { reportError } from "../sentry";
 import { runSync } from "./syncClient";
 
 export type SyncStatus = "idle" | "syncing" | "offline" | "error";
@@ -28,13 +29,29 @@ export function useSync(dekKey: CryptoKey | null) {
     setStatus("syncing");
     try {
       const result = await runSync(dekKey);
-      setStatus(result.ok ? "idle" : "error");
-      if (!result.ok) {
-        await saveCloudSyncState({ lastError: result.reason });
+      if (result.ok) {
+        setStatus("idle");
+        if (result.skippedRemote > 0 || result.skippedLocal > 0) {
+          reportError(new Error(`sync-skipped-records remote=${result.skippedRemote} local=${result.skippedLocal}`), {
+            source: "sync-skipped",
+          });
+        }
+      } else {
+        setStatus("error");
+        try {
+          await saveCloudSyncState({ lastError: result.reason });
+        } catch (saveError) {
+          reportError(saveError, { source: "sync-state" });
+        }
       }
-    } catch {
+    } catch (error) {
       setStatus("error");
-      await saveCloudSyncState({ lastError: "sync-failed" });
+      reportError(error, { source: "sync" });
+      try {
+        await saveCloudSyncState({ lastError: "sync-failed" });
+      } catch (saveError) {
+        reportError(saveError, { source: "sync-state" });
+      }
     } finally {
       running.current = false;
     }

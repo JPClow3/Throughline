@@ -32,6 +32,7 @@ import { AppearanceSettings, ThemePreference } from "../data/types";
 import { usePwaInstall } from "../hooks/usePwaInstall";
 import { downloadIcs } from "../lib/downloadIcs";
 import { APP_LOCALE } from "../lib/format";
+import { reportError } from "../sentry";
 import {
   notificationSupport,
   redactedRemindersForTasks,
@@ -102,9 +103,14 @@ export function SettingsView({
   }, []);
 
   async function requestPermission() {
-    const next = await requestNotificationPermission();
-    setPermission(next);
-    setStatus(`Notifications: ${next}`);
+    try {
+      const next = await requestNotificationPermission();
+      setPermission(next);
+      setStatus(`Notifications: ${next}`);
+    } catch (error) {
+      reportError(error, { source: "notification-permission" });
+      setStatus(error instanceof Error ? error.message : "Could not request notification permission");
+    }
   }
 
   async function handleSyncNow() {
@@ -139,23 +145,39 @@ export function SettingsView({
   }
 
   async function syncReminders() {
-    const syncResult = await syncRedactedRemindersForTasks(tasks, {
-      pushApiUrl: pushApi,
-      endpointHash: syncState?.endpointHash
-    });
-    setStatus(syncResult.status === "failed" ? syncResult.error : `Reminder sync: ${syncResult.status}`);
+    try {
+      const syncResult = await syncRedactedRemindersForTasks(tasks, {
+        pushApiUrl: pushApi,
+        endpointHash: syncState?.endpointHash
+      });
+      setStatus(
+        syncResult.status === "failed"
+          ? (syncResult.error ?? "Reminder sync failed")
+          : `Reminder sync: ${syncResult.status}`
+      );
+    } catch (error) {
+      reportError(error, { source: "reminder-sync" });
+      setStatus(error instanceof Error ? error.message : "Reminder sync failed");
+    }
   }
 
   async function exportData() {
-    const backup = await exportBackup();
-    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `throughline-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
-    setDataStatus("Backup downloaded");
+    try {
+      const backup = await exportBackup();
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `throughline-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setDataStatus("Backup downloaded");
+    } catch (error) {
+      reportError(error, { source: "backup-export" });
+      setDataStatus("Backup failed — storage is unavailable. Try again.");
+    }
   }
 
   async function importData(event: React.ChangeEvent<HTMLInputElement>) {
@@ -186,9 +208,44 @@ export function SettingsView({
     }
   }
 
+  async function testLocalNotification() {
+    try {
+      const shown = showLocalQuestNotification();
+      if (!shown) {
+        setStatus("Notifications are blocked — enable them in the browser, then try again.");
+      }
+    } catch (error) {
+      reportError(error, { source: "local-notification" });
+      setStatus(error instanceof Error ? error.message : "Could not show test notification");
+    }
+  }
+
+  async function persistPushApiUrl() {
+    try {
+      await saveReminderSyncState({ pushApiUrl: pushApi });
+    } catch (error) {
+      reportError(error, { source: "reminder-settings" });
+      setStatus("Could not save push settings — storage is unavailable.");
+    }
+  }
+
   async function resetData() {
-    await resetSampleData();
-    setDataStatus("Sample data restored");
+    try {
+      await resetSampleData();
+      setDataStatus("Sample data restored");
+    } catch (error) {
+      reportError(error, { source: "reset-data" });
+      setDataStatus("Reset failed — storage is unavailable. Try again.");
+    }
+  }
+
+  async function exportCalendar() {
+    try {
+      downloadIcs(tasks, courses);
+    } catch (error) {
+      reportError(error, { source: "ics-export" });
+      setStatus(error instanceof Error ? error.message : "Calendar export failed");
+    }
   }
 
   async function regenerateRecoveryKey() {
@@ -389,7 +446,7 @@ export function SettingsView({
               <Bell size={15} weight="bold" />
               {permission === "granted" ? "Granted" : permission === "denied" ? "Blocked in browser" : "Enable notifications"}
             </Button>
-            <Button onClick={showLocalQuestNotification}>
+            <Button onClick={testLocalNotification}>
               <PaperPlaneRight size={15} weight="bold" />
               Test
             </Button>
@@ -405,7 +462,7 @@ export function SettingsView({
             <span>Push API</span>
             <TextInput
               value={pushApi}
-              onBlur={() => void saveReminderSyncState({ pushApiUrl: pushApi })}
+              onBlur={() => void persistPushApiUrl()}
               onChange={(event) => setPushApiDraft(event.target.value)}
             />
           </label>
@@ -445,7 +502,7 @@ export function SettingsView({
             {tasks.filter((task) => task.dueAt).length === 1 ? "task" : "tasks"} available.
           </p>
           <div>
-            <Button variant="accent" onClick={() => downloadIcs(tasks, courses)}>
+            <Button variant="accent" onClick={() => void exportCalendar()}>
               <DownloadSimple size={15} weight="bold" />
               Export ICS
             </Button>

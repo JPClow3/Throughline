@@ -1,8 +1,9 @@
 import { Task } from "@throughline/domain";
-import { CheckCircle, Pause, Play, X } from "@phosphor-icons/react";
+import { CheckCircle, Pause, Play, WarningCircle, X } from "@phosphor-icons/react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useState } from "react";
 import type { FocusSessionInput } from "../data/repositories";
+import { reportError } from "../sentry";
 import { Button, IconButton } from "../ui";
 
 const FOCUS_MINUTES = 25;
@@ -23,6 +24,7 @@ export function FocusTimer({
   const [isActive, setIsActive] = useState(false);
   const [timeLeft, setTimeLeft] = useState(FOCUS_SECONDS);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [saveError, setSaveError] = useState(false);
   const [startedAt, setStartedAt] = useState(() => new Date().toISOString());
   const totalSeconds = Math.max(60, (task?.estimatedMinutes ?? FOCUS_MINUTES) * 60);
 
@@ -35,22 +37,31 @@ export function FocusTimer({
   const finishSession = useCallback(
     (durationSeconds: number) => {
       setIsActive(false);
-      setShowSuccess(true);
-      void onRecordFocusSession({
-        title: task?.title ?? "Focus Session",
-        taskId: task?.id,
-        courseId: task?.courseId,
-        goalId: task?.goalId,
-        startedAt,
-        endedAt: new Date().toISOString(),
-        durationMinutes: Math.max(1, Math.round(durationSeconds / 60))
-      });
-      window.setTimeout(() => {
-        setShowSuccess(false);
-        setIsOpen(false);
-        setTimeLeft(totalSeconds);
-        onTaskClose?.();
-      }, 3000);
+      setSaveError(false);
+      void (async () => {
+        try {
+          await onRecordFocusSession({
+            title: task?.title ?? "Focus Session",
+            taskId: task?.id,
+            courseId: task?.courseId,
+            goalId: task?.goalId,
+            startedAt,
+            endedAt: new Date().toISOString(),
+            durationMinutes: Math.max(1, Math.round(durationSeconds / 60))
+          });
+          setShowSuccess(true);
+        } catch (error) {
+          reportError(error, { source: "focus-save" });
+          setSaveError(true);
+          return;
+        }
+        window.setTimeout(() => {
+          setShowSuccess(false);
+          setIsOpen(false);
+          setTimeLeft(totalSeconds);
+          onTaskClose?.();
+        }, 3000);
+      })();
     },
     [onRecordFocusSession, onTaskClose, startedAt, task, totalSeconds]
   );
@@ -63,6 +74,7 @@ export function FocusTimer({
       setIsOpen(true);
       setIsActive(true);
       setShowSuccess(false);
+      setSaveError(false);
       setStartedAt(new Date().toISOString());
       setTimeLeft(totalSeconds);
     }, 0);
@@ -107,6 +119,7 @@ export function FocusTimer({
     setIsOpen(false);
     resetTimer();
     setShowSuccess(false);
+    setSaveError(false);
     onTaskClose?.();
   };
 
@@ -114,6 +127,7 @@ export function FocusTimer({
     setIsOpen(true);
     setIsActive(true);
     setShowSuccess(false);
+    setSaveError(false);
     setStartedAt(new Date().toISOString());
     setTimeLeft(FOCUS_SECONDS);
   };
@@ -157,6 +171,11 @@ export function FocusTimer({
                 <span className="focus-timer-success">
                   <CheckCircle size={30} weight="bold" />
                   <strong>Logged</strong>
+                </span>
+              ) : saveError ? (
+                <span className="focus-timer-success" role="alert">
+                  <WarningCircle size={30} weight="bold" />
+                  <strong>Couldn't log — try again</strong>
                 </span>
               ) : (
                 <span className="focus-ring-time tabular">

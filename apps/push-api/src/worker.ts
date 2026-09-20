@@ -182,34 +182,47 @@ export async function dispatchDueReminders(env: WorkerEnv): Promise<{ sent: numb
   let sent = 0;
 
   for (const reminder of due) {
-    const subscription = await pushStore.subscriptionFor(reminder.endpointHash);
-    if (!subscription) {
-      await pushStore.removeSubscription(reminder.endpointHash);
-      continue;
-    }
-
     try {
-      await webpush.sendNotification(
-        subscription.subscription,
-        JSON.stringify({
-          title: reminder.title,
-          body: reminder.body,
-          data: {
-            reminderId: reminder.reminderId,
-            taskId: reminder.taskId,
-            urgency: reminder.urgency
+      const subscription = await pushStore.subscriptionFor(reminder.endpointHash);
+      if (!subscription) {
+        await pushStore.removeSubscription(reminder.endpointHash);
+        continue;
+      }
+
+      try {
+        await webpush.sendNotification(
+          subscription.subscription,
+          JSON.stringify({
+            title: reminder.title,
+            body: reminder.body,
+            data: {
+              reminderId: reminder.reminderId,
+              taskId: reminder.taskId,
+              urgency: reminder.urgency
+            }
+          })
+        );
+        await pushStore.markDispatched(reminder.endpointHash, reminder.reminderId);
+        sent += 1;
+        dispatchMetrics.sent += 1;
+      } catch (err: unknown) {
+        dispatchMetrics.failed += 1;
+        console.error("Failed to send notification", err instanceof Error ? err.message : err);
+        const errStatusCode = (err as { statusCode?: number })?.statusCode;
+        if (errStatusCode === 404 || errStatusCode === 410) {
+          try {
+            await pushStore.removeSubscription(reminder.endpointHash);
+          } catch (cleanupError) {
+            console.error(
+              "Failed to remove stale subscription",
+              cleanupError instanceof Error ? cleanupError.message : cleanupError
+            );
           }
-        })
-      );
-      await pushStore.markDispatched(reminder.endpointHash, reminder.reminderId);
-      sent += 1;
-      dispatchMetrics.sent += 1;
+        }
+      }
     } catch (err: unknown) {
       dispatchMetrics.failed += 1;
-      const errStatusCode = (err as { statusCode?: number })?.statusCode;
-      if (errStatusCode === 404 || errStatusCode === 410) {
-        await pushStore.removeSubscription(reminder.endpointHash);
-      }
+      console.error("Failed to process due reminder", err instanceof Error ? err.message : err);
     }
   }
 
@@ -275,6 +288,10 @@ export async function handleRequest(request: Request, env: WorkerEnv, ctx?: Exec
     const subMatch = pathname.match(/^\/subscriptions\/([^/]+)$/);
     if (method === "DELETE" && subMatch) {
       const endpointHash = subMatch[1];
+      const existing = await pushStore.subscriptionFor(endpointHash);
+      if (!existing) {
+        return errorResponse(404, "Subscription not found", resHeaders);
+      }
       await pushStore.removeSubscription(endpointHash);
       return new Response(null, { status: 204, headers: resHeaders });
     }
@@ -467,8 +484,8 @@ export async function handleRequest(request: Request, env: WorkerEnv, ctx?: Exec
     if (err instanceof z.ZodError) {
       return jsonResponse({ error: "Validation failed", issues: err.issues }, 400, resHeaders);
     }
-    const message = err instanceof Error ? err.message : "Internal Server Error";
-    return errorResponse(500, message, resHeaders);
+    console.error(`${method} ${pathname} failed`, err instanceof Error ? err.message : err);
+    return errorResponse(500, "Internal Server Error", resHeaders);
   } finally {
     cleanup();
   }

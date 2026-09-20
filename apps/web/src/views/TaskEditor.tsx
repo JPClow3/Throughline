@@ -4,6 +4,7 @@ import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, us
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { FormEvent, useState } from "react";
+import { reportError } from "../sentry";
 import { Button, ConfirmDialog, Field, Select, TextArea, TextInput } from "../ui";
 
 function toLocalInput(iso?: string) {
@@ -102,6 +103,9 @@ export function TaskEditor({
         attributes,
         completedAt: status === "done" ? task.completedAt ?? new Date().toISOString() : undefined
       });
+    } catch (error) {
+      reportError(error, { source: "task-save" });
+      setError("Couldn't save this task — storage is unavailable. Try again.");
     } finally {
       setSaving(false);
     }

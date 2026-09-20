@@ -81,7 +81,9 @@ Stores or refreshes a browser push subscription.
 
 `DELETE /subscriptions/:endpointHash`
 
-Deletes a subscription and its reminders.
+Deletes a subscription and its reminders. Returns `404 subscription-not-found` for unknown hashes (previously silent `204`).
+
+Invalid subscription/reminder payloads return `400 validation-failed`; unexpected failures return a generic `500` without internal detail.
 
 `POST /reminders`
 

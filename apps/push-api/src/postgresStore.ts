@@ -53,8 +53,10 @@ export class PostgresPushStore {
   }
 
   async removeSubscription(endpointHash: string): Promise<void> {
-    await this.sql`DELETE FROM subscriptions WHERE endpoint_hash = ${endpointHash}`;
-    await this.sql`DELETE FROM reminders WHERE endpoint_hash = ${endpointHash}`;
+    await this.sql.begin(async (tx) => {
+      await tx`DELETE FROM subscriptions WHERE endpoint_hash = ${endpointHash}`;
+      await tx`DELETE FROM reminders WHERE endpoint_hash = ${endpointHash}`;
+    });
   }
 
   async saveReminder(subscriptionEndpoint: string, reminder: RedactedReminder): Promise<StoredReminder> {
@@ -104,25 +106,26 @@ export class PostgresPushStore {
       previousRows.map((r) => [r.reminder_id, { notifyAt: r.notify_at, dispatchedAt: r.dispatched_at }])
     );
 
-    await this.sql`DELETE FROM reminders WHERE endpoint_hash = ${endpointHash}`;
-
     const stored: StoredReminder[] = [];
+    await this.sql.begin(async (tx) => {
+      await tx`DELETE FROM reminders WHERE endpoint_hash = ${endpointHash}`;
 
-    for (const reminder of reminders) {
-      const prev = previousMap.get(reminder.reminderId);
-      const dispatchedAt = prev?.notifyAt === reminder.notifyAt ? (prev?.dispatchedAt ?? undefined) : undefined;
-      const item: StoredReminder = {
-        ...reminder,
-        endpointHash,
-        dispatchedAt
-      };
-      stored.push(item);
+      for (const reminder of reminders) {
+        const prev = previousMap.get(reminder.reminderId);
+        const dispatchedAt = prev?.notifyAt === reminder.notifyAt ? (prev?.dispatchedAt ?? undefined) : undefined;
+        const item: StoredReminder = {
+          ...reminder,
+          endpointHash,
+          dispatchedAt
+        };
+        stored.push(item);
 
-      await this.sql`
-        INSERT INTO reminders (endpoint_hash, reminder_id, title, body, notify_at, urgency, task_id, due_at, created_at, dispatched_at)
-        VALUES (${endpointHash}, ${reminder.reminderId}, ${reminder.title}, ${reminder.body}, ${reminder.notifyAt}, ${reminder.urgency}, ${reminder.taskId}, ${reminder.dueAt ?? null}, ${reminder.createdAt}, ${dispatchedAt ?? null})
-      `;
-    }
+        await tx`
+          INSERT INTO reminders (endpoint_hash, reminder_id, title, body, notify_at, urgency, task_id, due_at, created_at, dispatched_at)
+          VALUES (${endpointHash}, ${reminder.reminderId}, ${reminder.title}, ${reminder.body}, ${reminder.notifyAt}, ${reminder.urgency}, ${reminder.taskId}, ${reminder.dueAt ?? null}, ${reminder.createdAt}, ${dispatchedAt ?? null})
+        `;
+      }
+    });
 
     return stored;
   }

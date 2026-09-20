@@ -1,4 +1,5 @@
 import './sentry'
+import { reportError } from "./sentry";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter, Navigate, RouterProvider } from "react-router-dom";
@@ -27,7 +28,9 @@ const router = createBrowserRouter([
     path: "/app/*",
     element: (
       <RequireAuth>
-        <App />
+        <ErrorBoundary scope="workspace">
+          <App />
+        </ErrorBoundary>
       </RequireAuth>
     )
   },
@@ -36,7 +39,7 @@ const router = createBrowserRouter([
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <ErrorBoundary>
+    <ErrorBoundary scope="app">
       <AuthProvider>
         <MotionConfig reducedMotion="user">
           <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID ?? ""}>
@@ -47,6 +50,14 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     </ErrorBoundary>
   </React.StrictMode>
 );
+
+// Safety net: every background `void`-fire must still be observable.
+window.addEventListener("unhandledrejection", (event) => {
+  reportError(event.reason, { source: "unhandledrejection" });
+});
+window.addEventListener("error", (event) => {
+  if (event.error) reportError(event.error, { source: "window-error" });
+});
 
 // Register advanced PWA sync features if supported
 import { registerBackgroundSync, registerPeriodicSync } from "./lib/syncRegistration";

@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -73,10 +73,24 @@ describe("JsonPushStore", () => {
     
     const counts = await store.counts();
     expect(counts.reminders).toBe(2);
-    
-    // Test read failure fallback
-    await import("node:fs/promises").then(m => m.writeFile(join(directory, "push-store.json"), "invalid-json"));
-    const newStore = new JsonPushStore(join(directory, "push-store.json"));
-    expect(await newStore.counts()).toEqual({ subscriptions: 0, reminders: 0 });
+  });
+
+  it("quarantines a corrupt store file instead of silently emptying it", async () => {
+    const filePath = join(directory, "push-store.json");
+    await writeFile(filePath, "invalid-json{{{");
+    const corruptStore = new JsonPushStore(filePath);
+    await expect(corruptStore.counts()).rejects.toThrow("push-store-corrupt");
+    const files = await readdir(directory);
+    expect(files.some((name) => name.startsWith("push-store.json.corrupt-"))).toBe(true);
+    // After quarantine the corrupt file is moved aside, so the next write
+    // starts fresh instead of merging into garbage — and the backup survives.
+    await expect(corruptStore.upsertSubscription(fakeSubscription())).resolves.toHaveLength(64);
+    const afterFiles = await readdir(directory);
+    expect(afterFiles.some((name) => name.startsWith("push-store.json.corrupt-"))).toBe(true);
+  });
+
+  it("starts empty when the store file does not exist yet", async () => {
+    const fresh = new JsonPushStore(join(directory, "does-not-exist.json"));
+    expect(await fresh.counts()).toEqual({ subscriptions: 0, reminders: 0 });
   });
 });

@@ -1,6 +1,7 @@
 import { Goal, GoalStatus } from "@throughline/domain";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useCallback, useOptimistic, startTransition } from "react";
+import { reportError } from "../sentry";
 import {
   GoalInput,
   addGoal as addGoalRecord,
@@ -38,21 +39,33 @@ export function useGoals() {
   const updateGoal = useCallback(async (goal: Goal) => {
     startTransition(async () => {
       dispatchOptimisticGoal({ type: 'update', payload: goal });
-      await updateGoalRecord(goal);
+      try {
+        await updateGoalRecord(goal);
+      } catch (error) {
+        reportError(error, { source: "goal-update" });
+      }
     });
   }, [dispatchOptimisticGoal]);
 
   const setGoalStatus = useCallback(async (goalId: string, status: GoalStatus) => {
     startTransition(async () => {
       dispatchOptimisticGoal({ type: 'update', payload: { id: goalId, status } });
-      await setGoalStatusRecord(goalId, status);
+      try {
+        await setGoalStatusRecord(goalId, status);
+      } catch (error) {
+        reportError(error, { source: "goal-update" });
+      }
     });
   }, [dispatchOptimisticGoal]);
 
   const removeGoal = useCallback(async (goalId: string) => {
     startTransition(async () => {
       dispatchOptimisticGoal({ type: 'delete', payload: goalId });
-      await deleteGoalRecord(goalId);
+      try {
+        await deleteGoalRecord(goalId);
+      } catch (error) {
+        reportError(error, { source: "goal-delete" });
+      }
     });
   }, [dispatchOptimisticGoal]);
 

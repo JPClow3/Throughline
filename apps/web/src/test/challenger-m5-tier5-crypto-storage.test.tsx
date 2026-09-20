@@ -517,6 +517,13 @@ describe("Tier 5 Adversarial Hardening — Crypto, Storage & Offline Resilience"
                 })
             });
           }
+          if (url.includes("/sync/push")) {
+            return Promise.resolve({
+              ok: true,
+              status: 200,
+              json: () => Promise.resolve({ cursor: new Date().toISOString() })
+            });
+          }
           return Promise.resolve({ ok: false, status: 404 });
         })
       );
@@ -530,8 +537,10 @@ describe("Tier 5 Adversarial Hardening — Crypto, Storage & Offline Resilience"
         attributes: ["focus"]
       });
 
-      // Because decryptJson throws on corrupted ciphertext, runSync fails
-      await expect(runSync(dekKey)).rejects.toThrow();
+      // A single corrupt remote record is isolated: sync succeeds, the cursor
+      // still advances (no poison-pill stall), and local data is untouched.
+      const result = await runSync(dekKey);
+      expect(result.ok).toBe(true);
 
       // Local tasks must remain intact
       const localTasks = await listTasks();

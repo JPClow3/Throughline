@@ -2,6 +2,7 @@ import { FocusSession } from "@throughline/domain";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useCallback, useOptimistic, startTransition } from "react";
 import { registerBackgroundSync } from "../lib/syncRegistration";
+import { fireAndForget } from "../sentry";
 import {
   FocusSessionInput,
   deleteFocusSession as deleteFocusSessionRecord,
@@ -38,7 +39,7 @@ export function useFocusSessions() {
     async (input: FocusSessionInput = 25) => {
       const session = await recordFocusSessionRecord(input);
       startTransition(() => dispatchOptimistic({ type: "add", payload: session }));
-      void registerBackgroundSync("sync-tasks");
+      fireAndForget(registerBackgroundSync("sync-tasks"), { source: "background-sync" });
       return session;
     },
     [dispatchOptimistic]
@@ -48,7 +49,7 @@ export function useFocusSessions() {
     async (session: FocusSession) => {
       const updated = await updateFocusSessionRecord(session);
       startTransition(() => dispatchOptimistic({ type: "update", payload: updated }));
-      void registerBackgroundSync("sync-tasks");
+      fireAndForget(registerBackgroundSync("sync-tasks"), { source: "background-sync" });
       return updated;
     },
     [dispatchOptimistic]
@@ -58,7 +59,7 @@ export function useFocusSessions() {
     async (sessionId: string) => {
       await deleteFocusSessionRecord(sessionId);
       startTransition(() => dispatchOptimistic({ type: "delete", payload: sessionId }));
-      void registerBackgroundSync("sync-tasks");
+      fireAndForget(registerBackgroundSync("sync-tasks"), { source: "background-sync" });
     },
     [dispatchOptimistic]
   );

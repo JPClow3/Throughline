@@ -80,6 +80,33 @@ describe("push API", () => {
     await app.close();
   });
 
+  it("returns 404 when deleting an unknown subscription", async () => {
+    const app = await createServer({ config, store, configureWebPush: false });
+    const deleted = await app.inject({
+      method: "DELETE",
+      url: "/subscriptions/0000000000000000000000000000000000000000000000000000000000000000"
+    });
+
+    expect(deleted.statusCode).toBe(404);
+    expect(deleted.json()).toEqual({ error: "subscription-not-found" });
+
+    await app.close();
+  });
+
+  it("returns 400 for invalid subscription and reminder payloads", async () => {
+    const app = await createServer({ config, store, configureWebPush: false });
+    const badSubscription = await app.inject({ method: "POST", url: "/subscriptions", payload: { endpoint: 123 } });
+
+    expect(badSubscription.statusCode).toBe(400);
+    expect(badSubscription.json().error).toBe("validation-failed");
+
+    const badReminder = await app.inject({ method: "POST", url: "/reminders", payload: { nope: true } });
+
+    expect(badReminder.statusCode).toBe(400);
+
+    await app.close();
+  });
+
   it("keeps dispatch unavailable without VAPID configuration", async () => {
     const app = await createServer({ config, store, configureWebPush: false });
     const response = await app.inject({ method: "POST", url: "/dispatch-due" });

@@ -3,6 +3,7 @@ import { useCallback, useMemo, useOptimistic, startTransition } from "react";
 import { Task, TaskStatus } from "@throughline/domain";
 import { syncRedactedRemindersFromLocalState } from "../data/reminderSync";
 import { registerBackgroundSync } from "../lib/syncRegistration";
+import { fireAndForget, reportError } from "../sentry";
 import {
   TaskInput,
   addTask as addTaskRecord,
@@ -44,20 +45,28 @@ export function useTasks() {
     }
   );
 
+  const queueReminderSync = useCallback(() => {
+    fireAndForget(syncRedactedRemindersFromLocalState(), { source: "reminder-sync" });
+    fireAndForget(registerBackgroundSync("sync-tasks"), { source: "background-sync" });
+  }, []);
+
   const addTask = useCallback(async (input: TaskInput) => {
     await addTaskRecord(input);
-    void syncRedactedRemindersFromLocalState();
-    void registerBackgroundSync("sync-tasks");
-  }, []);
+    queueReminderSync();
+  }, [queueReminderSync]);
 
   const updateTaskStatus = useCallback(async (taskId: string, status: TaskStatus) => {
     startTransition(async () => {
       dispatchOptimisticTask({ type: 'update', payload: { id: taskId, status } });
-      await updateTaskStatusRecord(taskId, status);
-      void syncRedactedRemindersFromLocalState();
-      void registerBackgroundSync("sync-tasks");
+      try {
+        await updateTaskStatusRecord(taskId, status);
+      } catch (error) {
+        reportError(error, { source: "task-update" });
+        return;
+      }
+      queueReminderSync();
     });
-  }, [dispatchOptimisticTask]);
+  }, [dispatchOptimisticTask, queueReminderSync]);
 
   const completeTask = useCallback(
     async (task: Task) => {
@@ -69,20 +78,28 @@ export function useTasks() {
   const updateTask = useCallback(async (task: Task) => {
     startTransition(async () => {
       dispatchOptimisticTask({ type: 'update', payload: task });
-      await updateTaskRecord(task);
-      void syncRedactedRemindersFromLocalState();
-      void registerBackgroundSync("sync-tasks");
+      try {
+        await updateTaskRecord(task);
+      } catch (error) {
+        reportError(error, { source: "task-update" });
+        return;
+      }
+      queueReminderSync();
     });
-  }, [dispatchOptimisticTask]);
+  }, [dispatchOptimisticTask, queueReminderSync]);
 
   const deleteTask = useCallback(async (taskId: string) => {
     startTransition(async () => {
       dispatchOptimisticTask({ type: 'delete', payload: taskId });
-      await deleteTaskRecord(taskId);
-      void syncRedactedRemindersFromLocalState();
-      void registerBackgroundSync("sync-tasks");
+      try {
+        await deleteTaskRecord(taskId);
+      } catch (error) {
+        reportError(error, { source: "task-delete" });
+        return;
+      }
+      queueReminderSync();
     });
-  }, [dispatchOptimisticTask]);
+  }, [dispatchOptimisticTask, queueReminderSync]);
 
   const upsertCourse = useCallback(async (course: Parameters<typeof upsertCourseRecord>[0]) => {
     await upsertCourseRecord(course);

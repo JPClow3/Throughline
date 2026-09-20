@@ -7,6 +7,7 @@ import {
   getFilterSettings,
   saveFilterSettings
 } from "../data/repositories";
+import { fireAndForget } from "../sentry";
 import type { PersistedFilterState, SavedFilterPreset } from "../data/types";
 
 export type FilterState = PersistedFilterState;
@@ -26,7 +27,7 @@ export function useFilters() {
   const persist = useCallback(
     (next: FilterState, nextPresets: SavedFilterPreset[] = presets) => {
       setFilters(next);
-      void saveFilterSettings({ current: next, presets: nextPresets });
+      fireAndForget(saveFilterSettings({ current: next, presets: nextPresets }), { source: "filters" });
     },
     [presets]
   );

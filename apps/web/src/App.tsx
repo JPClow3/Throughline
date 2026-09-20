@@ -11,6 +11,7 @@ import { usePwaInstall } from "./hooks/usePwaInstall";
 import { useTheme } from "./hooks/useTheme";
 import { PROJECT_COLORS } from "./lib/palette";
 import { requestNotificationPermission } from "./lib/notifications";
+import { fireAndForget } from "./sentry";
 import { AppShell, AppView, ShellSync } from "./shell/AppShell";
 import { PlannerProvider, usePlanner } from "./state/PlannerProvider";
 import { Button, Sheet, ViewSkeleton } from "./ui";
@@ -93,7 +94,7 @@ export function App() {
   const bannerDismissed = appearanceSettings?.pwaBannerDismissed ?? false;
 
   React.useEffect(() => {
-    void syncRecurringTasks();
+    fireAndForget(syncRecurringTasks(), { source: "recurring-sync" });
   }, []);
 
   // Global Ctrl/Cmd+K shortcut lives at the app level so the palette opens even
@@ -122,7 +123,7 @@ export function App() {
   const toggleTheme = React.useCallback(() => {
     const current = appearanceSettings?.theme;
     const next = current === "dark" ? "light" : "dark";
-    void saveAppearanceSettings({ theme: next });
+    fireAndForget(saveAppearanceSettings({ theme: next }), { source: "appearance" });
   }, [appearanceSettings?.theme]);
 
   return (
@@ -461,14 +462,14 @@ function Workspace(props: WorkspaceProps) {
               <p className="pwa-install-sub">Works offline, feels native</p>
             </div>
             <div className="pwa-install-actions">
-              <Button variant="accent" size="sm" onClick={() => void props.promptToInstall()}>
+              <Button variant="accent" size="sm" onClick={() => fireAndForget(props.promptToInstall(), { source: "pwa-install" })}>
                 Install
               </Button>
               <button
                 type="button"
                 className="icon-toggle"
                 onClick={() => {
-                  void saveAppearanceSettings({ pwaBannerDismissed: true });
+                  fireAndForget(saveAppearanceSettings({ pwaBannerDismissed: true }), { source: "appearance" });
                 }}
                 aria-label="Dismiss install banner"
               >

@@ -92,6 +92,9 @@ self.addEventListener("notificationclick", (event) => {
         }
         return self.clients.openWindow("/app");
       })
+      .catch((error) => {
+        console.error("[ServiceWorker] notificationclick failed", error);
+      })
   );
 });
 
@@ -108,13 +111,22 @@ self.addEventListener("sync", (event: Event) => {
   if (syncEvent.tag === "sync-tasks") {
     syncEvent.waitUntil(
       (async () => {
-        console.log("[ServiceWorker] Background sync (sync-tasks) running");
-        await syncRedactedRemindersFromLocalState();
-        
-        // Notify open clients that a background sync has occurred
-        const clients = await self.clients.matchAll();
-        for (const client of clients) {
-          client.postMessage({ type: "BACKGROUND_SYNC_COMPLETED", tag: syncEvent.tag });
+        try {
+          console.log("[ServiceWorker] Background sync (sync-tasks) running");
+          await syncRedactedRemindersFromLocalState();
+
+          // Notify open clients that a background sync has occurred
+          const clients = await self.clients.matchAll();
+          for (const client of clients) {
+            try {
+              client.postMessage({ type: "BACKGROUND_SYNC_COMPLETED", tag: syncEvent.tag });
+            } catch {
+              // Client may have closed mid-sync — safe to ignore.
+            }
+          }
+        } catch (error) {
+          console.error("[ServiceWorker] Background sync failed", error);
+          throw error;
         }
       })()
     );
@@ -130,12 +142,21 @@ self.addEventListener("periodicsync", (event: Event) => {
   if (syncEvent.tag === "update-tasks") {
     syncEvent.waitUntil(
       (async () => {
-        console.log("[ServiceWorker] Periodic sync (update-tasks) running");
-        await syncRedactedRemindersFromLocalState();
+        try {
+          console.log("[ServiceWorker] Periodic sync (update-tasks) running");
+          await syncRedactedRemindersFromLocalState();
 
-        const clients = await self.clients.matchAll();
-        for (const client of clients) {
-          client.postMessage({ type: "PERIODIC_SYNC_COMPLETED", tag: syncEvent.tag });
+          const clients = await self.clients.matchAll();
+          for (const client of clients) {
+            try {
+              client.postMessage({ type: "PERIODIC_SYNC_COMPLETED", tag: syncEvent.tag });
+            } catch {
+              // Client may have closed mid-sync — safe to ignore.
+            }
+          }
+        } catch (error) {
+          console.error("[ServiceWorker] Periodic sync failed", error);
+          throw error;
         }
       })()
     );

@@ -149,3 +149,11 @@ Decision: `apps/web/tests/visual.e2e.spec.ts` freezes the clock (`page.clock.set
 Reason: The snapshots captured the wall-clock date and time-derived guidance ("1h 50m clear block"), so baselines drifted daily — the mobile baselines were weeks stale and failed for reasons unrelated to the code under test. On this Windows host, letting Vitest spawn one fork per core starved the pool: workers failed to start and the push-api suite (whose first case pays a Fastify/web-push/`node:sqlite` import) tripped the 15s timeout.
 
 Consequence: Regenerate snapshots only for intentional UI changes; the clock is fixed at `2026-09-12T14:00:00`. `apps/push-api/src/server.test.ts` documents its own 30s timeout for the first case. Raise the worker cap only after confirming the machine can absorb the import cost.
+
+## 019 - Background And Error Audit Hardening
+
+Decision: Sync isolates per-record failures (one corrupt ciphertext no longer stalls the cursor), the JSON push store quarantines corrupt files to `.corrupt-<timestamp>` instead of silently emptying, API validation maps to 400 with a generic 500 (internal messages stay server-side), `DELETE /subscriptions/:hash` returns 404 for unknown hashes, reminder replace is transactional, dispatch isolates per-reminder store failures, and background `void`-fires report through Sentry plus a global `unhandledrejection` handler.
+
+Reason: The audit found silent data-loss (store overwrite), poison-pill sync stalls, false Saved/Logged states, and unobserved background rejections.
+
+Consequence: `challenger-m5-tier5` 2.6 now asserts resilient sync (ok + local intact) instead of a throw; ICS export skips bad tasks, folds long lines, emits DTEND, and downloads as `throughline.ics`; forms and Settings surface storage failures instead of staying silent.

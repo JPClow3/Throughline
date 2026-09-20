@@ -76,8 +76,10 @@ export class D1PushStore {
   }
 
   async removeSubscription(endpointHash: string): Promise<void> {
-    await this.db.prepare("DELETE FROM subscriptions WHERE endpoint_hash = ?").bind(endpointHash).run();
-    await this.db.prepare("DELETE FROM reminders WHERE endpoint_hash = ?").bind(endpointHash).run();
+    await this.db.batch([
+      this.db.prepare("DELETE FROM subscriptions WHERE endpoint_hash = ?").bind(endpointHash),
+      this.db.prepare("DELETE FROM reminders WHERE endpoint_hash = ?").bind(endpointHash)
+    ]);
   }
 
   async saveReminder(subscriptionEndpoint: string, reminder: RedactedReminder): Promise<StoredReminder> {
@@ -146,11 +148,11 @@ export class D1PushStore {
       previousRows.results.map((r) => [r.reminder_id, { notifyAt: r.notify_at, dispatchedAt: r.dispatched_at }])
     );
 
-    // Delete existing
-    await this.db.prepare("DELETE FROM reminders WHERE endpoint_hash = ?").bind(endpointHash).run();
-
+    // Delete + re-insert in a single batch so a crash can't leave zero reminders.
     const stored: StoredReminder[] = [];
-    const statements: D1PreparedStatement[] = [];
+    const statements: D1PreparedStatement[] = [
+      this.db.prepare("DELETE FROM reminders WHERE endpoint_hash = ?").bind(endpointHash)
+    ];
 
     for (const reminder of reminders) {
       const prev = previousMap.get(reminder.reminderId);
@@ -183,9 +185,7 @@ export class D1PushStore {
       );
     }
 
-    if (statements.length > 0) {
-      await this.db.batch(statements);
-    }
+    await this.db.batch(statements);
 
     return stored;
   }

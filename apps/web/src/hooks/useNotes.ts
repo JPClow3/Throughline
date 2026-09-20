@@ -1,6 +1,7 @@
 import { Note } from "@throughline/domain";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useCallback, useOptimistic, startTransition } from "react";
+import { reportError } from "../sentry";
 import {
   NoteInput,
   addNote as addNoteRecord,
@@ -53,7 +54,12 @@ export function useNotes() {
   const updateNote = useCallback(async (note: Note) => {
     startTransition(async () => {
       dispatchOptimisticNote({ type: 'update', payload: note });
-      await updateNoteRecord(note);
+      try {
+        await updateNoteRecord(note);
+      } catch (error) {
+        reportError(error, { source: "note-update" });
+        throw error;
+      }
     });
     return note;
   }, [dispatchOptimisticNote]);
@@ -61,7 +67,11 @@ export function useNotes() {
   const removeNote = useCallback(async (noteId: string) => {
     startTransition(async () => {
       dispatchOptimisticNote({ type: 'delete', payload: noteId });
-      await deleteNoteRecord(noteId);
+      try {
+        await deleteNoteRecord(noteId);
+      } catch (error) {
+        reportError(error, { source: "note-delete" });
+      }
     });
   }, [dispatchOptimisticNote]);
 
@@ -69,7 +79,11 @@ export function useNotes() {
     async (noteId: string, kind: "task" | "goal", refId: string, linked: boolean) => {
       startTransition(async () => {
         dispatchOptimisticNote({ type: 'toggleLink', payload: { id: noteId, kind, refId, linked } });
-        await toggleNoteLinkRecord(noteId, kind, refId, linked);
+        try {
+          await toggleNoteLinkRecord(noteId, kind, refId, linked);
+        } catch (error) {
+          reportError(error, { source: "note-link" });
+        }
       });
     },
     [dispatchOptimisticNote]

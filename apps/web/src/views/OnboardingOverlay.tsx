@@ -2,6 +2,7 @@ import { Bell, Briefcase, Check, GraduationCap, House, Plus, SlidersHorizontal }
 import { motion } from "motion/react";
 import { useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
+import { reportError } from "../sentry";
 import { Button, Field, Select, TextInput, useDialogA11y } from "../ui";
 
 export type OnboardingSetupKind = "school" | "work" | "personal";
@@ -46,6 +47,7 @@ export function OnboardingOverlay({ onSetup, onComplete }: { onSetup: (input: On
   const [enableNotifications, setEnableNotifications] = useState(false);
   const [openSyncSettings, setOpenSyncSettings] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [setupError, setSetupError] = useState("");
 
   const cleanedProjects = useMemo(() => projectNames.map((name) => name.trim()).filter(Boolean).slice(0, 3), [projectNames]);
   const canContinue = step === 1 ? cleanedProjects.length > 0 : step === 2 ? taskTitle.trim().length > 0 : true;
@@ -73,6 +75,7 @@ export function OnboardingOverlay({ onSetup, onComplete }: { onSetup: (input: On
   async function finish() {
     if (!canContinue || submitting) return;
     setSubmitting(true);
+    setSetupError("");
     try {
       const result = onSetup({
         kind,
@@ -90,6 +93,9 @@ export function OnboardingOverlay({ onSetup, onComplete }: { onSetup: (input: On
       if (completion instanceof Promise) {
         await completion;
       }
+    } catch (error) {
+      reportError(error, { source: "onboarding" });
+      setSetupError("Setup couldn't finish — storage is unavailable. Try again.");
     } finally {
       setSubmitting(false);
     }
@@ -210,6 +216,11 @@ export function OnboardingOverlay({ onSetup, onComplete }: { onSetup: (input: On
               </Button>
             )}
           </div>
+          {setupError ? (
+            <p className="composer-error" role="alert">
+              {setupError}
+            </p>
+          ) : null}
         </div>
       </motion.div>
     </div>

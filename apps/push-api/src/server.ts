@@ -4,6 +4,7 @@ import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
 import Fastify from "fastify";
 import webpush from "web-push";
+import { z } from "zod";
 import { registerAuthRoutes, SESSION_COOKIE } from "./auth";
 import { registerSyncRoutes } from "./sync";
 import { hasVapidConfig, PushApiConfig, readPushApiConfig } from "./config";
@@ -79,6 +80,26 @@ export async function createServer(options: CreateServerOptions = {}) {
 
   await app.register(cookie, { secret: config.sessionSecret });
 
+  app.setErrorHandler((error, request, reply) => {
+    if (error instanceof z.ZodError) {
+      return reply.code(400).send({ error: "validation-failed", issues: error.issues });
+    }
+    const maybeValidation = error as { validation?: unknown; statusCode?: number };
+    if (Array.isArray(maybeValidation.validation) || maybeValidation.statusCode === 400) {
+      return reply.code(400).send({ error: "validation-failed" });
+    }
+    // Preserve intentional client errors (e.g. 429 rate limit, 401 auth).
+    if (
+      typeof maybeValidation.statusCode === "number" &&
+      maybeValidation.statusCode >= 400 &&
+      maybeValidation.statusCode < 500
+    ) {
+      return reply.code(maybeValidation.statusCode).send({ error: error.message });
+    }
+    request.log.error(error);
+    return reply.code(500).send({ error: "internal-error" });
+  });
+
   // Tolerate body-less POSTs (e.g. the cron hitting /dispatch-due via
   // `wget --post-data=""`, which sends form-encoded) so they don't 415.
   app.addContentTypeParser(
@@ -108,6 +129,10 @@ export async function createServer(options: CreateServerOptions = {}) {
 
   app.delete("/subscriptions/:endpointHash", async (request, reply) => {
     const params = EndpointHashParamsSchema.parse(request.params);
+    const existing = await store.subscriptionFor(params.endpointHash);
+    if (!existing) {
+      return reply.code(404).send({ error: "subscription-not-found" });
+    }
     await store.removeSubscription(params.endpointHash);
     return reply.code(204).send();
   });
@@ -146,35 +171,45 @@ export async function createServer(options: CreateServerOptions = {}) {
     let sent = 0;
 
     for (const reminder of due) {
-      const subscription = await store.subscriptionFor(reminder.endpointHash);
-      if (!subscription) {
-        await store.removeSubscription(reminder.endpointHash);
-        continue;
-      }
-
       try {
-        await sendNotification(
-          subscription.subscription,
-          JSON.stringify({
-            title: reminder.title,
-            body: reminder.body,
-            data: {
-              reminderId: reminder.reminderId,
-              taskId: reminder.taskId,
-              urgency: reminder.urgency
-            }
-          })
-        );
-        await store.markDispatched(reminder.endpointHash, reminder.reminderId);
-        sent += 1;
-        dispatchMetrics.sent += 1;
-      } catch (err: unknown) {
-        dispatchMetrics.failed += 1;
-        app.log.error(err, "Failed to send notification");
-        const errStatusCode = (err as { statusCode?: number })?.statusCode;
-        if (errStatusCode === 404 || errStatusCode === 410) {
+        const subscription = await store.subscriptionFor(reminder.endpointHash);
+        if (!subscription) {
           await store.removeSubscription(reminder.endpointHash);
+          continue;
         }
+
+        try {
+          await sendNotification(
+            subscription.subscription,
+            JSON.stringify({
+              title: reminder.title,
+              body: reminder.body,
+              data: {
+                reminderId: reminder.reminderId,
+                taskId: reminder.taskId,
+                urgency: reminder.urgency
+              }
+            })
+          );
+          await store.markDispatched(reminder.endpointHash, reminder.reminderId);
+          sent += 1;
+          dispatchMetrics.sent += 1;
+        } catch (err: unknown) {
+          dispatchMetrics.failed += 1;
+          app.log.error(err, "Failed to send notification");
+          const errStatusCode = (err as { statusCode?: number })?.statusCode;
+          if (errStatusCode === 404 || errStatusCode === 410) {
+            try {
+              await store.removeSubscription(reminder.endpointHash);
+            } catch (cleanupError) {
+              app.log.error(cleanupError, "Failed to remove stale subscription");
+            }
+          }
+        }
+      } catch (err: unknown) {
+        // A store failure for one reminder must not starve the rest of the batch.
+        dispatchMetrics.failed += 1;
+        app.log.error(err, "Failed to process due reminder");
       }
     }
 
@@ -196,7 +231,7 @@ if (isMainModule) {
       })
     )
     .catch((error) => {
-      console.error(error);
+      console.error(error instanceof Error ? error.message : error);
       process.exit(1);
     });
 }

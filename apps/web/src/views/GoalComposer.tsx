@@ -2,6 +2,7 @@ import { Course, Goal } from "@throughline/domain";
 import { Plus } from "@phosphor-icons/react";
 import { FormEvent, useState } from "react";
 import type { GoalInput } from "../data/repositories";
+import { reportError } from "../sentry";
 import { Button, Field, Select, TextInput } from "../ui";
 
 function toDateInput(iso?: string) {
@@ -41,6 +42,9 @@ export function GoalComposer({
         targetDate: targetDate || undefined,
         color: projectId ? courses.find((course) => course.id === projectId)?.color : goal?.color
       });
+    } catch (error) {
+      reportError(error, { source: "goal-save" });
+      setError("Couldn't save this goal — storage is unavailable. Try again.");
     } finally {
       setSaving(false);
     }

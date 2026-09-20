@@ -1,8 +1,11 @@
 import { Warning } from "@phosphor-icons/react";
 import { Component, type ErrorInfo, type ReactNode } from "react";
+import { reportError } from "../sentry";
 
 type ErrorBoundaryProps = {
   children: ReactNode;
+  /** Optional label so nested boundaries report where the crash happened. */
+  scope?: string;
 };
 
 type ErrorBoundaryState = {
@@ -21,8 +24,15 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error("Throughline crashed:", error, info.componentStack);
+    reportError(error, { scope: this.props.scope ?? "app" });
+    if (import.meta.env.DEV) {
+      console.error("Throughline crashed:", error, info.componentStack);
+    }
   }
+
+  private reset = () => {
+    this.setState({ error: null });
+  };
 
   render() {
     if (this.state.error) {
@@ -36,9 +46,14 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             <p className="crash-body">
               An unexpected error interrupted the view. Your data is saved locally and is safe.
             </p>
-            <button className="btn btn-primary" type="button" onClick={() => window.location.reload()}>
-              Reload Throughline
-            </button>
+            <div className="button-row">
+              <button className="btn" type="button" onClick={this.reset}>
+                Try again
+              </button>
+              <button className="btn btn-primary" type="button" onClick={() => window.location.reload()}>
+                Reload Throughline
+              </button>
+            </div>
           </div>
         </div>
       );

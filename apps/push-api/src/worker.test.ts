@@ -31,6 +31,12 @@ function createTestSql(): Sql {
     }
   };
 
+  (sqlFn as unknown as { begin: (cb: (tx: Sql) => Promise<void>) => Promise<void> }).begin = async (
+    cb: (tx: Sql) => Promise<void>
+  ) => {
+    await cb(sqlFn as unknown as Sql);
+  };
+
   return sqlFn as unknown as Sql;
 }
 
@@ -144,6 +150,24 @@ describe("Cloudflare Worker API (PostgreSQL / Neon)", () => {
       env
     );
     expect(delRes.status).toBe(204);
+
+    // Deleting again reports not-found instead of silent success
+    const delMissing = await handleRequest(
+      new Request(`http://localhost/subscriptions/${endpointHash}`, { method: "DELETE" }),
+      env
+    );
+    expect(delMissing.status).toBe(404);
+
+    // Invalid payloads map to 400, never 500
+    const badSub = await handleRequest(
+      new Request("http://localhost/subscriptions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ endpoint: 123 })
+      }),
+      env
+    );
+    expect(badSub.status).toBe(400);
 
     // Health counts should be 0
     const healthRes2 = await handleRequest(new Request("http://localhost/health"), env);
