@@ -216,12 +216,13 @@ export async function updateTaskStatus(taskId: string, status: TaskStatus) {
 }
 
 export async function syncRecurringTasks() {
-  const allTasks = await db.tasks.toArray();
-  const activeTasks = allTasks.filter(t => t.status !== "done" && t.recurrence && t.dueAt);
-  const keys = existingRecurringKeys(allTasks);
   const nowTime = new Date().getTime();
   
   await db.transaction("rw", db.tasks, async () => {
+    // Read within the write transaction so overlapping syncs see committed instances.
+    const allTasks = await db.tasks.toArray();
+    const activeTasks = allTasks.filter(t => t.status !== "done" && t.recurrence && t.dueAt);
+    const keys = existingRecurringKeys(allTasks);
     for (const task of activeTasks) {
       if (!task.dueAt || !task.recurrence) continue;
       
