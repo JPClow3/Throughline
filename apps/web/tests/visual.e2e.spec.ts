@@ -176,7 +176,11 @@ test.describe("Visual Regression", () => {
     await page.keyboard.press("Control+k");
     
     await page.waitForSelector("input[placeholder='Type a command or search...']");
-    await page.waitForTimeout(500);
+    // Recent results arrive after the dialog mounts. Select a known item once
+    // they are visible so cmdk's initial asynchronous selection cannot drift.
+    await expect(page.getByRole("option", { name: /Practice cell division questions/ })).toBeVisible();
+    await page.getByPlaceholder("Type a command or search...").press("Home");
+    await expect(page.getByRole("option", { name: /Practice cell division questions/ })).toHaveAttribute("aria-selected", "true");
     
     await expect(page).toHaveScreenshot("command-palette.png", { fullPage: true });
   });
