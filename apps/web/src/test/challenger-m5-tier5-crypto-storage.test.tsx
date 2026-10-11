@@ -77,6 +77,7 @@ describe("Tier 5 Adversarial Hardening — Crypto, Storage & Offline Resilience"
   });
 
   afterEach(async () => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
     await db.delete();
@@ -898,7 +899,9 @@ describe("Tier 5 Adversarial Hardening — Crypto, Storage & Offline Resilience"
       expect(tasks[0].title).toBe("Offline task created before sync attempt");
     });
 
-    it("3.6: evaluates idempotency and exposes concurrency vulnerability in recurring task synchronization", async () => {
+    it("3.6: recurring task synchronization is idempotent sequentially and concurrently", async () => {
+      vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(new Date("2026-10-11T18:00:00Z"));
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
       yesterday.setHours(12, 0, 0, 0);
@@ -924,7 +927,7 @@ describe("Tier 5 Adversarial Hardening — Crypto, Storage & Offline Resilience"
       expect(uniqueDueDatesSequential.size).toBe(2);
 
       // Part B: Concurrency stress test on a fresh overdue recurring task
-      // Demonstrates race condition when allTasks is queried outside the transaction block
+      // Overlapping calls must observe instances created by preceding transactions.
       await addTask({
         title: "Concurrent Habit",
         priority: "low",
@@ -945,9 +948,9 @@ describe("Tier 5 Adversarial Hardening — Crypto, Storage & Offline Resilience"
 
       const afterConcurrent = (await listTasks()).filter((t) => t.title === "Concurrent Habit");
       const uniqueDueDatesConcurrent = new Set(afterConcurrent.map((t) => t.dueAt));
-      const hasDuplicateRace = afterConcurrent.length > uniqueDueDatesConcurrent.size;
-      // Confirmed finding: race condition produces duplicate instances under concurrent sync calls
-      expect(hasDuplicateRace).toBe(true);
+      expect(afterConcurrent).toHaveLength(2);
+      expect(uniqueDueDatesConcurrent.size).toBe(2);
+      vi.useRealTimers();
     });
   });
 });

@@ -94,7 +94,9 @@ export async function createServer(options: CreateServerOptions = {}) {
       maybeValidation.statusCode >= 400 &&
       maybeValidation.statusCode < 500
     ) {
-      return reply.code(maybeValidation.statusCode).send({ error: error.message });
+      return reply.code(maybeValidation.statusCode).send({
+        error: error instanceof Error ? error.message : "client-error"
+      });
     }
     request.log.error(error);
     return reply.code(500).send({ error: "internal-error" });
