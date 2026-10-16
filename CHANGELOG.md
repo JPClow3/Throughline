@@ -14,6 +14,7 @@
 - Goal detail shows a single "Add linked note" action.
 
 ### Changed
+- The Cloudflare Worker no longer runs a 5-minute cron. Reminder dispatch stays on `POST /dispatch-due` for an external caller such as the Docker ofelia sidecar. The Worker `compatibility_date` is `2026-10-16`.
 - Insights reads planner context like every other view, and its charts expose screen-reader summaries; the course-load empty state offers capture.
 - Mobile board status tabs and Timeline day chips are real tablists: `aria-controls`/`tabpanel` wiring plus Arrow/Home/End navigation.
 - Goal completion and step reordering are announced to assistive tech; subtask and recurrence controls are labelled; card titles keep a visible "open task" affordance on touch.

@@ -149,4 +149,6 @@ Dispatches reminders where `notifyAt <= now` if VAPID is configured. Returns `50
 and ofelia passes it automatically.
 
 For non-Docker setups, wire any external scheduler (system cron, a serverless
-timer, etc.) to `POST /dispatch-due`.
+timer, etc.) to `POST /dispatch-due`. The Cloudflare Worker does not schedule
+that call itself. A Worker Cron Trigger would keep the Neon compute awake on
+every tick, including when there is nothing to send.
