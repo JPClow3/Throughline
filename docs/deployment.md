@@ -3,7 +3,7 @@
 This document covers deployment options, PWA offline capabilities, and release readiness for Throughline.
 
 Throughline supports two primary production deployment architectures:
-1. **Cloudflare Edge (Cloudflare Pages + Cloudflare Workers + Cloudflare Hyperdrive + Neon PostgreSQL)** — Serverless edge deployment with automatic GitHub integration, zero-maintenance global scaling, connection pooling, and built-in cron triggers.
+1. **Cloudflare Edge (Cloudflare Pages + Cloudflare Workers + Cloudflare Hyperdrive + Neon PostgreSQL)** — Serverless edge deployment with automatic GitHub integration for the Pages app, connection pooling, and scale-to-zero database compute.
 2. **Docker / Dokploy on EC2** — Single-server containerized deployment with Traefik ingress and Let's Encrypt TLS.
 
 ---
@@ -15,7 +15,7 @@ Throughline is deployed on the Cloudflare developer platform with Neon Serverles
 - **Backend API**: Cloudflare Workers (`apps/push-api`) handles push subscriptions, VAPID dispatch, user authentication, and E2EE encrypted sync.
 - **Database Connection Pooling**: Cloudflare Hyperdrive pools and accelerates TCP connections from Cloudflare Workers to Neon PostgreSQL globally.
 - **Database**: Neon PostgreSQL stores user credentials, sessions, encrypted ciphertext sync records, push subscriptions, and redacted reminders.
-- **Background Cron**: Cloudflare Scheduled Triggers (`*/5 * * * *`) automatically invoke the reminder dispatcher every 5 minutes without needing an external cron server.
+- **Reminder dispatch**: The Worker has no Cron Trigger. `POST /dispatch-due` sends due reminders when an external caller hits it. The Docker stack's ofelia sidecar does that every 5 minutes. A Worker schedule would keep the Neon compute from suspending between ticks, so edge deploys do not poll on their own.
 
 ### Architecture
 
@@ -30,7 +30,7 @@ Throughline is deployed on the Cloudflare developer platform with Neon Serverles
                           │    ├─ Auth & Sessions                                              │
                           │    ├─ E2EE Ciphertext Sync (pull / push)                           │
                           │    ├─ Push Subscriptions & Redacted Reminders                      │
-                          │    ├─ Scheduled Cron (*/5 * * * *) ──▶ Dispatches Due Reminders    │
+                          │    ├─ POST /dispatch-due (external caller only, no Worker cron)   │
                           │    └─ env.HYPERDRIVE (connection pooling proxy)                    │
     Browser SW   ◀───────│        └─ Web Push (VAPID / Web Crypto)                        │   │
                           └───────────────────────────────────────────────────────────────┼────┘
@@ -82,6 +82,8 @@ Copy the returned `id` and ensure `apps/push-api/wrangler.jsonc` has the Hyperdr
    - **Root directory**: `apps/push-api` *(crucial for monorepo)*
    - **Build command**: `npm run build`
    - **Deploy command**: `npx wrangler deploy`
+
+   Git pushes to `main` publish the Pages project. They do not publish this Worker. Cron and compatibility-date changes take effect only after `npx wrangler deploy` from `apps/push-api`.
 3. Under **Settings > Bindings**:
    - Add Hyperdrive binding with name `HYPERDRIVE` linked to `throughline-hyperdrive`.
 4. Under **Settings > Variables and Secrets**:

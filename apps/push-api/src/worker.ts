@@ -22,12 +22,6 @@ export interface ExecutionContext {
   passThroughOnException(): void;
 }
 
-export interface ScheduledController {
-  readonly scheduledTime: number;
-  readonly cron: string;
-  noRetry(): void;
-}
-
 export interface HyperdriveBinding {
   connectionString: string;
 }
@@ -319,7 +313,8 @@ export async function handleRequest(request: Request, env: WorkerEnv, ctx?: Exec
     }
 
     // ----------------------------------------------------
-    // Cron / Manual Dispatch
+    // Manual reminder dispatch. Nothing in the Worker invokes this on a
+    // schedule; Docker/ofelia or another external caller posts here.
     // ----------------------------------------------------
     if (method === "POST" && pathname === "/dispatch-due") {
       if (env.DISPATCH_TOKEN) {
@@ -494,10 +489,6 @@ export async function handleRequest(request: Request, env: WorkerEnv, ctx?: Exec
 const worker = {
   async fetch(request: Request, env: WorkerEnv, ctx: ExecutionContext): Promise<Response> {
     return handleRequest(request, env, ctx);
-  },
-
-  async scheduled(_controller: ScheduledController, env: WorkerEnv, ctx: ExecutionContext): Promise<void> {
-    ctx.waitUntil(dispatchDueReminders(env));
   }
 };
 

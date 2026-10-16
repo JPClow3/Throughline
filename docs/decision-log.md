@@ -157,3 +157,11 @@ Decision: Sync isolates per-record failures (one corrupt ciphertext no longer st
 Reason: The audit found silent data-loss (store overwrite), poison-pill sync stalls, false Saved/Logged states, and unobserved background rejections.
 
 Consequence: `challenger-m5-tier5` 2.6 now asserts resilient sync (ok + local intact) instead of a throw; ICS export skips bad tasks, folds long lines, emits DTEND, and downloads as `throughline.ics`; forms and Settings surface storage failures instead of staying silent.
+
+## 020 - No Cloudflare Worker Cron
+
+Decision: `apps/push-api/wrangler.jsonc` does not declare a Cron Trigger, and the Worker export has no `scheduled` handler.
+
+Reason: The deployed `throughline` Worker was invoked every 5 minutes. That schedule only called reminder dispatch. Production has VAPID unset and no subscriptions or pending reminders, so the runs did not deliver notifications. They still started the Worker on a Free-plan Neon database that suspends when idle. Railway services for this app are offline. Auth and encrypted sync stay on the `fetch` handler and do not need the schedule.
+
+Consequence: Due reminders are sent only when something calls `POST /dispatch-due` (the Docker/ofelia sidecar, or another external scheduler). Removing the cron from git does not change the live Worker until `wrangler deploy` runs from `apps/push-api`. Pages deploys from `main` do not publish the Worker.
