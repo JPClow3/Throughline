@@ -83,7 +83,7 @@ Copy the returned `id` and ensure `apps/push-api/wrangler.jsonc` has the Hyperdr
    - **Build command**: `npm run build`
    - **Deploy command**: `npx wrangler deploy`
 
-   Git pushes to `main` publish the Pages project. They do not publish this Worker. Cron and compatibility-date changes take effect only after `npx wrangler deploy` from `apps/push-api`.
+   Git pushes to `main` publish the affected Pages app and/or the existing `throughline` Worker through Cloudflare Git integration. Watch paths select the affected component. See `cloudflare-ci.md` for validation and emergency fallback.
 3. Under **Settings > Bindings**:
    - Add Hyperdrive binding with name `HYPERDRIVE` linked to `throughline-hyperdrive`.
 4. Under **Settings > Variables and Secrets**:
