@@ -24,6 +24,8 @@
     "test:unit": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
+    "test:release": "node --test scripts/smoke-push-api.test.mjs",
+    "smoke:production": "node scripts/smoke-push-api.mjs",
     "test:e2e": "playwright test --project=desktop --project=mobile",
     "test:e2e:desktop": "playwright test --project=desktop",
     "test:perf": "playwright test --project=performance",
