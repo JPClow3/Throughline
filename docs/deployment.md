@@ -47,14 +47,14 @@ Throughline is deployed on the Cloudflare developer platform with Neon Serverles
 #### Step 1: Create Cloudflare Hyperdrive for Neon
 Run the command below (or create in Cloudflare Dashboard under **Storage & Databases > Hyperdrive**):
 ```bash
-npx wrangler hyperdrive create throughline-hyperdrive --connection-string="<YOUR_NEON_POSTGRES_CONNECTION_STRING>"
+npx wrangler hyperdrive create throughline-db --connection-string="<YOUR_NEON_POSTGRES_CONNECTION_STRING>"
 ```
-Copy the returned `id` and ensure `apps/push-api/wrangler.jsonc` has the Hyperdrive binding:
+Copy the returned `id` and ensure `apps/push-api/wrangler.jsonc` has the Hyperdrive binding. Production currently uses Hyperdrive `throughline-db` (`efa59973e66347bf9ce5e10a02d47980`) pointed at Neon's direct host:
 ```jsonc
 "hyperdrive": [
   {
     "binding": "HYPERDRIVE",
-    "id": "<YOUR_HYPERDRIVE_ID>"
+    "id": "efa59973e66347bf9ce5e10a02d47980"
   }
 ]
 ```
@@ -85,7 +85,7 @@ Copy the returned `id` and ensure `apps/push-api/wrangler.jsonc` has the Hyperdr
 
    Git pushes to `main` publish the affected Pages app and/or the existing `throughline` Worker through Cloudflare Git integration. Watch paths select the affected component. See `cloudflare-ci.md` for validation and emergency fallback.
 3. Under **Settings > Bindings**:
-   - Add Hyperdrive binding with name `HYPERDRIVE` linked to `throughline-hyperdrive`.
+   - Add Hyperdrive binding with name `HYPERDRIVE` linked to `throughline-db`.
 4. Under **Settings > Variables and Secrets**:
    - `SESSION_SECRET`: Session cookie secret
    - `VAPID_PUBLIC_KEY`: Web Push VAPID public key
