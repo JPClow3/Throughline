@@ -82,6 +82,3 @@ export function RecoveryKeyPanel({
   );
 }
 
-export function isRecoveryKeyConfirmed(recoveryKey: string, confirmed: boolean, partialKey: string) {
-  return confirmed && partialKey.toLowerCase() === recoveryKey.slice(-4).toLowerCase();
-}

@@ -2,7 +2,7 @@ import { FormEvent, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
 import { useAuth } from "../auth/AuthProvider";
-import { isRecoveryKeyConfirmed, RecoveryKeyPanel } from "../auth/RecoveryKeyPanel";
+import { RecoveryKeyPanel } from "../auth/RecoveryKeyPanel";
 import { AuthShell } from "./AuthShell";
 import { Button, Field, TextInput } from "../ui";
 
@@ -72,7 +72,8 @@ export function Signup() {
   }
 
   if (recoveryKey) {
-    const canProceed = isRecoveryKeyConfirmed(recoveryKey, confirmedSaved, partialKey);
+    const canProceed =
+      confirmedSaved && partialKey.toLowerCase() === recoveryKey.slice(-4).toLowerCase();
 
     async function regenerateRecoveryKey() {
       setRecoveryBusy(true);
