@@ -2324,6 +2324,42 @@ button.meta-chip:hover {
   padding-left: 2.1rem;
   min-height: 38px;
 }
+.weekday-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.weekday-chip {
+  min-width: 2.6rem;
+  padding: 0.45rem 0.55rem;
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  background: var(--card-tinted);
+  color: var(--ink);
+  font-size: var(--text-label);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: var(--shadow-0);
+  transition: transform var(--dur-fast) ease, box-shadow var(--dur-fast) ease, background-color var(--dur-fast) ease;
+}
+.weekday-chip:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: var(--shadow-1);
+}
+.weekday-chip:active {
+  transform: translate(1px, 1px);
+  box-shadow: none;
+}
+.weekday-chip.active {
+  background: var(--yellow);
+  color: var(--on-signal);
+}
+.weekday-chip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 .filter-preset-chip {
   position: relative;
   display: inline-flex;

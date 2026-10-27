@@ -16,7 +16,7 @@ import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, v
 import { CSS } from "@dnd-kit/utilities";
 import { FormEvent, useState } from "react";
 import { reportError } from "../sentry";
-import { Button, ConfirmDialog, Field, Select, TextArea, TextInput } from "../ui";
+import { Button, ConfirmDialog, Field, Select, TextArea, TextInput, WeekdayPicker } from "../ui";
 
 function toLocalInput(iso?: string) {
   if (!iso) {
@@ -57,6 +57,9 @@ export function TaskEditor({
   const [subtasks, setSubtasks] = useState([...task.subtasks]);
   const [recurrence, setRecurrence] = useState<"daily" | "weekly" | "biweekly" | "monthly" | "custom" | "">(
     task.recurrence?.pattern ?? ""
+  );
+  const [customDays, setCustomDays] = useState<number[]>(
+    task.recurrence?.daysOfWeek?.length ? [...task.recurrence.daysOfWeek] : [1, 2, 3, 4, 5]
   );
   const [energy, setEnergy] = useState(task.energy);
   const [difficulty, setDifficulty] = useState(task.difficulty);
@@ -102,6 +105,10 @@ export function TaskEditor({
       setError("Give the task a title before saving.");
       return;
     }
+    if (recurrence === "custom" && customDays.length === 0) {
+      setError("Pick at least one weekday for custom recurrence.");
+      return;
+    }
     setError("");
     setSaving(true);
     try {
@@ -123,7 +130,12 @@ export function TaskEditor({
           .map((tag) => tag.trim())
           .filter(Boolean),
         subtasks: subtasks.map((subtask) => ({ ...subtask, title: subtask.title.trim() })).filter((subtask) => subtask.title),
-        recurrence: recurrence ? { pattern: recurrence as "daily" | "weekly" | "biweekly" | "monthly" | "custom" } : undefined,
+        recurrence: recurrence
+          ? {
+              pattern: recurrence as "daily" | "weekly" | "biweekly" | "monthly" | "custom",
+              ...(recurrence === "custom" ? { daysOfWeek: customDays } : {})
+            }
+          : undefined,
         attributes: [attribute],
         completedAt: status === "done" ? task.completedAt ?? new Date().toISOString() : undefined
       });
@@ -246,12 +258,18 @@ export function TaskEditor({
             <option value="weekly">Weekly</option>
             <option value="biweekly">Biweekly</option>
             <option value="monthly">Monthly</option>
+            <option value="custom">Custom weekdays</option>
           </Select>
         </Field>
         <Field label="Reminder">
           <TextInput type="datetime-local" value={reminderAt} onChange={(event) => setReminderAt(event.target.value)} />
         </Field>
       </div>
+      {recurrence === "custom" ? (
+        <Field label="Repeat on">
+          <WeekdayPicker value={customDays} onChange={setCustomDays} />
+        </Field>
+      ) : null}
       <Field label="Study minutes">
         <TextInput
           type="number"

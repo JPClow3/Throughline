@@ -3,7 +3,7 @@ import { CaretDown, Plus, Trash } from "@phosphor-icons/react";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import type { TaskInput } from "../data/repositories";
 import { reportError } from "../sentry";
-import { Button, Field, Select, TextArea, TextInput } from "../ui";
+import { Button, Field, Select, TextArea, TextInput, WeekdayPicker } from "../ui";
 
 function toLocalInput(date?: Date) {
   if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
@@ -42,6 +42,7 @@ export function TaskComposer({
   const [tags, setTags] = useState("");
   const [subtasks, setSubtasks] = useState<Array<{ id: string; title: string; completed: boolean }>>([]);
   const [recurrence, setRecurrence] = useState<"daily" | "weekly" | "biweekly" | "monthly" | "custom" | "">("");
+  const [customDays, setCustomDays] = useState<number[]>([1, 2, 3, 4, 5]);
   const [expanded, setExpanded] = useState(false);
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -60,6 +61,10 @@ export function TaskComposer({
     event.preventDefault();
     setAttemptedSubmit(true);
     if (!canSubmit) {
+      return;
+    }
+    if (recurrence === "custom" && customDays.length === 0) {
+      setSubmitError("Pick at least one weekday for custom recurrence.");
       return;
     }
 
@@ -84,7 +89,12 @@ export function TaskComposer({
         attributes: [attribute],
         tags: parseTags(tags),
         subtasks: subtasks.map((subtask) => ({ ...subtask, title: subtask.title.trim() })).filter((subtask) => subtask.title),
-        recurrence: recurrence ? { pattern: recurrence } : undefined
+        recurrence: recurrence
+          ? {
+              pattern: recurrence,
+              ...(recurrence === "custom" ? { daysOfWeek: customDays } : {})
+            }
+          : undefined
       });
 
       setTitle("");
@@ -98,6 +108,7 @@ export function TaskComposer({
       setPriority("medium");
       setEstimatedMinutes(50);
       setRecurrence("");
+      setCustomDays([1, 2, 3, 4, 5]);
       setAttemptedSubmit(false);
     } catch (error) {
       reportError(error, { source: "task-create" });
@@ -220,8 +231,14 @@ export function TaskComposer({
               <option value="weekly">Weekly</option>
               <option value="biweekly">Biweekly</option>
               <option value="monthly">Monthly</option>
+              <option value="custom">Custom weekdays</option>
             </Select>
           </Field>
+          {recurrence === "custom" ? (
+            <Field label="Repeat on">
+              <WeekdayPicker value={customDays} onChange={setCustomDays} />
+            </Field>
+          ) : null}
           <Field label="Tags">
             <TextInput value={tags} onChange={(event) => setTags(event.target.value)} placeholder="reading, errand" />
           </Field>

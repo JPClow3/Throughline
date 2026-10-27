@@ -6,3 +6,4 @@ export { Sheet, Modal, ModalCloseButton } from "./Overlay";
 export { useDialogA11y } from "./dialogA11y";
 export { ConfirmDialog } from "./ConfirmDialog";
 export { Notice, EmptyState, Spinner, Skeleton, ViewSkeleton, Ring, Mark } from "./feedback";
+export { WeekdayPicker } from "./WeekdayPicker";
