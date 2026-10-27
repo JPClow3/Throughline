@@ -1,8 +1,12 @@
 import type { ReactNode } from "react";
-import { Navigate } from "react-router-dom";
 import { useAuth } from "./AuthProvider";
 import { Spinner } from "../ui";
 
+/**
+ * Waits for auth bootstrap, then renders the planner for both signed-in and
+ * local-only (anon) sessions. Accounts are optional — IndexedDB stays the
+ * source of truth either way.
+ */
 export function RequireAuth({ children }: { children: ReactNode }) {
   const { status } = useAuth();
 
@@ -14,10 +18,5 @@ export function RequireAuth({ children }: { children: ReactNode }) {
     );
   }
 
-  if (status === "anon") {
-    return <Navigate to="/login" replace />;
-  }
-
   return <>{children}</>;
 }
-

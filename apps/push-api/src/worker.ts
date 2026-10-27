@@ -60,7 +60,11 @@ const LoginSchema = z.object({ email: z.string().email().max(254), authKey: blob
 const SaltSchema = z.object({ email: z.string().email().max(254) });
 const GoogleAuthSchema = z.object({ credential: z.string(), dek: z.string().optional() });
 const UpdatePasswordSchema = z.object({ authKey: blob, wrappedDek: blob });
-const UpdateRecoveryKeySchema = z.object({ recoveryAuthKey: blob, recoveryWrappedDek: blob });
+const UpdateRecoveryKeySchema = z.object({
+  recoveryAuthKey: blob,
+  recoveryWrappedDek: blob,
+  salt: blob.optional()
+});
 
 const EntitySchema = z.enum(["task", "course", "goal", "note", "focusSession"]);
 const ChangeSchema = z.object({
@@ -393,7 +397,7 @@ export async function handleRequest(request: Request, env: WorkerEnv, ctx?: Exec
       if (existing) {
         const token = await userStore.createSession(existing.userId);
         resHeaders.set("Set-Cookie", buildSetCookieHeader(token, isSecure));
-        return jsonResponse({ userId: existing.userId, dek: existing.dek, isNew: false }, 200, resHeaders);
+        return jsonResponse({ email, dek: existing.dek, created: false }, 200, resHeaders);
       }
 
       // New user signup via Google
@@ -408,7 +412,7 @@ export async function handleRequest(request: Request, env: WorkerEnv, ctx?: Exec
 
       const token = await userStore.createSession(newUser.id);
       resHeaders.set("Set-Cookie", buildSetCookieHeader(token, isSecure));
-      return jsonResponse({ userId: newUser.id, dek: newUser.wrappedDek, isNew: true }, 201, resHeaders);
+      return jsonResponse({ email, dek: newUser.wrappedDek, created: true }, 201, resHeaders);
     }
 
     if (method === "GET" && pathname === "/auth/me") {
@@ -446,6 +450,9 @@ export async function handleRequest(request: Request, env: WorkerEnv, ctx?: Exec
       }
       const body = await request.json();
       const input = UpdateRecoveryKeySchema.parse(body);
+      if (input.salt) {
+        await userStore.ensureSalt(user.userId, input.salt);
+      }
       await userStore.updateRecoveryKey(user.userId, input.recoveryAuthKey, input.recoveryWrappedDek);
       return new Response(null, { status: 204, headers: resHeaders });
     }

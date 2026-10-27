@@ -4,6 +4,7 @@ import React, { useMemo, useState, type CSSProperties } from "react";
 import {
   DndContext,
   DragOverlay,
+  KeyboardSensor,
   PointerSensor,
   closestCorners,
   useDraggable,
@@ -11,6 +12,7 @@ import {
   useSensor,
   useSensors
 } from "@dnd-kit/core";
+import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core/dist/types/events";
 import { FilterBar } from "./FilterBar";
 import { useFilters } from "../hooks/useFilters";
@@ -122,6 +124,9 @@ export function TimelineView({
       activationConstraint: {
         distance: 5
       }
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates
     })
   );
 

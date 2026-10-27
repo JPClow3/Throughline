@@ -39,7 +39,7 @@ export function Login() {
 
   return (
     <AuthShell title="Welcome back" subtitle="Sign in to sync your plan across devices.">
-      <div style={{ display: "flex", justifyContent: "center", marginBottom: "0.5rem" }}>
+      <div className="auth-oauth-row">
         <GoogleLogin
           onSuccess={async (credentialResponse) => {
             if (credentialResponse.credential) {
@@ -74,7 +74,7 @@ export function Login() {
             onChange={(event) => setEmail(event.target.value)}
           />
         </Field>
-        <Field label="Password or Recovery Key">
+        <Field label="Password">
           <TextInput
             type="password"
             autoComplete="current-password"
@@ -83,6 +83,10 @@ export function Login() {
             onChange={(event) => setPassword(event.target.value)}
           />
         </Field>
+        <p className="auth-field-hint">
+          Lost your password? Use <Link to="/forgot-password">recovery with your key</Link> instead of typing the key
+          here.
+        </p>
         {error ? (
           <Notice variant="error">{error}</Notice>
         ) : null}
@@ -90,12 +94,15 @@ export function Login() {
           {busy ? "Signing in…" : "Sign in"}
         </Button>
       </form>
-      <div className="auth-switch" style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+      <div className="auth-switch auth-switch-stack">
         <p>
           New here? <Link to="/signup">Create an account</Link>
         </p>
-        <p style={{ fontSize: "0.85em" }}>
+        <p className="auth-switch-secondary">
           <Link to="/forgot-password">Forgot your password?</Link>
+        </p>
+        <p className="auth-switch-secondary">
+          Prefer offline? <Link to="/app">Continue without an account</Link>
         </p>
       </div>
     </AuthShell>

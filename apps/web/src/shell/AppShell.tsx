@@ -348,8 +348,16 @@ export function AppShell({
               New Task
             </button>
           ) : null}
-          <SyncPill sync={sync} />
-          <AccountMenu email={email} sync={sync} onNavigateSettings={() => navigate("settings")} onSignOut={onSignOut} />
+          {email ? (
+            <>
+              <SyncPill sync={sync} />
+              <AccountMenu email={email} sync={sync} onNavigateSettings={() => navigate("settings")} onSignOut={onSignOut} />
+            </>
+          ) : (
+            <a href="/login" className="btn btn-sm hidden sm:inline-flex">
+              Sign in
+            </a>
+          )}
         </div>
       </header>
 

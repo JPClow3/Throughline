@@ -67,6 +67,16 @@ describe("AppShell", () => {
     expect(container.querySelector(".shell-mobile-primary-action")).not.toBeInTheDocument();
   });
 
+  it("shows Sign in when there is no account session", () => {
+    render(
+      <AppShell view="dashboard" onViewChange={vi.fn()} onNewTask={vi.fn()}>
+        <h1>Today</h1>
+      </AppShell>
+    );
+
+    expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute("href", "/login");
+  });
+
   it("exposes every view as a labelled navigation anchor", () => {
     render(
       <AppShell view="dashboard" onViewChange={vi.fn()} onNewTask={vi.fn()}>

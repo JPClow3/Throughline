@@ -2812,13 +2812,42 @@ button.meta-chip:hover {
   font-size: var(--text-body);
   line-height: 1.6;
 }
+.note-preview:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
 .note-preview h1,
 .note-preview h2,
 .note-preview h3 {
   margin: 0.8rem 0 0.4rem;
+  font-weight: var(--fw-bold);
+  letter-spacing: -0.02em;
 }
 .note-preview p {
   margin: 0.4rem 0;
+}
+.note-preview ul,
+.note-preview ol {
+  margin: 0.4rem 0 0.4rem 1.2rem;
+  padding: 0;
+}
+.note-preview li + li {
+  margin-top: 0.25rem;
+}
+.note-preview blockquote {
+  margin: 0.6rem 0;
+  padding: 0.35rem 0.75rem;
+  border-left: 3px solid var(--line);
+  color: var(--ink-soft);
+  background: var(--paper-2);
+}
+.note-preview pre {
+  margin: 0.6rem 0;
+  padding: 0.75rem 0.9rem;
+  overflow-x: auto;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--paper-2);
 }
 .note-preview code {
   background: var(--paper-2);
@@ -2826,6 +2855,16 @@ button.meta-chip:hover {
   border-radius: 5px;
   padding: 0.05rem 0.3rem;
   font-size: 0.85em;
+}
+.note-preview pre code {
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+.note-mode-hint {
+  margin: -0.35rem 0 0;
+  font-size: var(--text-label);
+  color: var(--ink-faint);
 }
 .note-links {
   display: flex;
@@ -3757,6 +3796,54 @@ button.meta-chip:hover {
   width: 2.15rem;
   height: 2.15rem;
   border-radius: 11px;
+}
+.auth-oauth-row {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+}
+.auth-field-hint {
+  margin: -0.35rem 0 0;
+  font-size: var(--text-label);
+  color: var(--ink-soft);
+}
+.auth-field-hint a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.auth-switch-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.auth-switch-secondary {
+  font-size: 0.85em;
+}
+.recovery-key-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+.recovery-key-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+.recovery-key-hint {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+  text-align: center;
+}
+.recovery-key-partial {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  width: 8rem;
+  text-align: center;
+}
+.cooldown-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.35rem;
 }
 .auth-title {
   font-size: var(--text-page);

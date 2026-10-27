@@ -326,7 +326,18 @@ export class D1UserStore {
       .prepare("SELECT salt FROM users WHERE email = ?")
       .bind(normalizeEmail(email))
       .first<{ salt: string }>();
-    return row?.salt ?? null;
+    return row?.salt ? row.salt : null;
+  }
+
+  async ensureSalt(userId: string, salt: string): Promise<void> {
+    const row = await this.db.prepare("SELECT salt FROM users WHERE id = ?").bind(userId).first<{ salt?: string }>();
+    if (!row || row.salt) {
+      return;
+    }
+    await this.db
+      .prepare("UPDATE users SET salt = ? WHERE id = ? AND (salt IS NULL OR salt = '')")
+      .bind(salt, userId)
+      .run();
   }
 
   async verifyLogin(email: string, authKey: string): Promise<{ userId: string; salt: string; wrappedDek: string } | null> {
@@ -364,7 +375,7 @@ export class D1UserStore {
     const row: UserRow = {
       id: `user_${Buffer.from(randomBytes(12)).toString("hex")}`,
       email,
-      salt: "",
+      salt: Buffer.from(randomBytes(16)).toString("base64"),
       authHash: "",
       wrappedDek: input.dek,
       createdAt: new Date().toISOString(),

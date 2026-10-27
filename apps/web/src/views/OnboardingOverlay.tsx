@@ -115,10 +115,26 @@ export function OnboardingOverlay({ onSetup, onComplete }: { onSetup: (input: On
       >
         <div className="onboarding-body">
           <div>
-            <span className="eyebrow">Setup</span>
-            <h2 id="onboarding-title" className="onboarding-title">Make Today useful</h2>
+            <span className="eyebrow">Setup · {step + 1} of 4</span>
+            <h2 id="onboarding-title" className="onboarding-title">
+              {step === 0
+                ? "What are you planning for?"
+                : step === 1
+                  ? kind === "school"
+                    ? "Add your courses"
+                    : "Name your projects"
+                  : step === 2
+                    ? "Capture one real task"
+                    : "Optional finishing touches"}
+            </h2>
             <p className="onboarding-copy">
-              Start with a real workspace, one project, and one task you can act on today.
+              {step === 0
+                ? "Pick a workspace so Throughline can label projects the way you already think."
+                : step === 1
+                  ? "Start with one to three names. You can always add more later."
+                  : step === 2
+                    ? "Give Today something concrete to show the moment setup ends."
+                    : "Notifications and encrypted sync stay optional — local planning already works."}
             </p>
           </div>
 

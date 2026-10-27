@@ -107,7 +107,16 @@ export function createUserStore(dbPath: string) {
       const row = db.prepare("SELECT salt FROM users WHERE email = ?").get(normalizeEmail(email)) as
         | { salt: string }
         | undefined;
-      return row?.salt ?? null;
+      // Empty string is used for legacy Google users that never received a salt.
+      return row?.salt ? row.salt : null;
+    },
+
+    ensureSalt(userId: string, salt: string) {
+      const row = db.prepare("SELECT salt FROM users WHERE id = ?").get(userId) as { salt?: string } | undefined;
+      if (!row || row.salt) {
+        return;
+      }
+      db.prepare("UPDATE users SET salt = ? WHERE id = ? AND (salt IS NULL OR salt = '')").run(salt, userId);
     },
 
     verifyLogin(email: string, authKey: string): { userId: string; salt: string; wrappedDek: string } | null {
@@ -137,7 +146,8 @@ export function createUserStore(dbPath: string) {
       const row: UserRow = {
         id: `user_${Buffer.from(randomBytes(12)).toString("hex")}`,
         email,
-        salt: "", // No salt for google users
+        // Salt enables recovery-key derivation even when Google is the login method.
+        salt: Buffer.from(randomBytes(16)).toString("base64"),
         authHash: "", // No auth hash for google users
         wrappedDek: input.dek, // Raw DEK stored for google users
         createdAt: new Date().toISOString(),

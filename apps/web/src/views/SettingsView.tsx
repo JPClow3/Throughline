@@ -40,6 +40,7 @@ import {
   requestNotificationPermission,
   showLocalQuestNotification
 } from "../lib/notifications";
+import { RecoveryKeyPanel } from "../auth/RecoveryKeyPanel";
 import { Button, Card, ConfirmDialog, Notice, TextInput, ToggleRow } from "../ui";
 
 type AccountInfo = {
@@ -286,7 +287,7 @@ export function SettingsView({
       </header>
 
       <section className="settings-grid">
-        {account ? (
+        {account?.email ? (
           <Card className="settings-card">
             <header>
               <CloudCheck size={18} weight="bold" />
@@ -295,7 +296,7 @@ export function SettingsView({
             <dl className="support-list">
               <div>
                 <dt>Signed in</dt>
-                <dd>{account.email ?? "—"}</dd>
+                <dd>{account.email}</dd>
               </div>
               <div>
                 <dt>Sync</dt>
@@ -312,9 +313,28 @@ export function SettingsView({
             </div>
             <p>Your data is end-to-end encrypted before it syncs — the server can't read it.</p>
           </Card>
-        ) : null}
+        ) : (
+          <Card className="settings-card">
+            <header>
+              <CloudCheck size={18} weight="bold" />
+              <h2>Account</h2>
+            </header>
+            <p>
+              You&apos;re planning locally on this device. Create an account anytime for optional end-to-end encrypted sync
+              across devices — the server never reads your task content.
+            </p>
+            <div className="button-row">
+              <a href="/signup" className="btn btn-accent">
+                Create account
+              </a>
+              <a href="/login" className="btn">
+                Sign in
+              </a>
+            </div>
+          </Card>
+        )}
 
-        {account ? (
+        {account?.email ? (
           <Card className="settings-card">
             <header>
               <Key size={18} weight="bold" />
@@ -325,28 +345,24 @@ export function SettingsView({
               recovery key are lost, synced task content cannot be recovered.
             </p>
             {recoveryKey ? (
-              <>
-                <p className="recovery-key">{recoveryKey}</p>
-                <ToggleRow checked={recoveryConfirmed} onChange={setRecoveryConfirmed}>
-                  I saved this recovery key
-                </ToggleRow>
-                <label className="field">
-                  <span>Confirm last 4 characters</span>
-                  <TextInput value={recoveryPartial} onChange={(event) => setRecoveryPartial(event.target.value)} maxLength={4} placeholder="last 4" />
-                </label>
-                <span className="status-pill self-start">
-                  {recoveryConfirmed && recoveryPartial.toLowerCase() === recoveryKey.slice(-4).toLowerCase()
-                    ? "Saved confirmation complete"
-                    : "Save and confirm before closing"}
-                </span>
-              </>
-            ) : null}
-            <div>
-              <Button onClick={() => void regenerateRecoveryKey()} disabled={recoveryBusy || !onRegenerateRecoveryKey}>
-                <Key size={15} weight="bold" />
-                {recoveryBusy ? "Generating..." : "Regenerate recovery key"}
-              </Button>
-            </div>
+              <RecoveryKeyPanel
+                recoveryKey={recoveryKey}
+                confirmed={recoveryConfirmed}
+                onConfirmedChange={setRecoveryConfirmed}
+                partialKey={recoveryPartial}
+                onPartialKeyChange={setRecoveryPartial}
+                onRegenerate={regenerateRecoveryKey}
+                regenerateBusy={recoveryBusy}
+                regenerateLabel="Regenerate recovery key"
+              />
+            ) : (
+              <div>
+                <Button onClick={() => void regenerateRecoveryKey()} disabled={recoveryBusy || !onRegenerateRecoveryKey}>
+                  <Key size={15} weight="bold" />
+                  {recoveryBusy ? "Generating..." : "Regenerate recovery key"}
+                </Button>
+              </div>
+            )}
             {recoveryKeyStatus ? <span className="status-pill self-start">{recoveryKeyStatus}</span> : null}
           </Card>
         ) : null}
@@ -412,13 +428,18 @@ export function SettingsView({
               <dd>{isInstalled ? "installed" : isInstallable ? "installable" : "not installable"}</dd>
             </div>
           </dl>
-          {isInstallable && (
+          {isInstallable ? (
             <div className="button-row">
               <Button variant="accent" onClick={promptToInstall}>
                 <DownloadSimple size={15} weight="bold" /> Install App
               </Button>
             </div>
-          )}
+          ) : !isInstalled ? (
+            <Notice variant="info">
+              If Install is unavailable in this browser, use your browser menu: on iPhone/iPad tap Share → Add to Home
+              Screen; on desktop Chrome/Edge open the address-bar install icon or App menu.
+            </Notice>
+          ) : null}
           <p>Throughline is designed to work fully offline once the shell is cached.</p>
         </Card>
 

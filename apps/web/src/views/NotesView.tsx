@@ -258,11 +258,16 @@ export function NoteEditor({
   const [mode, setMode] = useState<"write" | "preview">("write");
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const savedTimerRef = useRef<number | null>(null);
+  const debounceTimerRef = useRef<number | null>(null);
+  const draftRef = useRef({ title: note.title, body: note.body });
 
   useEffect(
     () => () => {
       if (savedTimerRef.current !== null) {
         window.clearTimeout(savedTimerRef.current);
+      }
+      if (debounceTimerRef.current !== null) {
+        window.clearTimeout(debounceTimerRef.current);
       }
     },
     []
@@ -275,9 +280,12 @@ export function NoteEditor({
   const unlinkedTasks = tasks.filter((task) => !note.taskIds.includes(task.id));
   const unlinkedGoals = goals.filter((goal) => !note.goalIds.includes(goal.id));
 
-  function commit(next: Partial<Pick<Note, "title" | "body" | "pinned">>) {
+  function commit(next: Partial<Pick<Note, "title" | "body" | "pinned">> = {}) {
+    const nextTitle = next.title ?? draftRef.current.title;
+    const nextBody = next.body ?? draftRef.current.body;
+    draftRef.current = { title: nextTitle, body: nextBody };
     setSaveState("saving");
-    void Promise.resolve(onSave({ ...note, title, body, ...next })).then(
+    void Promise.resolve(onSave({ ...note, title: nextTitle, body: nextBody, ...next })).then(
       () => {
         setSaveState("saved");
         if (savedTimerRef.current !== null) {
@@ -296,6 +304,16 @@ export function NoteEditor({
     );
   }
 
+  function scheduleCommit(nextTitle: string, nextBody: string) {
+    draftRef.current = { title: nextTitle, body: nextBody };
+    if (debounceTimerRef.current !== null) {
+      window.clearTimeout(debounceTimerRef.current);
+    }
+    debounceTimerRef.current = window.setTimeout(() => {
+      commit({ title: nextTitle, body: nextBody });
+    }, 700);
+  }
+
   function addLink(value: string) {
     if (value.startsWith("task:")) {
       onToggleLink(note.id, "task", value.slice(5), true);
@@ -312,7 +330,11 @@ export function NoteEditor({
           value={title}
           placeholder="Title"
           aria-label="Note title"
-          onChange={(event) => setTitle(event.target.value)}
+          onChange={(event) => {
+            const nextTitle = event.target.value;
+            setTitle(nextTitle);
+            scheduleCommit(nextTitle, body);
+          }}
           onBlur={() => commit({})}
         />
         <IconButton
@@ -352,6 +374,7 @@ export function NoteEditor({
           Preview
         </button>
       </div>
+      <p className="note-mode-hint">Tip: press Ctrl+Shift+P to toggle preview.</p>
 
       {mode === "write" ? (
         <textarea
@@ -359,15 +382,35 @@ export function NoteEditor({
           value={body}
           placeholder="Start writing… markdown is welcome."
           aria-label="Note body"
-          onChange={(event) => setBody(event.target.value)}
+          onChange={(event) => {
+            const nextBody = event.target.value;
+            setBody(nextBody);
+            scheduleCommit(title, nextBody);
+          }}
           onBlur={() => commit({})}
+          onKeyDown={(event) => {
+            if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === "p") {
+              event.preventDefault();
+              commit({});
+              setMode("preview");
+            }
+          }}
         />
       ) : (
-        <div className="note-preview">
+        <div
+          className="note-preview"
+          tabIndex={0}
+          onKeyDown={(event) => {
+            if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === "p") {
+              event.preventDefault();
+              setMode("write");
+            }
+          }}
+        >
           {body.trim() ? (
             <ReactMarkdown>{body}</ReactMarkdown>
           ) : (
-            <EmptyState variant="inline" icon={<Eye size={22} weight="bold" />} title="Nothing to preview yet" />
+            <EmptyState variant="inline" icon={<Eye size={22} weight="bold" />} title="Nothing to preview yet" body="Switch back to Write and add some markdown." />
           )}
         </div>
       )}

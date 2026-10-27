@@ -1,7 +1,7 @@
 import { Task } from "@throughline/domain";
 import { BatteryCharging } from "@phosphor-icons/react";
 import { motion } from "motion/react";
-import { Modal, ModalCloseButton } from "../ui";
+import { Button, Modal, ModalCloseButton } from "../ui";
 import { TaskCard } from "./TaskCard";
 
 export function CooldownModal({
@@ -32,16 +32,30 @@ export function CooldownModal({
           <div className="cooldown-badge" aria-hidden="true">
             <BatteryCharging size={22} weight="bold" />
           </div>
-          <h2>Session Complete!</h2>
+          <h2 id="cooldown-title">Easy wins while you cool down</h2>
           <p>
-            Great focus. If you're looking for a quick win to cool down, here are some low-energy tasks from your backlog.
+            Great focus. Pick a low-energy backlog task, or close this and keep your streak for later.
           </p>
         </div>
 
-        <div className="cooldown-task-list custom-scrollbar">
+        <div className="cooldown-task-list custom-scrollbar" aria-labelledby="cooldown-title">
           {tasks.map((task) => (
-            <TaskCard key={task.id} task={task} compact onEdit={onEditTask} onComplete={onCompleteTask} onStartFocus={onStartFocus} />
+            <TaskCard
+              key={task.id}
+              task={task}
+              compact
+              offerEmptyStepInput={false}
+              onEdit={onEditTask}
+              onComplete={onCompleteTask}
+              onStartFocus={onStartFocus}
+            />
           ))}
+        </div>
+
+        <div className="cooldown-footer">
+          <Button variant="primary" onClick={onClose}>
+            Done for now
+          </Button>
         </div>
       </motion.div>
     </Modal>

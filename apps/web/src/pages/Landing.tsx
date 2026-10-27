@@ -136,12 +136,12 @@ export function Landing() {
             </Reveal>
             <Reveal delay={0.15}>
               <div className="landing-hero-actions">
-                <Link to="/signup" className="btn btn-primary" style={{ minHeight: 50, paddingInline: "1.6rem", fontSize: "1rem" }}>
+                <Link to="/app" className="btn btn-primary" style={{ minHeight: 50, paddingInline: "1.6rem", fontSize: "1rem" }}>
                   Start planning free <ArrowRight size={18} weight="bold" />
                 </Link>
-                <a href="#views" className="btn" style={{ minHeight: 50, paddingInline: "1.6rem", fontSize: "1rem" }}>
-                  See the app
-                </a>
+                <Link to="/signup" className="btn" style={{ minHeight: 50, paddingInline: "1.6rem", fontSize: "1rem" }}>
+                  Create account for sync
+                </Link>
               </div>
             </Reveal>
             <Reveal delay={0.2}>
@@ -284,10 +284,15 @@ export function Landing() {
 
           <section className="ik-card landing-final">
             <h2>Start with one goal.</h2>
-            <p>Add the first step today — Throughline keeps the rest calm.</p>
-            <Link to="/signup" className="btn btn-accent" style={{ minHeight: 50, paddingInline: "1.6rem", fontSize: "1rem" }}>
-              Get started <ArrowRight size={17} weight="bold" />
-            </Link>
+            <p>Add the first step today — Throughline keeps the rest calm. No account required.</p>
+            <div className="landing-hero-actions" style={{ justifyContent: "center" }}>
+              <Link to="/app" className="btn btn-accent" style={{ minHeight: 50, paddingInline: "1.6rem", fontSize: "1rem" }}>
+                Open the planner <ArrowRight size={17} weight="bold" />
+              </Link>
+              <Link to="/signup" className="btn" style={{ minHeight: 50, paddingInline: "1.6rem", fontSize: "1rem" }}>
+                Create account
+              </Link>
+            </div>
           </section>
         </main>
 

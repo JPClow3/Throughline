@@ -86,7 +86,8 @@ export function registerAuthRoutes(app: FastifyInstance, userStore: UserStore, c
     const googleId = payload.sub;
     
     let result = userStore.verifyGoogleLogin(email, googleId);
-    
+    let created = false;
+
     if (!result) {
       // Create user if not exists
       if (!dek) {
@@ -98,12 +99,13 @@ export function registerAuthRoutes(app: FastifyInstance, userStore: UserStore, c
         return reply.code(409).send({ error: "email-taken-by-another-method" });
       }
       result = { userId: newUser.id, dek: newUser.wrappedDek };
+      created = true;
     }
-    
+
     const token = userStore.createSession(result.userId);
     setSessionCookie(reply, token, secure);
-    
-    return { email, dek: result.dek };
+
+    return { email, dek: result.dek, created };
   });
 
   // Pre-login: client needs the per-user salt to derive its keys.
@@ -145,7 +147,11 @@ export function registerAuthRoutes(app: FastifyInstance, userStore: UserStore, c
   });
 
   const UpdatePasswordSchema = z.object({ authKey: blob, wrappedDek: blob });
-  const UpdateRecoveryKeySchema = z.object({ recoveryAuthKey: blob, recoveryWrappedDek: blob });
+  const UpdateRecoveryKeySchema = z.object({
+    recoveryAuthKey: blob,
+    recoveryWrappedDek: blob,
+    salt: blob.optional()
+  });
 
   app.post("/auth/update-password", authRateLimit, async (request, reply) => {
     const user = userFromRequest(request, userStore);
@@ -162,7 +168,10 @@ export function registerAuthRoutes(app: FastifyInstance, userStore: UserStore, c
     if (!user) {
       return reply.code(401).send({ error: "unauthenticated" });
     }
-    const { recoveryAuthKey, recoveryWrappedDek } = UpdateRecoveryKeySchema.parse(request.body);
+    const { recoveryAuthKey, recoveryWrappedDek, salt } = UpdateRecoveryKeySchema.parse(request.body);
+    if (salt) {
+      userStore.ensureSalt(user.userId, salt);
+    }
     userStore.updateRecoveryKey(user.userId, recoveryAuthKey, recoveryWrappedDek);
     return reply.code(204).send();
   });

@@ -459,7 +459,7 @@ function Workspace(props: WorkspaceProps) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 24 }}
             className="ik-card pwa-install-banner"
-            role="dialog"
+            role="region"
             aria-label="Install Throughline"
           >
             <div className="pwa-install-icon">
@@ -597,10 +597,14 @@ function Workspace(props: WorkspaceProps) {
                   courses={courses}
                   appearanceSettings={props.appearanceSettings}
                   onAppearanceChange={saveAppearanceSettings}
-                  account={{ email: props.email, syncStatus: props.sync.status, lastSyncAt: props.sync.lastSyncAt }}
-                  onSyncNow={props.sync.syncNow}
-                  onRegenerateRecoveryKey={props.rotateRecoveryKey}
-                  onSignOut={props.logout}
+                  account={
+                    props.email
+                      ? { email: props.email, syncStatus: props.sync.status, lastSyncAt: props.sync.lastSyncAt }
+                      : undefined
+                  }
+                  onSyncNow={props.email ? props.sync.syncNow : undefined}
+                  onRegenerateRecoveryKey={props.email ? props.rotateRecoveryKey : undefined}
+                  onSignOut={props.email ? props.logout : undefined}
                 />
               ) : null}
             </React.Suspense>

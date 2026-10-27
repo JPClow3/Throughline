@@ -262,7 +262,19 @@ export class PostgresUserStore {
     const [row] = await this.sql<{ salt: string }[]>`
       SELECT salt FROM users WHERE email = ${normalizeEmail(email)}
     `;
-    return row?.salt ?? null;
+    return row?.salt ? row.salt : null;
+  }
+
+  async ensureSalt(userId: string, salt: string): Promise<void> {
+    const [row] = await this.sql<{ salt?: string }[]>`
+      SELECT salt FROM users WHERE id = ${userId}
+    `;
+    if (!row || row.salt) {
+      return;
+    }
+    await this.sql`
+      UPDATE users SET salt = ${salt} WHERE id = ${userId} AND (salt IS NULL OR salt = '')
+    `;
   }
 
   async verifyLogin(email: string, authKey: string): Promise<{ userId: string; salt: string; wrappedDek: string } | null> {
@@ -302,7 +314,7 @@ export class PostgresUserStore {
     const row: UserRow = {
       id: `user_${Buffer.from(randomBytes(12)).toString("hex")}`,
       email,
-      salt: "",
+      salt: Buffer.from(randomBytes(16)).toString("base64"),
       authHash: "",
       wrappedDek: input.dek,
       createdAt: new Date().toISOString(),

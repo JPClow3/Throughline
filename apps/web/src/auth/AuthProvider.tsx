@@ -25,7 +25,7 @@ type AuthContextValue = {
   dekKey: CryptoKey | null;
   signup: (email: string, password: string) => Promise<string>;
   login: (email: string, password: string) => Promise<void>;
-  loginWithGoogle: (credential: string) => Promise<void>;
+  loginWithGoogle: (credential: string) => Promise<{ created: boolean }>;
   rotateRecoveryKey: () => Promise<string>;
   resetPassword: (email: string, recoveryKey: string, newPassword: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -149,9 +149,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginWithGoogle = useCallback(async (credential: string) => {
     const freshDek = generateDek();
     const dekStr = dekToB64(freshDek);
-    
+
     const res = await api("/auth/google", { credential, dek: dekStr });
-    
+
     if (!res.ok) {
       let msg = "Could not sign in with Google. Please try again.";
       try {
@@ -162,10 +162,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch { /* ignore */ }
       throw new AuthError(msg);
     }
-    
-    const data = (await res.json()) as { email: string; dek: string };
+
+    const data = (await res.json()) as { email: string; dek: string; created?: boolean };
     const finalDek = dekFromB64(data.dek);
     await persistSession(data.email, finalDek);
+    return { created: Boolean(data.created) };
   }, []);
 
   const rotateRecoveryKey = useCallback(async (): Promise<string> => {
@@ -179,15 +180,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new AuthError("Sign in again before regenerating your recovery key.");
     }
 
-    const saltRes = await api("/auth/salt", { email: email ?? (await res.json()).email });
-    if (!saltRes.ok) {
-      throw new AuthError("Could not prepare a new recovery key.");
+    const me = (await res.json()) as { email: string };
+    const accountEmail = email ?? me.email;
+    const saltRes = await api("/auth/salt", { email: accountEmail });
+    let salt: string | undefined;
+    let provisionSalt = false;
+    if (saltRes.ok) {
+      const payload = (await saltRes.json()) as { salt?: string };
+      salt = payload.salt || undefined;
     }
-    const { salt } = (await saltRes.json()) as { salt: string };
+    if (!salt) {
+      salt = randomSalt();
+      provisionSalt = true;
+    }
+
     const recoveryKey = generateRecoveryKey();
     const { kek: recoveryKek, authKey: recoveryAuthKey } = await deriveRecoveryKeys(recoveryKey, salt);
     const recoveryWrappedDek = await wrapDek(dekFromB64(savedDek), recoveryKek);
-    const updateRes = await api("/auth/update-recovery-key", { recoveryAuthKey, recoveryWrappedDek });
+    const updateRes = await api("/auth/update-recovery-key", {
+      recoveryAuthKey,
+      recoveryWrappedDek,
+      ...(provisionSalt ? { salt } : {})
+    });
     if (!updateRes.ok) {
       throw new AuthError("Could not update your recovery key.");
     }
