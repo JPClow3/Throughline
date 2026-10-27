@@ -426,7 +426,12 @@ describe("auth", () => {
       url: "/auth/verify-email",
       payload: { token: verificationToken }
     });
-    expect(reuse.statusCode).toBe(400);
+    expect(reuse.statusCode).toBe(200);
+    expect(reuse.json()).toMatchObject({
+      email: account.email,
+      emailVerified: true,
+      alreadyVerified: true
+    });
 
     const other = {
       ...account,

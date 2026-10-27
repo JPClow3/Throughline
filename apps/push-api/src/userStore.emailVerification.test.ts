@@ -46,12 +46,16 @@ describe("userStore email verification", () => {
     });
 
     const verified = users.verifyEmailWithToken(token);
-    expect(verified).toEqual({ userId: user!.id, email: "student@example.com" });
+    expect(verified).toEqual({ userId: user!.id, email: "student@example.com", alreadyVerified: false });
     expect(users.isEmailVerified(user!.id)).toBe(true);
     expect(users.getSessionUser(session)?.emailVerified).toBe(true);
 
-    // Token is one-time
-    expect(users.verifyEmailWithToken(token)).toBeNull();
+    // Same token stays valid until expiry / resend so refresh is idempotent
+    expect(users.verifyEmailWithToken(token)).toEqual({
+      userId: user!.id,
+      email: "student@example.com",
+      alreadyVerified: true
+    });
   });
 
   it("replaces prior tokens on resend", () => {

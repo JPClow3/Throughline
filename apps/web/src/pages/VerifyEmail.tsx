@@ -1,9 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { useAuth } from "../auth/AuthProvider";
 import { AuthShell } from "./AuthShell";
 import { Notice, Spinner } from "../ui";
-
-const API_BASE = (import.meta.env.VITE_PUSH_API_URL ?? "/api").replace(/\/$/, "");
 
 type VerifyState =
   | { status: "loading" }
@@ -13,7 +12,9 @@ type VerifyState =
 export function VerifyEmail() {
   const [params] = useSearchParams();
   const token = params.get("token")?.trim() ?? "";
+  const { verifyEmailToken } = useAuth();
   const [state, setState] = useState<VerifyState>({ status: "loading" });
+  const startedForToken = useRef<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -26,26 +27,21 @@ export function VerifyEmail() {
         return;
       }
 
+      // React Strict Mode remounts effects; only one network attempt per token.
+      if (startedForToken.current === token) {
+        return;
+      }
+      startedForToken.current = token;
+
       try {
-        const res = await fetch(`${API_BASE}/auth/verify-email?token=${encodeURIComponent(token)}`, {
-          method: "GET",
-          credentials: "include"
-        });
+        const result = await verifyEmailToken(token);
         if (cancelled) return;
-        if (!res.ok) {
-          setState({
-            status: "error",
-            message: "This verification link is invalid or has expired. You can request a new one from Settings."
-          });
-          return;
-        }
-        const data = (await res.json()) as { email?: string };
-        setState({ status: "success", email: data.email ?? "your account" });
+        setState({ status: "success", email: result.email ?? "your account" });
       } catch {
         if (!cancelled) {
           setState({
             status: "error",
-            message: "Could not reach the server to verify your email. Check your connection and try again."
+            message: "This verification link is invalid or has expired. You can request a new one from Settings."
           });
         }
       }
@@ -55,7 +51,7 @@ export function VerifyEmail() {
     return () => {
       cancelled = true;
     };
-  }, [token]);
+  }, [token, verifyEmailToken]);
 
   if (state.status === "loading") {
     return (

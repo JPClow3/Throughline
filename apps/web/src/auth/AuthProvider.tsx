@@ -32,7 +32,7 @@ type AuthContextValue = {
   resetPassword: (email: string, recoveryKey: string, newPassword: string) => Promise<void>;
   resendVerification: () => Promise<{ mailSent: boolean }>;
   refreshEmailVerified: () => Promise<void>;
-  verifyEmailToken: (token: string) => Promise<void>;
+  verifyEmailToken: (token: string) => Promise<{ email: string | null; alreadyVerified: boolean }>;
   logout: () => Promise<void>;
 };
 
@@ -322,8 +322,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!res.ok) {
       throw new AuthError("This verification link is invalid or expired.");
     }
+    const data = (await res.json().catch(() => ({}))) as { email?: string; emailVerified?: boolean; alreadyVerified?: boolean };
     writeLocalVerified(true);
     setEmailVerified(true);
+    if (data.email) {
+      setEmail(data.email);
+    }
+    return { email: data.email ?? null, alreadyVerified: Boolean(data.alreadyVerified) };
   }, []);
 
   const logout = useCallback(async () => {

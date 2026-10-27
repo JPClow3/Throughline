@@ -249,15 +249,17 @@ export function createUserStore(dbPath: string) {
       return token;
     },
 
-    verifyEmailWithToken(token: string): { userId: string; email: string } | null {
+    verifyEmailWithToken(token: string): { userId: string; email: string; alreadyVerified?: boolean } | null {
       const row = db
         .prepare(
-          `SELECT t.user_id AS user_id, t.expires_at AS expires_at, u.email AS email
+          `SELECT t.user_id AS user_id, t.expires_at AS expires_at, u.email AS email, u.email_verified_at AS email_verified_at
            FROM email_verification_tokens t
            JOIN users u ON u.id = t.user_id
            WHERE t.token = ?`
         )
-        .get(token) as { user_id: string; expires_at: string; email: string } | undefined;
+        .get(token) as
+        | { user_id: string; expires_at: string; email: string; email_verified_at: string | null }
+        | undefined;
       if (!row) {
         return null;
       }
@@ -265,10 +267,13 @@ export function createUserStore(dbPath: string) {
         db.prepare("DELETE FROM email_verification_tokens WHERE token = ?").run(token);
         return null;
       }
-      const verifiedAt = new Date().toISOString();
-      db.prepare("UPDATE users SET email_verified_at = ? WHERE id = ?").run(verifiedAt, row.user_id);
-      db.prepare("DELETE FROM email_verification_tokens WHERE user_id = ?").run(row.user_id);
-      return { userId: row.user_id, email: row.email };
+      const alreadyVerified = Boolean(row.email_verified_at);
+      if (!alreadyVerified) {
+        const verifiedAt = new Date().toISOString();
+        db.prepare("UPDATE users SET email_verified_at = ? WHERE id = ?").run(verifiedAt, row.user_id);
+      }
+      // Keep the token until expiry / resend so refresh and Strict Mode remounts stay idempotent.
+      return { userId: row.user_id, email: row.email, alreadyVerified };
     },
 
     isEmailVerified(userId: string): boolean {

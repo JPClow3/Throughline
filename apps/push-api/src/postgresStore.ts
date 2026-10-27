@@ -407,9 +407,13 @@ export class PostgresUserStore {
     return token;
   }
 
-  async verifyEmailWithToken(token: string): Promise<{ userId: string; email: string } | null> {
-    const [row] = await this.sql<{ user_id: string; expires_at: string; email: string }[]>`
-      SELECT t.user_id AS user_id, t.expires_at AS expires_at, u.email AS email
+  async verifyEmailWithToken(
+    token: string
+  ): Promise<{ userId: string; email: string; alreadyVerified?: boolean } | null> {
+    const [row] = await this.sql<
+      { user_id: string; expires_at: string; email: string; email_verified_at: string | null }[]
+    >`
+      SELECT t.user_id AS user_id, t.expires_at AS expires_at, u.email AS email, u.email_verified_at AS email_verified_at
       FROM email_verification_tokens t
       JOIN users u ON u.id = t.user_id
       WHERE t.token = ${token}
@@ -422,10 +426,13 @@ export class PostgresUserStore {
       return null;
     }
 
-    const verifiedAt = new Date().toISOString();
-    await this.sql`UPDATE users SET email_verified_at = ${verifiedAt} WHERE id = ${row.user_id}`;
-    await this.sql`DELETE FROM email_verification_tokens WHERE user_id = ${row.user_id}`;
-    return { userId: row.user_id, email: row.email };
+    const alreadyVerified = Boolean(row.email_verified_at);
+    if (!alreadyVerified) {
+      const verifiedAt = new Date().toISOString();
+      await this.sql`UPDATE users SET email_verified_at = ${verifiedAt} WHERE id = ${row.user_id}`;
+    }
+    // Keep the token until expiry / resend so refresh and Strict Mode remounts stay idempotent.
+    return { userId: row.user_id, email: row.email, alreadyVerified };
   }
 
   async isEmailVerified(userId: string): Promise<boolean> {

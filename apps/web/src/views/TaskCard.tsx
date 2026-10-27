@@ -109,6 +109,10 @@ export function TaskCard({
   const [localJustCompleted, setLocalJustCompleted] = useState(false);
   const isJustCompleted = justCompleted || localJustCompleted;
   const wasDoneRef = useRef(task.status === "done");
+  const taskRef = useRef(task);
+  const draftTitlesRef = useRef(draftTitles);
+  taskRef.current = task;
+  draftTitlesRef.current = draftTitles;
   const showSubtaskEditor = Boolean(onUpdateTask && (expanded || (offerEmptyStepInput && totalSubtasks === 0)));
 
   useEffect(() => {
@@ -130,32 +134,19 @@ export function TaskCard({
     onComplete?.(task);
   }
 
-  function updateSubtask(index: number, updates: Partial<{ title: string; completed: boolean }>) {
-    if (!onUpdateTask) return;
-    const nextSubtasks = [...(task.subtasks || [])];
-    nextSubtasks[index] = { ...nextSubtasks[index], ...updates };
-    onUpdateTask({ ...task, subtasks: nextSubtasks });
+  /** Merge in-flight title drafts so checkbox/delete cannot clobber an unsaved rename. */
+  function subtasksWithDrafts() {
+    const drafts = draftTitlesRef.current;
+    return (taskRef.current.subtasks || []).map((subtask) => {
+      if (!(subtask.id in drafts)) {
+        return subtask;
+      }
+      const drafted = drafts[subtask.id].trim();
+      return drafted ? { ...subtask, title: drafted } : subtask;
+    });
   }
 
-  function removeSubtask(index: number) {
-    if (!onUpdateTask) return;
-    const removed = task.subtasks?.[index];
-    const nextSubtasks = (task.subtasks || []).filter((_, itemIndex) => itemIndex !== index);
-    if (removed) {
-      setDraftTitles((current) => {
-        if (!(removed.id in current)) {
-          return current;
-        }
-        const next = { ...current };
-        delete next[removed.id];
-        return next;
-      });
-    }
-    onUpdateTask({ ...task, subtasks: nextSubtasks });
-  }
-
-  function commitSubtaskTitle(index: number, subtaskId: string, rawTitle: string) {
-    const nextTitle = rawTitle.trim();
+  function clearDraftTitle(subtaskId: string) {
     setDraftTitles((current) => {
       if (!(subtaskId in current)) {
         return current;
@@ -164,21 +155,46 @@ export function TaskCard({
       delete next[subtaskId];
       return next;
     });
+  }
+
+  function updateSubtask(index: number, updates: Partial<{ title: string; completed: boolean }>) {
+    if (!onUpdateTask) return;
+    const nextSubtasks = subtasksWithDrafts();
+    const current = nextSubtasks[index];
+    if (!current) return;
+    nextSubtasks[index] = { ...current, ...updates };
+    if (updates.title !== undefined) {
+      clearDraftTitle(current.id);
+    }
+    onUpdateTask({ ...taskRef.current, subtasks: nextSubtasks });
+  }
+
+  function removeSubtask(index: number) {
+    if (!onUpdateTask) return;
+    const nextSubtasks = subtasksWithDrafts();
+    const removed = nextSubtasks[index];
+    const remaining = nextSubtasks.filter((_, itemIndex) => itemIndex !== index);
+    if (removed) {
+      clearDraftTitle(removed.id);
+    }
+    onUpdateTask({ ...taskRef.current, subtasks: remaining });
+  }
+
+  function commitSubtaskTitle(index: number, subtaskId: string, rawTitle: string) {
+    const nextTitle = rawTitle.trim();
     if (!nextTitle) {
+      clearDraftTitle(subtaskId);
       removeSubtask(index);
       return;
     }
-    const currentTitle = task.subtasks?.[index]?.title;
-    if (nextTitle !== currentTitle) {
-      updateSubtask(index, { title: nextTitle });
-    }
+    updateSubtask(index, { title: nextTitle });
   }
 
   function handleAddSubtask(event: React.KeyboardEvent<HTMLInputElement>) {
     if (event.key === "Enter" && newSubtaskTitle.trim() && onUpdateTask) {
       event.preventDefault();
       const newSubtask = { id: crypto.randomUUID(), title: newSubtaskTitle.trim(), completed: false };
-      onUpdateTask({ ...task, subtasks: [...(task.subtasks || []), newSubtask] });
+      onUpdateTask({ ...taskRef.current, subtasks: [...subtasksWithDrafts(), newSubtask] });
       setNewSubtaskTitle("");
       setExpanded(true);
     }

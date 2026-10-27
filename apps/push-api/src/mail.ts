@@ -30,7 +30,8 @@ export async function sendVerificationEmail(
   const verifyUrl = buildVerifyEmailUrl(config, input.token);
 
   if (!config.resendApiKey || !config.emailFrom) {
-    console.info(`[email] Verification link for ${input.to}: ${verifyUrl}`);
+    // Dev-only signal — never log the recipient or one-time token URL.
+    console.info("[email] Verification mail skipped (RESEND_API_KEY / EMAIL_FROM unset); token returned to caller when applicable.");
     return { sent: false, verifyUrl };
   }
 

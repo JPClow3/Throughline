@@ -10,6 +10,7 @@ import {
   PostgresSyncStore,
   PostgresUserStore
 } from "./postgresStore";
+import { consumeAuthRateLimit } from "./authRateLimit";
 import { sendVerificationEmail } from "./mail";
 import {
   BulkReminderSyncSchema,
@@ -355,6 +356,14 @@ async function handleRequestInner(request: Request, env: WorkerEnv, ctx?: Execut
     // Authentication Endpoints
     // ----------------------------------------------------
     if (method === "POST" && pathname === "/auth/signup") {
+      const limited = consumeAuthRateLimit(request, {
+        max: Number(env.RATE_LIMIT_MAX ?? 12),
+        key: "signup"
+      });
+      if (!limited.ok) {
+        resHeaders.set("Retry-After", String(limited.retryAfterSec));
+        return errorResponse(429, "rate-limited", resHeaders);
+      }
       const body = await request.json();
       const input = SignupSchema.parse(body);
       const user = await userStore.createUser(input);
@@ -493,10 +502,26 @@ async function handleRequestInner(request: Request, env: WorkerEnv, ctx?: Execut
       if (!result) {
         return errorResponse(400, "invalid-or-expired-token", resHeaders);
       }
-      return jsonResponse({ email: result.email, emailVerified: true }, 200, resHeaders);
+      return jsonResponse(
+        {
+          email: result.email,
+          emailVerified: true,
+          ...(result.alreadyVerified ? { alreadyVerified: true } : {})
+        },
+        200,
+        resHeaders
+      );
     }
 
     if (method === "POST" && pathname === "/auth/resend-verification") {
+      const limited = consumeAuthRateLimit(request, {
+        max: Number(env.RATE_LIMIT_MAX ?? 12),
+        key: "resend-verification"
+      });
+      if (!limited.ok) {
+        resHeaders.set("Retry-After", String(limited.retryAfterSec));
+        return errorResponse(429, "rate-limited", resHeaders);
+      }
       const user = await getUserFromRequest(request, userStore);
       if (!user) {
         return errorResponse(401, "Not authenticated", resHeaders);

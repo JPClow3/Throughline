@@ -472,16 +472,18 @@ export class D1UserStore {
     return token;
   }
 
-  async verifyEmailWithToken(token: string): Promise<{ userId: string; email: string } | null> {
+  async verifyEmailWithToken(
+    token: string
+  ): Promise<{ userId: string; email: string; alreadyVerified?: boolean } | null> {
     const row = await this.db
       .prepare(
-        `SELECT t.user_id AS user_id, t.expires_at AS expires_at, u.email AS email
+        `SELECT t.user_id AS user_id, t.expires_at AS expires_at, u.email AS email, u.email_verified_at AS email_verified_at
          FROM email_verification_tokens t
          JOIN users u ON u.id = t.user_id
          WHERE t.token = ?`
       )
       .bind(token)
-      .first<{ user_id: string; expires_at: string; email: string }>();
+      .first<{ user_id: string; expires_at: string; email: string; email_verified_at: string | null }>();
 
     if (!row) return null;
 
@@ -490,10 +492,13 @@ export class D1UserStore {
       return null;
     }
 
-    const verifiedAt = new Date().toISOString();
-    await this.db.prepare("UPDATE users SET email_verified_at = ? WHERE id = ?").bind(verifiedAt, row.user_id).run();
-    await this.db.prepare("DELETE FROM email_verification_tokens WHERE user_id = ?").bind(row.user_id).run();
-    return { userId: row.user_id, email: row.email };
+    const alreadyVerified = Boolean(row.email_verified_at);
+    if (!alreadyVerified) {
+      const verifiedAt = new Date().toISOString();
+      await this.db.prepare("UPDATE users SET email_verified_at = ? WHERE id = ?").bind(verifiedAt, row.user_id).run();
+    }
+    // Keep the token until expiry / resend so refresh and Strict Mode remounts stay idempotent.
+    return { userId: row.user_id, email: row.email, alreadyVerified };
   }
 
   async isEmailVerified(userId: string): Promise<boolean> {

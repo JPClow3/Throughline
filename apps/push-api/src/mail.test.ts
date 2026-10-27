@@ -14,7 +14,7 @@ describe("mail verification helpers", () => {
     expect(url).not.toMatch(/task|quest|note/i);
   });
 
-  it("logs and skips send when Resend is not configured", async () => {
+  it("skips send without logging recipient or token when Resend is not configured", async () => {
     const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
     const result = await sendVerificationEmail(
       { publicAppUrl: "http://127.0.0.1:5173" },
@@ -23,6 +23,9 @@ describe("mail verification helpers", () => {
     expect(result.sent).toBe(false);
     expect(result.verifyUrl).toContain("/verify-email?token=");
     expect(info).toHaveBeenCalled();
+    const logged = String(info.mock.calls[0]?.[0] ?? "");
+    expect(logged).not.toContain("a@example.com");
+    expect(logged).not.toContain("tokentokentokentoken");
   });
 
   it("posts to Resend when configured", async () => {

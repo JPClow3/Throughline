@@ -177,7 +177,11 @@ export function registerAuthRoutes(app: FastifyInstance, userStore: UserStore, c
     if (!result) {
       return reply.code(400).send({ error: "invalid-or-expired-token" });
     }
-    return { email: result.email, emailVerified: true };
+    return {
+      email: result.email,
+      emailVerified: true,
+      ...(result.alreadyVerified ? { alreadyVerified: true } : {})
+    };
   }
 
   app.get("/auth/verify-email", authRateLimit, async (request, reply) => {

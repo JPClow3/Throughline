@@ -260,17 +260,21 @@ export function NoteEditor({
   const savedTimerRef = useRef<number | null>(null);
   const debounceTimerRef = useRef<number | null>(null);
   const draftRef = useRef({ title: note.title, body: note.body });
+  const noteRef = useRef(note);
+  noteRef.current = note;
 
   // Remounted per note via key; flush any pending draft on leave or unload.
+  // Always merge onto noteRef so pin/link metadata is not clobbered by a stale closure.
   useEffect(() => {
     function flushPending() {
       if (debounceTimerRef.current !== null) {
         window.clearTimeout(debounceTimerRef.current);
         debounceTimerRef.current = null;
       }
+      const latest = noteRef.current;
       const draft = draftRef.current;
-      if (draft.title !== note.title || draft.body !== note.body) {
-        void Promise.resolve(onSave({ ...note, title: draft.title, body: draft.body })).catch((error) => {
+      if (draft.title !== latest.title || draft.body !== latest.body) {
+        void Promise.resolve(onSave({ ...latest, title: draft.title, body: draft.body })).catch((error) => {
           reportError(error, { source: "note-save-flush" });
         });
       }
@@ -284,7 +288,7 @@ export function NoteEditor({
       }
       flushPending();
     };
-  }, [note, onSave]);
+  }, [onSave]);
 
   const taskMap = new Map(tasks.map((task) => [task.id, task]));
   const goalMap = new Map(goals.map((goal) => [goal.id, goal]));
@@ -298,7 +302,7 @@ export function NoteEditor({
     const nextBody = next.body ?? draftRef.current.body;
     draftRef.current = { title: nextTitle, body: nextBody };
     setSaveState("saving");
-    void Promise.resolve(onSave({ ...note, title: nextTitle, body: nextBody, ...next })).then(
+    void Promise.resolve(onSave({ ...noteRef.current, title: nextTitle, body: nextBody, ...next })).then(
       () => {
         setSaveState("saved");
         if (savedTimerRef.current !== null) {
