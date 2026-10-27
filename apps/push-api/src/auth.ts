@@ -189,14 +189,8 @@ export function registerAuthRoutes(app: FastifyInstance, userStore: UserStore, c
     };
   }
 
-  app.get("/auth/verify-email", authRateLimit, async (request, reply) => {
-    const query = VerifyEmailSchema.safeParse(request.query);
-    if (!query.success) {
-      return reply.code(400).send({ error: "missing-token" });
-    }
-    return handleVerifyEmail(query.data.token, reply);
-  });
-
+  // POST only — never accept the one-time token as a query string (access logs).
+  // The web app opens /verify-email?token=… then POSTs the secret in the body.
   app.post("/auth/verify-email", authRateLimit, async (request, reply) => {
     const body = VerifyEmailSchema.safeParse(request.body);
     if (!body.success) {

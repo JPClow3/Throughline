@@ -415,8 +415,15 @@ describe("auth", () => {
       method: "GET",
       url: `/auth/verify-email?token=${verificationToken}`
     });
-    expect(verifyGet.statusCode).toBe(200);
-    expect(verifyGet.json()).toEqual({ email: account.email, emailVerified: true });
+    expect(verifyGet.statusCode).toBe(404);
+
+    const verifyPost = await app.inject({
+      method: "POST",
+      url: "/auth/verify-email",
+      payload: { token: verificationToken }
+    });
+    expect(verifyPost.statusCode).toBe(200);
+    expect(verifyPost.json()).toEqual({ email: account.email, emailVerified: true });
 
     const me = await app.inject({ method: "GET", url: "/auth/me", cookies: { tl_session: session } });
     expect(me.json()).toEqual({ email: account.email, emailVerified: true });
@@ -452,13 +459,13 @@ describe("auth", () => {
     const nextToken = (resend.json() as { verificationToken: string }).verificationToken;
     expect(nextToken).toBeTruthy();
 
-    const verifyPost = await app.inject({
+    const verifyResend = await app.inject({
       method: "POST",
       url: "/auth/verify-email",
       payload: { token: nextToken }
     });
-    expect(verifyPost.statusCode).toBe(200);
-    expect(verifyPost.json()).toEqual({ email: other.email, emailVerified: true });
+    expect(verifyResend.statusCode).toBe(200);
+    expect(verifyResend.json()).toEqual({ email: other.email, emailVerified: true });
 
     const already = await app.inject({
       method: "POST",

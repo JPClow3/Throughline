@@ -484,18 +484,21 @@ async function handleRequestInner(request: Request, env: WorkerEnv, ctx?: Execut
       );
     }
 
-    if (
-      (method === "GET" || method === "POST") &&
-      pathname === "/auth/verify-email"
-    ) {
-      let tokenValue: string | undefined;
-      if (method === "GET") {
-        tokenValue = url.searchParams.get("token") ?? undefined;
-      } else {
-        const body = await request.json().catch(() => null);
-        tokenValue = (body as { token?: string } | null)?.token;
+    // POST only — never accept the one-time token as a query string (access logs).
+    // The web app opens /verify-email?token=… then POSTs the secret in the body.
+    if (method === "POST" && pathname === "/auth/verify-email") {
+      const limited = consumeAuthRateLimit(request, {
+        max: Number(env.RATE_LIMIT_MAX ?? 12),
+        key: "verify-email"
+      });
+      if (!limited.ok) {
+        resHeaders.set("Retry-After", String(limited.retryAfterSec));
+        return errorResponse(429, "rate-limited", resHeaders);
       }
-      const parsed = VerifyEmailSchema.safeParse({ token: tokenValue });
+      const body = await request.json().catch(() => null);
+      const parsed = VerifyEmailSchema.safeParse({
+        token: (body as { token?: string } | null)?.token
+      });
       if (!parsed.success) {
         return errorResponse(400, "missing-token", resHeaders);
       }
