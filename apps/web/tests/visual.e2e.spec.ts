@@ -111,7 +111,6 @@ test.describe("Visual Regression", () => {
 
     await page.goto("/app");
 
-    const { completeOnboarding } = await import("./helpers/completeOnboarding");
     await completeOnboarding(page, { project: "Biology", task: "Review biology notes", optional: false });
     await seedVisualGoal(page);
     await page.reload();
