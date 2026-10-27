@@ -1,25 +1,10 @@
 import { test, expect } from "@playwright/test";
 import type { RedactedReminder } from "@throughline/domain";
+import { completeOnboarding } from "./helpers/completeOnboarding";
 
 type ReminderSyncPayload = {
   reminders?: RedactedReminder[];
 };
-
-async function completeOnboarding(page: import("@playwright/test").Page) {
-  const heading = page.getByRole("heading", { name: "Make Today useful" });
-  if (!(await heading.waitFor({ state: "visible", timeout: 10000 }).then(() => true).catch(() => false))) {
-    return;
-  }
-
-  await page.getByRole("button", { name: "Next" }).click();
-  await page.getByLabel("Course 1").fill("Biology");
-  await page.getByRole("button", { name: "Next" }).click();
-  await page.getByLabel("First task").fill("Review biology notes");
-  await page.getByRole("button", { name: "Next" }).click();
-  await page.getByLabel("Open Settings next so I can enable encrypted sync").check();
-  await page.getByRole("button", { name: /Finish setup/i }).click();
-  await heading.waitFor({ state: "hidden", timeout: 5000 });
-}
 
 test.describe("Notification Flow", () => {
   test.beforeEach(async ({ page }) => {
@@ -87,7 +72,7 @@ test.describe("Notification Flow", () => {
     // Wait for Hydration to complete so buttons become interactive
     await page.waitForTimeout(500);
 
-    await completeOnboarding(page);
+    await completeOnboarding(page, { openSyncSettings: true });
 
     const syncRequests: ReminderSyncPayload[] = [];
 

@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { completeOnboarding } from "./helpers/completeOnboarding";
 
 test.beforeEach(async ({ page }) => {
   await page.route("**/auth/me", route => route.fulfill({ status: 200 }));
@@ -8,21 +9,6 @@ test.beforeEach(async ({ page }) => {
     localStorage.setItem("tl_dek", btoa(String.fromCharCode.apply(null, Array.from(new Uint8Array(32)))));
   });
 });
-
-async function completeOnboarding(page: import("@playwright/test").Page) {
-  const heading = page.getByRole("heading", { name: "Make Today useful" });
-  if (!(await heading.waitFor({ state: "visible", timeout: 10000 }).then(() => true).catch(() => false))) {
-    return;
-  }
-
-  await page.getByRole("button", { name: "Next" }).click();
-  await page.getByLabel("Course 1").fill("Biology");
-  await page.getByRole("button", { name: "Next" }).click();
-  await page.getByLabel("First task").fill("Review biology notes");
-  await page.getByRole("button", { name: "Next" }).click();
-  await page.getByRole("button", { name: /Finish setup/i }).click();
-  await heading.waitFor({ state: "hidden", timeout: 5000 });
-}
 
 test.describe("Edge Cases & Boundaries", () => {
   

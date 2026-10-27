@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { completeOnboarding } from "./helpers/completeOnboarding";
 
 // The /app routes are auth-gated. Seed a local session marker so the guard
 // admits us without a running backend (background /auth/me just fails offline).
@@ -10,21 +11,6 @@ test.beforeEach(async ({ page }) => {
     localStorage.setItem("tl_dek", btoa(String.fromCharCode.apply(null, Array.from(new Uint8Array(32)))));
   });
 });
-
-async function completeOnboarding(page: import("@playwright/test").Page, options: { project?: string; task?: string } = {}) {
-  const heading = page.getByRole("heading", { name: "Make Today useful" });
-  if (!(await heading.waitFor({ state: "visible", timeout: 10000 }).then(() => true).catch(() => false))) {
-    return;
-  }
-
-  await page.getByRole("button", { name: "Next" }).click();
-  await page.getByLabel("Course 1").fill(options.project ?? "Biology");
-  await page.getByRole("button", { name: "Next" }).click();
-  await page.getByLabel("First task").fill(options.task ?? "Review biology notes");
-  await page.getByRole("button", { name: "Next" }).click();
-  await page.getByRole("button", { name: /Finish setup/i }).click();
-  await heading.waitFor({ state: "hidden", timeout: 5000 });
-}
 
 async function readTaskTitles(page: import("@playwright/test").Page) {
   return page.evaluate(async () => {

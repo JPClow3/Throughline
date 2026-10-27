@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { completeOnboarding } from "./helpers/completeOnboarding";
 
 async function seedVisualGoal(page: import("@playwright/test").Page) {
   await page.evaluate(async () => {
@@ -110,15 +111,8 @@ test.describe("Visual Regression", () => {
 
     await page.goto("/app");
 
-    const setupHeading = page.getByRole("heading", { name: "Make Today useful" });
-    await setupHeading.waitFor({ state: "visible", timeout: 10000 });
-    await page.getByRole("button", { name: "Next" }).click();
-    await page.getByLabel("Course 1").fill("Biology");
-    await page.getByRole("button", { name: "Next" }).click();
-    await page.getByLabel("First task").fill("Review biology notes");
-    await page.getByRole("button", { name: "Next" }).click();
-    await page.getByRole("button", { name: /Finish setup/i }).click();
-    await setupHeading.waitFor({ state: "hidden", timeout: 5000 });
+    const { completeOnboarding } = await import("./helpers/completeOnboarding");
+    await completeOnboarding(page, { project: "Biology", task: "Review biology notes", optional: false });
     await seedVisualGoal(page);
     await page.reload();
 

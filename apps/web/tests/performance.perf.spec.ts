@@ -1,25 +1,11 @@
 import { expect, test } from "@playwright/test";
+import { completeOnboarding } from "./helpers/completeOnboarding";
 
 const budgets = {
   dashboardReadyMs: 4_500,
   kanbanSwitchMs: 1_500,
   domContentLoadedMs: 3_500
 };
-
-async function completeOnboarding(page: import("@playwright/test").Page) {
-  const heading = page.getByRole("heading", { name: "Make Today useful" });
-  if (!(await heading.waitFor({ state: "visible", timeout: 10000 }).then(() => true).catch(() => false))) {
-    return;
-  }
-
-  await page.getByRole("button", { name: "Next" }).click();
-  await page.getByLabel("Course 1").fill("Biology");
-  await page.getByRole("button", { name: "Next" }).click();
-  await page.getByLabel("First task").fill("Review biology notes");
-  await page.getByRole("button", { name: "Next" }).click();
-  await page.getByRole("button", { name: /Finish setup/i }).click();
-  await heading.waitFor({ state: "hidden", timeout: 5000 });
-}
 
 test("keeps core dashboard and Kanban interactions inside smoke budgets", async ({ page }) => {
   await page.route("**/auth/me", route => route.fulfill({ status: 200 }));
