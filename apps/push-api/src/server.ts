@@ -41,6 +41,8 @@ export async function createServer(options: CreateServerOptions = {}) {
   }
 
   const dispatchMetrics = { sent: 0, failed: 0 };
+  // Process-local request counters; reset on restart is expected for lightweight ops checks.
+  const requestMetrics = { total: 0, status4xx: 0, status5xx: 0 };
 
   const app = Fastify({ 
     logger: {
@@ -79,6 +81,19 @@ export async function createServer(options: CreateServerOptions = {}) {
   });
 
   await app.register(cookie, { secret: config.sessionSecret });
+
+  // Count accepted requests immediately so /health includes the current call in `total`.
+  app.addHook("onRequest", async () => {
+    requestMetrics.total += 1;
+  });
+  app.addHook("onResponse", async (_request, reply) => {
+    const code = reply.statusCode;
+    if (code >= 500) {
+      requestMetrics.status5xx += 1;
+    } else if (code >= 400) {
+      requestMetrics.status4xx += 1;
+    }
+  });
 
   app.setErrorHandler((error, request, reply) => {
     if (error instanceof z.ZodError) {
@@ -120,6 +135,7 @@ export async function createServer(options: CreateServerOptions = {}) {
         ? dispatchMetrics.sent / (dispatchMetrics.sent + dispatchMetrics.failed)
         : 1,
     metrics: dispatchMetrics,
+    requests: requestMetrics,
     ...(await store.counts())
   }));
 

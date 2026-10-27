@@ -26,7 +26,7 @@ Account sync is optional. When a user signs in, records are encrypted on-device 
 Push data follows a separate path. The browser registers a subscription with `apps/push-api`, stores the returned endpoint hash locally, derives redacted reminders from local tasks, and bulk-syncs them with `PUT /subscriptions/:endpointHash/reminders`. The push service stores subscriptions and redacted reminder metadata only. Task text remains local.
 
 ### Push API Model
-The push API is split into config, schemas, server routes, and a store interface. The current store is JSON-backed and serializes writes to avoid file races. A future SQLite or hosted store should implement the same store interface. Dispatch uses `notifyAt`, not `dueAt`, so reminders can fire before a task is due.
+The push API is split into config, schemas, server routes, and a store interface. The current store is JSON-backed and serializes writes to avoid file races. Production edge deploys use Postgres via Hyperdrive. Dispatch uses `notifyAt`, not `dueAt`, so reminders can fire before a task is due. Lightweight observability lives on `GET /health`: VAPID readiness, dispatch success rate, in-memory dispatch sent/failed counts, and request counters (total / 4xx / 5xx). The Cloudflare Worker also reports errors to Sentry when `SENTRY_DSN` is set.
 
 ### Offline Model
 The app utilizes a custom service worker (`sw.ts`) built via the Vite PWA plugin's `injectManifest` strategy. This worker precaches the app shell via Workbox, supports push notifications, handles background and periodic sync events, and falls back to `index.html`. User data lives in IndexedDB through Dexie. Core task workflows should work without the push API.

@@ -12,7 +12,7 @@ Throughline supports two primary production deployment architectures:
 
 Throughline is deployed on the Cloudflare developer platform with Neon Serverless Postgres:
 - **Frontend**: Cloudflare Pages hosts the Vite React PWA from `apps/web/dist`, with custom security headers and service worker caching rules defined in `_headers` and SPA routing via `_redirects`.
-- **Backend API**: Cloudflare Workers (`apps/push-api`) handles push subscriptions, VAPID dispatch, user authentication, and E2EE encrypted sync.
+- **Backend API**: Cloudflare Workers (`apps/push-api`) handles push subscriptions, VAPID dispatch, user authentication, and E2EE encrypted sync. `GET /health` is the lightweight ops check (VAPID state, dispatch metrics, request counters); optional `SENTRY_DSN` captures Worker exceptions.
 - **Database Connection Pooling**: Cloudflare Hyperdrive pools and accelerates TCP connections from Cloudflare Workers to Neon PostgreSQL globally.
 - **Database**: Neon PostgreSQL stores user credentials, sessions, encrypted ciphertext sync records, push subscriptions, and redacted reminders.
 - **Reminder dispatch**: The Worker has no Cron Trigger. `POST /dispatch-due` sends due reminders when an external caller hits it. The Docker stack's ofelia sidecar does that every 5 minutes. A Worker schedule would keep the Neon compute from suspending between ticks, so edge deploys do not poll on their own.

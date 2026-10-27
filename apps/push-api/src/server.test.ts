@@ -39,9 +39,31 @@ describe("push API", () => {
     const created = await app.inject({ method: "POST", url: "/subscriptions", payload: fakeSubscription() });
 
     expect(health.statusCode).toBe(200);
-    expect(health.json()).toMatchObject({ ok: true, vapidConfigured: false });
+    expect(health.json()).toMatchObject({
+      ok: true,
+      vapidConfigured: false,
+      metrics: { sent: 0, failed: 0 },
+      requests: { total: 1, status4xx: 0, status5xx: 0 }
+    });
     expect(created.statusCode).toBe(201);
     expect(created.json().endpointHash).toHaveLength(64);
+
+    await app.close();
+  });
+
+  it("counts total, 4xx, and 5xx requests in the health payload", async () => {
+    const app = await createServer({ config, store, configureWebPush: false });
+
+    await app.inject({ method: "GET", url: "/health" });
+    await app.inject({ method: "POST", url: "/subscriptions", payload: { endpoint: 123 } });
+    await app.inject({
+      method: "DELETE",
+      url: "/subscriptions/0000000000000000000000000000000000000000000000000000000000000000"
+    });
+
+    const health = await app.inject({ method: "GET", url: "/health" });
+    expect(health.statusCode).toBe(200);
+    expect(health.json().requests).toEqual({ total: 4, status4xx: 2, status5xx: 0 });
 
     await app.close();
   });

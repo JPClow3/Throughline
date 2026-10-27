@@ -78,8 +78,9 @@ const ChangeSchema = z.object({
 const PushSchema = z.object({ changes: z.array(ChangeSchema).max(5000) });
 const PullQuerySchema = z.object({ since: z.string().max(40).optional() });
 
-// In-memory metrics tracking for the worker isolate
+// In-memory metrics tracking for the worker isolate (reset on isolate recycle).
 const dispatchMetrics = { sent: 0, failed: 0 };
+const requestMetrics = { total: 0, status4xx: 0, status5xx: 0 };
 
 export function getDb(env: WorkerEnv): Sql {
   if (env.SQL) {
@@ -228,6 +229,18 @@ export async function dispatchDueReminders(env: WorkerEnv): Promise<{ sent: numb
 }
 
 export async function handleRequest(request: Request, env: WorkerEnv, ctx?: ExecutionContext): Promise<Response> {
+  // Increment total up front so /health includes the current call; class buckets update after status is known.
+  requestMetrics.total += 1;
+  const response = await handleRequestInner(request, env, ctx);
+  if (response.status >= 500) {
+    requestMetrics.status5xx += 1;
+  } else if (response.status >= 400) {
+    requestMetrics.status4xx += 1;
+  }
+  return response;
+}
+
+async function handleRequestInner(request: Request, env: WorkerEnv, ctx?: ExecutionContext): Promise<Response> {
   const url = new URL(request.url);
   // Strip optional /api prefix to support same-origin proxy or direct routing
   const pathname = url.pathname.replace(/^\/api/, "") || "/";
@@ -266,6 +279,7 @@ export async function handleRequest(request: Request, env: WorkerEnv, ctx?: Exec
           vapidConfigured: hasVapidConfig(env),
           dispatchSuccessRate: totalDispatches > 0 ? dispatchMetrics.sent / totalDispatches : 1,
           metrics: dispatchMetrics,
+          requests: requestMetrics,
           ...counts
         },
         200,

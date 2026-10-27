@@ -73,7 +73,7 @@ npm run dev:web
 
 `GET /health`
 
-Returns service health, VAPID configuration state, and counts.
+Returns service health, VAPID configuration state, subscription/reminder counts, dispatch success rate, in-memory dispatch `metrics` (`sent` / `failed`), and process-local `requests` counters (`total` / `status4xx` / `status5xx`). Counters reset on process or Worker isolate recycle.
 
 `POST /subscriptions`
 
