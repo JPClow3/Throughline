@@ -71,10 +71,11 @@ A calm cockpit for the day. Shows greeting, date, and a progress hero ("X of Y t
 
 **Next product milestones**:
 1. Email verification.
-2. PWA install polish (Microsoft Store packaging).
+2. Microsoft Store submission (PWABuilder packaging assets, manifest shortcuts, and `microsoft-store.yml` workflow are ready; Partner Center credentials still required to publish).
 
 **Recently polished**:
 - Lightweight API observability: `GET /health` exposes VAPID state, dispatch success rate, in-memory dispatch sent/failed counts, and request counters (total / 4xx / 5xx) on Fastify and the Cloudflare Worker; Worker errors also go to Sentry.
+- Public brand color kit aligned to Inkline (paper/ink/hard shadows); unused glass `original_styles.css` removed.
 - Inline subtask editing in the task editor and expandable card step lists.
 - View-aware `N` / mobile FAB capture (task, goal, or note) with a always-live masthead New Task action.
 - Local-only planner access restored: `/app` works without an account; sync remains an optional Settings/signup path.
