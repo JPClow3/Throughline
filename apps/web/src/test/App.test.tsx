@@ -44,4 +44,17 @@ describe("App", () => {
     fireEvent.keyDown(document.body, { key: "n" });
     expect(await screen.findByRole("heading", { name: "New goal" })).toBeInTheDocument();
   });
+
+  it("honors ?view=notes&action=new by creating a note and clearing the action flag", async () => {
+    await saveAppearanceSettings({ hasCompletedOnboarding: true });
+    window.history.replaceState({}, "", "/app?view=notes&action=new");
+    render(
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    );
+
+    expect(await screen.findByPlaceholderText("Title")).toBeInTheDocument();
+    expect(window.location.search).toBe("?view=notes");
+  });
 });

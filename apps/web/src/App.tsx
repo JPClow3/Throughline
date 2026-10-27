@@ -363,6 +363,30 @@ function Workspace(props: WorkspaceProps) {
     []
   );
 
+  // Honor PWA note_taking `new_note_url` (?view=notes&action=new) once, then strip the flag.
+  const consumedNewNoteAction = React.useRef(false);
+  React.useEffect(() => {
+    if (loading || props.appearanceSettings === undefined || consumedNewNoteAction.current) {
+      return;
+    }
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("action") !== "new") {
+      return;
+    }
+    if (props.view !== "notes" && url.searchParams.get("view") !== "notes") {
+      return;
+    }
+    consumedNewNoteAction.current = true;
+    url.searchParams.delete("action");
+    url.searchParams.set("view", "notes");
+    window.history.replaceState({}, "", url);
+    void (async () => {
+      const note = await addNote({});
+      setSelectedNoteId(note.id);
+      setView("notes");
+    })();
+  }, [addNote, loading, props.appearanceSettings, props.view, setSelectedNoteId, setView]);
+
   const handlePrimaryAction = React.useCallback(async () => {
     if (view === "notes") {
       const note = await addNote({});

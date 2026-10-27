@@ -172,7 +172,14 @@ export const appManifest = {
       name: "Today",
       short_name: "Today",
       description: "Open the daily dashboard.",
-      url: "/app?view=today",
+      url: "/app?view=dashboard",
+      icons: [{ src: "/pwa-icon.svg", sizes: "any", type: "image/svg+xml" }]
+    },
+    {
+      name: "Goals",
+      short_name: "Goals",
+      description: "Break goals into steps.",
+      url: "/app?view=goals",
       icons: [{ src: "/pwa-icon.svg", sizes: "any", type: "image/svg+xml" }]
     },
     {
@@ -180,13 +187,6 @@ export const appManifest = {
       short_name: "Board",
       description: "Jump straight to the board.",
       url: "/app?view=kanban",
-      icons: [{ src: "/pwa-icon.svg", sizes: "any", type: "image/svg+xml" }]
-    },
-    {
-      name: "Timeline",
-      short_name: "Timeline",
-      description: "Open the day timeline.",
-      url: "/app?view=timeline",
       icons: [{ src: "/pwa-icon.svg", sizes: "any", type: "image/svg+xml" }]
     },
     {
