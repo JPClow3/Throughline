@@ -22,7 +22,8 @@ const NAV_ITEMS: Array<{ view: AppView; label: string; icon: ReactNode }> = [
   { view: "insights", label: "Insights", icon: <ChartLine size={17} weight="bold" /> }
 ];
 
-const MOBILE_PRIMARY_VIEWS: AppView[] = ["dashboard", "kanban", "timeline", "notes"];
+/** Primary dock keeps student capture + decomposition one tap away; Timeline lives under More. */
+const MOBILE_PRIMARY_VIEWS: AppView[] = ["dashboard", "goals", "kanban", "notes"];
 
 /** The palette listens for Ctrl+K everywhere; only the hint text changes per platform. */
 const IS_APPLE_PLATFORM = typeof navigator !== "undefined" && /Mac|iPhone|iPad|iPod/.test(navigator.userAgent);

@@ -25,6 +25,7 @@ type CommandPaletteProps = {
   onNavigate: (view: AppView) => void;
   onNewTask: () => void;
   onNewGoal?: () => void;
+  onNewNote?: () => void;
   onToggleTheme: () => void;
   searchResults?: GlobalSearchResult[];
   onOpenResult?: (result: GlobalSearchResult) => void;
@@ -59,6 +60,7 @@ export function CommandPalette({
   onNavigate,
   onNewTask,
   onNewGoal,
+  onNewNote,
   onToggleTheme,
   searchResults = [],
   onOpenResult,
@@ -159,6 +161,12 @@ export function CommandPalette({
               <Command.Item onSelect={() => runCommand(onNewGoal)} className={ITEM_CLASS}>
                 <Target size={16} weight="bold" />
                 <span className="palette-item-title">Create new goal</span>
+              </Command.Item>
+            ) : null}
+            {onNewNote ? (
+              <Command.Item onSelect={() => runCommand(onNewNote)} className={ITEM_CLASS}>
+                <FileText size={16} weight="bold" />
+                <span className="palette-item-title">Create new note</span>
               </Command.Item>
             ) : null}
           </Command.Group>

@@ -42,7 +42,7 @@ Depth is communicated by displacement, not blur:
 - **Press physics:** Buttons and cards translate against their shadow on click (see elevation model). Transitions are fast (`~120ms`) and snappy rather than springy-soft.
 - **Completion feedback:** Completing a task fires a brief confetti-square burst plus a "+XP" chip when relevant; it never blocks interaction.
 - **Sheet transitions:** Sheets slide up from the bottom edge (centered dialog on desktop) over a dimmed backdrop using a short spring.
-- **Navigation dock:** Mobile uses a floating bottom dock; desktop uses a top tab strip where the active tab is highlighted with signal yellow.
+- **Navigation dock:** Mobile uses a floating bottom dock with Today, Goals, Board, and Notes as primary tabs (Timeline and the rest live under More); desktop uses a top tab strip where the active tab is highlighted with signal yellow.
 
 ## 6. Shell Chrome & Account
 

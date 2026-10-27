@@ -27,7 +27,7 @@ type TaskCardProps = {
   onStatusChange?: (taskId: string, status: TaskStatus) => void;
   onEdit?: (task: Task) => void;
   onUpdateTask?: (task: Task) => void;
-  onOpenNotes?: () => void;
+  onOpenNotes?: (taskId: string) => void;
   onStartFocus?: (task: Task) => void;
   /**
    * Dense lists (Today, the Board) keep cards quiet: the inline step input
@@ -39,7 +39,7 @@ type TaskCardProps = {
 
 type DueTone = "done" | "overdue" | "soon" | "normal";
 
-function CompletionBurst({ task }: { task: Task }) {
+function CompletionBurst({ task, showGameLayer }: { task: Task; showGameLayer: boolean }) {
   const [particles] = useState(() =>
     Array.from({ length: 14 }, (_, index) => ({
       x: Math.cos((index / 14) * Math.PI * 2) * (36 + (index % 4) * 14),
@@ -50,14 +50,16 @@ function CompletionBurst({ task }: { task: Task }) {
 
   return (
     <div className="completion-burst" aria-hidden="true">
-      <motion.span
-        className="xp-burst"
-        initial={{ opacity: 0, y: 6, scale: 0.7 }}
-        animate={{ opacity: [0, 1, 1, 0], y: [-4, -26, -34, -44], scale: 1 }}
-        transition={{ duration: 1.5, times: [0, 0.15, 0.75, 1], ease: "easeOut" }}
-      >
-        +{task.xp} XP
-      </motion.span>
+      {showGameLayer ? (
+        <motion.span
+          className="xp-burst"
+          initial={{ opacity: 0, y: 6, scale: 0.7 }}
+          animate={{ opacity: [0, 1, 1, 0], y: [-4, -26, -34, -44], scale: 1 }}
+          transition={{ duration: 1.5, times: [0, 0.15, 0.75, 1], ease: "easeOut" }}
+        >
+          +{task.xp} XP
+        </motion.span>
+      ) : null}
       {particles.map((particle, index) => (
         <motion.span
           key={index}
@@ -180,12 +182,19 @@ export function TaskCard({
           : { type: "spring", stiffness: 380, damping: 28 }
       }
     >
-      <AnimatePresence>{isJustCompleted ? <CompletionBurst task={task} /> : null}</AnimatePresence>
+      <AnimatePresence>
+        {isJustCompleted ? <CompletionBurst task={task} showGameLayer={showGameLayer} /> : null}
+      </AnimatePresence>
 
       <div className="task-card-top">
         <h3 className={`task-card-title ${compact ? "line-clamp-2" : ""}`}>
           {onEdit ? (
-            <button type="button" className={`task-card-edit ${compact ? "w-full text-left" : ""}`} onClick={() => onEdit(task)}>
+            <button
+              type="button"
+              className={`task-card-edit ${compact ? "w-full text-left" : ""}`}
+              onClick={() => onEdit(task)}
+              aria-label={`Open task ${task.title}`}
+            >
               {task.title}
             </button>
           ) : (
@@ -216,12 +225,7 @@ export function TaskCard({
             <ProjectDot />
             {course.code ?? course.name}
           </span>
-        ) : (
-          <span className="chip-static">
-            <span className="project-dot" aria-hidden="true" style={{ background: "transparent" }} />
-            No project
-          </span>
-        )}
+        ) : null}
         {dueInfo ? (
           <span className={`meta-due chip-static meta-due-${dueInfo.tone}`}>
             <Clock size={12} weight="bold" />
@@ -330,7 +334,7 @@ export function TaskCard({
             <button
               type="button"
               className="meta-chip"
-              onClick={onOpenNotes}
+              onClick={() => onOpenNotes(task.id)}
               aria-label={`${noteCount} linked ${noteCount === 1 ? "note" : "notes"} — open Notes`}
             >
               <StickyNote size={12} weight="bold" />

@@ -155,19 +155,6 @@ export function TaskComposer({
         </Field>
       </div>
 
-      {goals.length ? (
-        <Field label="Goal">
-          <Select value={goalId} onChange={(event) => setGoalId(event.target.value)}>
-            <option value="">No goal</option>
-            {goals.map((goal) => (
-              <option key={goal.id} value={goal.id}>
-                {goal.title}
-              </option>
-            ))}
-          </Select>
-        </Field>
-      ) : null}
-
       <button className="details-toggle" type="button" aria-expanded={expanded} onClick={() => setExpanded((value) => !value)}>
         <CaretDown size={14} weight="bold" style={{ rotate: expanded ? "180deg" : undefined }} />
         Details
@@ -182,6 +169,18 @@ export function TaskComposer({
               placeholder="A short note about what done looks like"
             />
           </Field>
+          {goals.length ? (
+            <Field label="Goal">
+              <Select value={goalId} onChange={(event) => setGoalId(event.target.value)}>
+                <option value="">No goal</option>
+                {goals.map((goal) => (
+                  <option key={goal.id} value={goal.id}>
+                    {goal.title}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          ) : null}
           <div className="composer-grid">
             <Field label="Priority">
               <Select value={priority} onChange={(event) => setPriority(event.target.value as Priority)}>

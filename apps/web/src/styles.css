@@ -1849,6 +1849,12 @@ select.input {
   box-shadow: var(--shadow-0);
   transition: transform var(--dur-fast) ease, box-shadow var(--dur-fast) ease, background-color var(--dur-fast) ease;
 }
+@media (pointer: coarse), (max-width: 640px) {
+  .complete-button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
 .complete-button:hover:not(:disabled) {
   background: var(--green-soft);
   transform: translate(-1px, -1px);

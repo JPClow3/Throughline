@@ -38,7 +38,7 @@ This document outlines the product requirements, features, current roadmap, and 
 A calm cockpit for the day. Shows greeting, date, and a progress hero ("X of Y tasks done") backed only by real task data. Focus time, planned study time, completed-by-day activity, overdue count, and the next study block are derived from local tasks and focus sessions. An "Also on the radar" list surfaces the next few actionable tasks that are not already prioritized, so the main panel stays useful on quiet days.
 
 ### Task Composer & Cards
-- **Composer**: Fast capture via a floating glass sheet. Up-front fields are minimal (Title, Project, Due).
+- **Composer**: Fast capture via a solid Inkline sheet. Up-front fields are minimal (Title, Project, Due).
 - **Cards**: Calm, scannable task representation. Show project colour, title, due date (quietly), and quiet glyphs. Clicking the card title opens the task in an Edit task sheet.
 - **Focus**: Focus sessions can start from a task or as untitled focus. Completed sessions are stored as focus-session records, not as fake completed tasks.
 

@@ -527,7 +527,13 @@ function Workspace(props: WorkspaceProps) {
                   onUpdateTasks={(updates) => void updateTasks(updates)}
                   onUpdateTask={(task) => void updateTask(task)}
                   onEdit={openTask}
-                  onOpenNotes={() => props.setView("notes")}
+                  onOpenNotes={(taskId) => {
+                    const linked = notes.find((note) => note.taskIds.includes(taskId));
+                    if (linked) {
+                      props.setSelectedNoteId(linked.id);
+                    }
+                    props.setView("notes");
+                  }}
                   onStartFocus={props.setFocusTask}
                   onNewTask={props.onOpenComposer}
                 />
@@ -553,7 +559,12 @@ function Workspace(props: WorkspaceProps) {
                   onDeleteGoal={removeGoal}
                   onEditGoal={props.setEditingGoal}
                   onAddTask={addTask}
-                  onAddNote={addNote}
+                  onAddNote={async (input) => {
+                    const note = await addNote(input);
+                    props.setSelectedNoteId(note.id);
+                    props.setView("notes");
+                    return note;
+                  }}
                   onCompleteTask={(task) => completeTask(task)}
                   onStatusChange={(taskId, status) => void updateTaskStatus(taskId, status)}
                   onEditTask={openTask}
@@ -619,6 +630,13 @@ function Workspace(props: WorkspaceProps) {
           onNavigate={props.setView}
           onNewTask={() => props.onOpenComposer()}
           onNewGoal={() => props.setGoalOpen(true)}
+          onNewNote={() => {
+            void (async () => {
+              const note = await addNote({});
+              props.setSelectedNoteId(note.id);
+              props.setView("notes");
+            })();
+          }}
           onToggleTheme={props.onToggleTheme}
           tasks={tasks}
           notes={notes}
@@ -684,6 +702,7 @@ function Workspace(props: WorkspaceProps) {
               task={editingTask}
               courses={courses}
               goals={goals}
+              showGameLayer={props.showGameLayer}
               onSave={async (updated) => {
                 await updateTask(updated);
                 props.setEditingTaskId(null);
