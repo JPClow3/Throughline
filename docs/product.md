@@ -84,6 +84,7 @@ A calm cockpit for the day. Shows greeting, date, and a progress hero ("X of Y t
 - Editable study-minute estimates; PWA share-target composer prefill; note draft flush on leave; Google login gated on `VITE_GOOGLE_CLIENT_ID`.
 - Mobile More sheet uses a flat ink wash, focus trap, and arrow-key menu pattern; Today pressure rows and Projects open Board with matching filters; custom filter presets can be deleted; local due-time reminders fire in-tab when permission is granted.
 - Custom weekday recurrence (composer/editor + domain next-due); task-card Inkline press physics without competing springs; expanded card steps can be deleted.
+- Calendar ICS export surfaced on Timeline and Today (student path), not only Settings; onboarding draft survives remounts; verify-email updates session state.
 
 ## 4. Project Map
 

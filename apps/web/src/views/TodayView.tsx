@@ -1,8 +1,10 @@
 import { FocusSession, Task, deriveTodayBriefing } from "@throughline/domain";
-import { CheckCircle, Clock, LockKey, Plus, Timer, WarningCircle } from "@phosphor-icons/react";
-import { useMemo, type CSSProperties, type ReactNode } from "react";
+import { CheckCircle, Clock, DownloadSimple, LockKey, Plus, Timer, WarningCircle } from "@phosphor-icons/react";
+import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import { downloadIcs } from "../lib/downloadIcs";
+import { reportError } from "../sentry";
 import { usePlanner } from "../state/PlannerProvider";
-import { Button, Card, EmptyState } from "../ui";
+import { Button, Card, EmptyState, Notice } from "../ui";
 import { TaskCard } from "./TaskCard";
 
 export type TodayPressureKind = "due-today" | "overdue" | "blocked";
@@ -26,10 +28,22 @@ export function TodayView({
   showGameLayer?: boolean;
 }) {
   const { tasks, courses, focusSessions, completeTask, noteCountByTask } = usePlanner();
+  const [exportNotice, setExportNotice] = useState("");
+  const dueCount = tasks.filter((task) => task.dueAt).length;
 
   const briefing = useMemo(() => deriveTodayBriefing({ tasks, focusSessions: focusSessions as FocusSession[] }), [tasks, focusSessions]);
   const stats = briefing.stats;
   const courseMap = useMemo(() => new Map(courses.map((course) => [course.id, course])), [courses]);
+
+  function exportCalendar() {
+    try {
+      downloadIcs(tasks, courses);
+      setExportNotice(`Exported ${dueCount} due ${dueCount === 1 ? "task" : "tasks"} to throughline.ics`);
+    } catch (error) {
+      reportError(error, { source: "today-ics-export" });
+      setExportNotice(error instanceof Error ? error.message : "Calendar export failed");
+    }
+  }
 
   // "Also on the radar": the next few actionable tasks that are not already in
   // the priority list, so the main panel stays useful on quiet days.
@@ -202,6 +216,23 @@ export function TodayView({
                     {formatClock(stats.nextStudyBlock.startsAt)} · {formatMinutes(stats.nextStudyBlock.minutes)}
                   </small>
                 </button>
+              ) : null}
+              <div className="button-row" style={{ marginTop: "0.85rem" }}>
+                <Button
+                  type="button"
+                  variant="quiet"
+                  disabled={dueCount === 0}
+                  onClick={exportCalendar}
+                  aria-label="Export due tasks as calendar ICS"
+                >
+                  <DownloadSimple size={15} weight="bold" />
+                  Export calendar
+                </Button>
+              </div>
+              {exportNotice ? (
+                <Notice variant={exportNotice.startsWith("Exported") ? "success" : "error"} className="mt-3">
+                  {exportNotice}
+                </Notice>
               ) : null}
             </section>
           </Card>

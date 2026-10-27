@@ -1,5 +1,5 @@
 import { Course, Task, kanbanColumns } from "@throughline/domain";
-import { CalendarBlank, Play, Plus } from "@phosphor-icons/react";
+import { CalendarBlank, DownloadSimple, Play, Plus } from "@phosphor-icons/react";
 import React, { useMemo, useState, type CSSProperties } from "react";
 import {
   DndContext,
@@ -16,8 +16,10 @@ import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
 import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core/dist/types/events";
 import { FilterBar } from "./FilterBar";
 import { useFilters } from "../hooks/useFilters";
+import { downloadIcs } from "../lib/downloadIcs";
 import { APP_LOCALE, capitalizeFirst } from "../lib/format";
-import { Button, Card, EmptyState } from "../ui";
+import { reportError } from "../sentry";
+import { Button, Card, EmptyState, Notice } from "../ui";
 import { usePlanner } from "../state/PlannerProvider";
 
 function localDayKey(date: Date) {
@@ -119,6 +121,18 @@ export function TimelineView({
   const [selectedKey, setSelectedKey] = useState(() => localDayKey(today));
   const { filters, presets, setFilter, applyFilters, applyPreset, clearFilters, saveCurrentPreset, deletePreset } = useFilters();
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+  const [exportNotice, setExportNotice] = useState("");
+  const dueCount = tasks.filter((task) => task.dueAt).length;
+
+  function exportCalendar() {
+    try {
+      downloadIcs(tasks, courses);
+      setExportNotice(`Exported ${dueCount} due ${dueCount === 1 ? "task" : "tasks"} to throughline.ics`);
+    } catch (error) {
+      reportError(error, { source: "timeline-ics-export" });
+      setExportNotice(error instanceof Error ? error.message : "Calendar export failed");
+    }
+  }
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -212,6 +226,26 @@ export function TimelineView({
           <div>
             <span className="eyebrow">Agenda</span>
             <h1 className="view-title">Timeline</h1>
+            <p className="view-head-sub">
+              Day pressure and due blocks — export to your calendar when you need them off-device.
+            </p>
+            <div className="button-row" style={{ marginTop: "0.75rem" }}>
+              <Button
+                type="button"
+                variant="quiet"
+                disabled={dueCount === 0}
+                onClick={exportCalendar}
+                aria-label="Export due tasks as calendar ICS"
+              >
+                <DownloadSimple size={15} weight="bold" />
+                Export ICS
+              </Button>
+            </div>
+            {exportNotice ? (
+              <Notice variant={exportNotice.startsWith("Exported") ? "success" : "error"} className="mt-3">
+                {exportNotice}
+              </Notice>
+            ) : null}
           </div>
           <FilterBar
             courses={courses}

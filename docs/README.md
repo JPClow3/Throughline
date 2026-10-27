@@ -16,7 +16,7 @@ This folder is the project memory. If you come back later, read this file first,
 - [Product & Requirements](product.md): Product requirements, current features, roadmap, and project map.
 - [Architecture](architecture.md): Workspace responsibilities, data flow, offline model, encrypted sync, and storage shapes.
 - [Notifications](notifications.md): Local notification flow, push API endpoints, VAPID setup, and privacy rules.
-- [Deployment](deployment.md): Cloudflare (Pages + Workers + D1) and Docker/Dokploy deployment architectures, PWA offline, and release readiness.
+- [Deployment](deployment.md): Cloudflare (Pages + Workers + Hyperdrive/Neon) and Docker/Dokploy deployment architectures, PWA offline, and release readiness.
 - [Design System Specification](../DESIGN.md): Authoritative Inkline token system, component recipes, elevation ladder, and agent prompt guide.
 - [UI/UX](ui-ux.md): Inkline design system (bold editorial neo-brutalism), interaction rules, and workflow guidance.
 - [Development Workflow](development.md): Setup, commands, quality gates, coverage, generated files, and troubleshooting.
