@@ -1,6 +1,6 @@
--- Email verification state + one-time tokens (D1 / SQLite)
-
-ALTER TABLE users ADD COLUMN email_verified_at TEXT;
+-- Email verification catch-up for D1 databases that applied a pre-verify 0001.
+-- Current 0001_initial.sql already creates users.email_verified_at and
+-- email_verification_tokens, so this file must stay idempotent (no bare ALTER).
 
 CREATE TABLE IF NOT EXISTS email_verification_tokens (
   token TEXT PRIMARY KEY,

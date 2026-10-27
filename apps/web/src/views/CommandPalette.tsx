@@ -1,6 +1,7 @@
 import { Command } from "cmdk";
 import {
   CalendarDots,
+  CalendarPlus,
   ChartLine,
   FolderSimple,
   GearSix,
@@ -26,6 +27,7 @@ type CommandPaletteProps = {
   onNewTask: () => void;
   onNewGoal?: () => void;
   onNewNote?: () => void;
+  onExportCalendar?: () => void;
   onToggleTheme: () => void;
   searchResults?: GlobalSearchResult[];
   onOpenResult?: (result: GlobalSearchResult) => void;
@@ -61,6 +63,7 @@ export function CommandPalette({
   onNewTask,
   onNewGoal,
   onNewNote,
+  onExportCalendar,
   onToggleTheme,
   searchResults = [],
   onOpenResult,
@@ -167,6 +170,16 @@ export function CommandPalette({
               <Command.Item onSelect={() => runCommand(onNewNote)} className={ITEM_CLASS}>
                 <FileText size={16} weight="bold" />
                 <span className="palette-item-title">Create new note</span>
+              </Command.Item>
+            ) : null}
+            {onExportCalendar ? (
+              <Command.Item
+                value="Export calendar ICS due tasks"
+                onSelect={() => runCommand(onExportCalendar)}
+                className={ITEM_CLASS}
+              >
+                <CalendarPlus size={16} weight="bold" />
+                <span className="palette-item-title">Export calendar (.ics)</span>
               </Command.Item>
             ) : null}
           </Command.Group>

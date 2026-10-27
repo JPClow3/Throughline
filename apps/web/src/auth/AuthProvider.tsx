@@ -25,12 +25,12 @@ type AuthContextValue = {
   emailVerified: boolean | null;
   /** In-memory AES-GCM key for record encryption (null until authed). */
   dekKey: CryptoKey | null;
-  signup: (email: string, password: string) => Promise<string>;
+  signup: (email: string, password: string) => Promise<{ recoveryKey: string; verificationToken?: string }>;
   login: (email: string, password: string) => Promise<void>;
   loginWithGoogle: (credential: string) => Promise<{ created: boolean }>;
   rotateRecoveryKey: () => Promise<string>;
   resetPassword: (email: string, recoveryKey: string, newPassword: string) => Promise<void>;
-  resendVerification: () => Promise<{ mailSent: boolean }>;
+  resendVerification: () => Promise<{ mailSent: boolean; verificationToken?: string }>;
   refreshEmailVerified: () => Promise<void>;
   verifyEmailToken: (token: string) => Promise<{ email: string | null; alreadyVerified: boolean }>;
   logout: () => Promise<void>;
@@ -137,7 +137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStatus("authed");
   }
 
-  const signup = useCallback(async (rawEmail: string, password: string): Promise<string> => {
+  const signup = useCallback(async (rawEmail: string, password: string) => {
     const userEmail = rawEmail.trim().toLowerCase();
     const salt = randomSalt();
     const { kek, authKey } = await deriveKeys(password, salt);
@@ -156,8 +156,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!res.ok) {
       throw new AuthError("Could not create the account. Please try again.");
     }
+    const data = (await res.json().catch(() => ({}))) as { verificationToken?: string };
     await persistSession(userEmail, dek, false);
-    return recoveryKey;
+    return {
+      recoveryKey,
+      ...(data.verificationToken ? { verificationToken: data.verificationToken } : {})
+    };
   }, []);
 
   const login = useCallback(async (rawEmail: string, password: string) => {
@@ -309,16 +313,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!res.ok) {
       throw new AuthError("Could not resend the verification email.");
     }
-    const data = (await res.json()) as { emailVerified?: boolean; mailSent?: boolean; alreadyVerified?: boolean };
+    const data = (await res.json()) as {
+      emailVerified?: boolean;
+      mailSent?: boolean;
+      alreadyVerified?: boolean;
+      verificationToken?: string;
+    };
     if (data.emailVerified || data.alreadyVerified) {
       writeLocalVerified(true);
       setEmailVerified(true);
     }
-    return { mailSent: Boolean(data.mailSent) };
+    return {
+      mailSent: Boolean(data.mailSent),
+      ...(data.verificationToken ? { verificationToken: data.verificationToken } : {})
+    };
   }, []);
 
   const verifyEmailToken = useCallback(async (token: string) => {
-    const res = await api(`/auth/verify-email?token=${encodeURIComponent(token)}`);
+    // POST keeps the one-time secret out of access-log query strings.
+    const res = await api("/auth/verify-email", { token });
     if (!res.ok) {
       throw new AuthError("This verification link is invalid or expired.");
     }

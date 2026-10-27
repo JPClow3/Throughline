@@ -32,6 +32,7 @@ import { AppearanceSettings, ThemePreference } from "../data/types";
 import { usePwaInstall } from "../hooks/usePwaInstall";
 import { downloadIcs } from "../lib/downloadIcs";
 import { APP_LOCALE } from "../lib/format";
+import { buildVerifyEmailLink } from "../lib/verifyEmailLink";
 import { reportError } from "../sentry";
 import {
   notificationSupport,
@@ -68,7 +69,7 @@ export function SettingsView({
   account?: AccountInfo;
   onSyncNow?: () => void | Promise<void>;
   onRegenerateRecoveryKey?: () => Promise<string>;
-  onResendVerification?: () => Promise<{ mailSent: boolean }>;
+  onResendVerification?: () => Promise<{ mailSent: boolean; verificationToken?: string }>;
   onSignOut?: () => void;
 }) {
   const support = useMemo(() => (typeof window === "undefined" ? null : notificationSupport()), []);
@@ -332,11 +333,16 @@ export function SettingsView({
                       setVerifyStatus("");
                       void onResendVerification()
                         .then((result) => {
-                          setVerifyStatus(
-                            result.mailSent
-                              ? "Verification email sent — check your inbox."
-                              : "Verification link ready (mail provider not configured on this server)."
-                          );
+                          if (result.mailSent) {
+                            setVerifyStatus("Verification email sent — check your inbox.");
+                            return;
+                          }
+                          if (result.verificationToken) {
+                            const link = buildVerifyEmailLink(result.verificationToken);
+                            setVerifyStatus(link);
+                            return;
+                          }
+                          setVerifyStatus("Could not create a verification link. Try again.");
                         })
                         .catch((error) => {
                           setVerifyStatus(error instanceof Error ? error.message : "Could not resend verification.");
@@ -347,8 +353,20 @@ export function SettingsView({
                     <PaperPlaneRight size={15} weight="bold" />
                     {verifyBusy ? "Sending…" : "Resend verification"}
                   </Button>
+                  {verifyStatus?.includes("/verify-email?token=") ? (
+                    <a className="btn btn-accent" href={verifyStatus}>
+                      Open verification link
+                    </a>
+                  ) : null}
                 </div>
-                {verifyStatus ? <span className="status-pill self-start">{verifyStatus}</span> : null}
+                {verifyStatus && !verifyStatus.includes("/verify-email?token=") ? (
+                  <span className="status-pill self-start">{verifyStatus}</span>
+                ) : null}
+                {verifyStatus?.includes("/verify-email?token=") ? (
+                  <p className="text-sm text-[var(--ink-soft)]" style={{ marginTop: "0.5rem" }}>
+                    Mail is not configured on this server — use the link above to confirm.
+                  </p>
+                ) : null}
               </Notice>
             ) : null}
           </Card>

@@ -98,7 +98,7 @@ A calm cockpit for the day. Shows greeting, date, and a progress hero ("X of Y t
 - `src/styles.css`: Inkline token system and component layer.
 - `src/state/PlannerProvider.tsx`: context over the Dexie-backed hooks (`usePlanner()`).
 - `src/shell/AppShell.tsx`: masthead, tab strip, mobile dock, account menu.
-- `src/views/`: Today, Board, Timeline, Goals, Notes, Courses, Insights, Settings views plus composers/editors/overlays.
+- `src/views/`: Today, Board, Timeline, Goals, Notes, Projects (`CoursesView`), Insights, Settings views plus composers/editors/overlays.
 - `src/ui/`: shared primitives (buttons, cards, fields, chips, sheets/modals, feedback).
 - `src/data/`: Dexie database (`db.ts`), repositories, reminder sync.
 - `src/hooks/`: React hooks for data (`useTasks.ts`, `useGoals.ts`, etc).

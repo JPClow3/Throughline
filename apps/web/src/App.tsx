@@ -15,10 +15,12 @@ import {
 import type { GlobalSearchResult } from "./hooks/useGlobalSearch";
 import { usePwaInstall } from "./hooks/usePwaInstall";
 import { useTheme } from "./hooks/useTheme";
+import { downloadIcs } from "./lib/downloadIcs";
 import { scheduleLocalReminders } from "./lib/localReminders";
 import { PROJECT_COLORS } from "./lib/palette";
 import { requestNotificationPermission } from "./lib/notifications";
-import { fireAndForget } from "./sentry";
+import { buildVerifyEmailLink } from "./lib/verifyEmailLink";
+import { fireAndForget, reportError } from "./sentry";
 import { AppShell, AppView, ShellSync } from "./shell/AppShell";
 import { PlannerProvider, usePlanner } from "./state/PlannerProvider";
 import { Button, Sheet, ViewSkeleton } from "./ui";
@@ -248,7 +250,7 @@ type WorkspaceProps = {
   email: string | null;
   emailVerified: boolean | null;
   rotateRecoveryKey: () => Promise<string>;
-  resendVerification: () => Promise<{ mailSent: boolean }>;
+  resendVerification: () => Promise<{ mailSent: boolean; verificationToken?: string }>;
   logout: () => Promise<void> | void;
   appearanceSettings?: AppearanceSettings;
   showGameLayer: boolean;
@@ -604,9 +606,15 @@ function Workspace(props: WorkspaceProps) {
                   void props
                     .resendVerification()
                     .then((result) => {
-                      setVerifyBannerStatus(
-                        result.mailSent ? "Verification email sent." : "Link created — check server logs if mail is unset."
-                      );
+                      if (result.mailSent) {
+                        setVerifyBannerStatus("Verification email sent.");
+                        return;
+                      }
+                      if (result.verificationToken) {
+                        window.location.assign(buildVerifyEmailLink(result.verificationToken));
+                        return;
+                      }
+                      setVerifyBannerStatus("Could not create a verification link.");
                     })
                     .catch((error) => {
                       setVerifyBannerStatus(error instanceof Error ? error.message : "Could not resend.");
@@ -816,6 +824,13 @@ function Workspace(props: WorkspaceProps) {
               props.setSelectedNoteId(note.id);
               props.setView("notes");
             })();
+          }}
+          onExportCalendar={() => {
+            try {
+              downloadIcs(tasks, courses);
+            } catch (error) {
+              reportError(error, { source: "palette-ics-export" });
+            }
           }}
           onToggleTheme={props.onToggleTheme}
           tasks={tasks}

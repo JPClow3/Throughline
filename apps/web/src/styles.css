@@ -3770,8 +3770,9 @@ button.project-row-open:focus-visible {
   display: flex;
   flex-direction: column;
   width: min(600px, 100%);
-  max-height: 90vh;
-  overflow: hidden;
+  /* svh keeps Next/Finish inside the visible frame when mobile keyboards open. */
+  max-height: min(90vh, 100svh - 1.5rem);
+  overflow-y: auto;
   background: var(--card);
   box-shadow: var(--shadow-3);
   animation: ik-rise-in var(--dur-enter) ease both;
@@ -3781,7 +3782,6 @@ button.project-row-open:focus-visible {
   flex-direction: column;
   gap: var(--space-6);
   padding: var(--space-6);
-  overflow-y: auto;
   min-height: 0;
   flex: 1 1 auto;
 }
@@ -3832,6 +3832,9 @@ button.project-row-open:focus-visible {
 .onboarding-footer {
   margin-top: auto;
   flex: 0 0 auto;
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;

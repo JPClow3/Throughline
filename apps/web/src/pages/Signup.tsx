@@ -3,8 +3,9 @@ import { Link, Navigate, useNavigate } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
 import { useAuth } from "../auth/AuthProvider";
 import { RecoveryKeyPanel } from "../auth/RecoveryKeyPanel";
+import { buildVerifyEmailLink } from "../lib/verifyEmailLink";
 import { AuthShell } from "./AuthShell";
-import { Button, Field, TextInput } from "../ui";
+import { Button, Field, Notice, TextInput } from "../ui";
 
 export function Signup() {
   const { signup, loginWithGoogle, rotateRecoveryKey, status } = useAuth();
@@ -15,6 +16,7 @@ export function Signup() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [recoveryKey, setRecoveryKey] = useState("");
+  const [verificationToken, setVerificationToken] = useState("");
   const [confirmedSaved, setConfirmedSaved] = useState(false);
   const [partialKey, setPartialKey] = useState("");
   const [recoveryBusy, setRecoveryBusy] = useState(false);
@@ -42,8 +44,9 @@ export function Signup() {
     setBusy(true);
     setError("");
     try {
-      const key = await signup(email, password);
-      setRecoveryKey(key);
+      const result = await signup(email, password);
+      setRecoveryKey(result.recoveryKey);
+      setVerificationToken(result.verificationToken ?? "");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create the account.");
     } finally {
@@ -102,6 +105,23 @@ export function Signup() {
           regenerateBusy={recoveryBusy}
           footer={
             <>
+              {verificationToken ? (
+                <Notice variant="info" title="Confirm your email when you can">
+                  <p>
+                    Mail delivery is optional on this server. Open the verification link below (or from Settings later).
+                    Your planner already works locally.
+                  </p>
+                  <div className="button-row" style={{ marginTop: "0.75rem" }}>
+                    <a className="btn btn-accent" href={buildVerifyEmailLink(verificationToken)}>
+                      Open verification link
+                    </a>
+                  </div>
+                </Notice>
+              ) : (
+                <p className="text-sm text-[var(--ink-soft)]">
+                  We also sent a confirmation email when mail is configured — you can resend it anytime from Settings.
+                </p>
+              )}
               {error ? <p className="auth-error">{error}</p> : null}
               <Button variant="primary" disabled={!canProceed} onClick={() => navigate("/app")}>
                 Continue to Planner
