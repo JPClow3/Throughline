@@ -381,7 +381,7 @@ export function AppShell({
       {primaryActionLabel && onPrimaryAction && !mobileMoreOpen ? (
         <button
           type="button"
-          onClick={onPrimaryAction}
+          onClick={() => onPrimaryAction()}
           className="shell-mobile-primary-action"
           aria-label={primaryActionLabel}
         >

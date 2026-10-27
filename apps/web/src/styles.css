@@ -3740,10 +3740,23 @@ button.meta-chip:hover {
   padding: var(--space-8) var(--space-6);
   background: var(--card);
 }
-.auth-card > a[href="/"] {
-  display: flex;
+.auth-card > a[href="/"],
+.auth-brand {
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
-  margin-bottom: var(--space-4);
+  gap: 0.65rem;
+  margin: 0 auto var(--space-4);
+  font-size: var(--text-title);
+  font-weight: var(--fw-bold);
+  letter-spacing: -0.02em;
+  color: inherit;
+  text-decoration: none;
+}
+.auth-brand .shell-brand-mark {
+  width: 2.15rem;
+  height: 2.15rem;
+  border-radius: 11px;
 }
 .auth-title {
   font-size: var(--text-page);
