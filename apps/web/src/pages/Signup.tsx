@@ -163,9 +163,14 @@ export function Signup() {
           {busy ? "Creating…" : "Create account"}
         </Button>
       </form>
-      <p className="auth-switch">
-        Already have an account? <Link to="/login">Sign in</Link>
-      </p>
+      <div className="auth-switch auth-switch-stack">
+        <p>
+          Already have an account? <Link to="/login">Sign in</Link>
+        </p>
+        <p className="auth-switch-secondary">
+          Prefer offline? <Link to="/app">Continue without an account</Link>
+        </p>
+      </div>
     </AuthShell>
   );
 }
