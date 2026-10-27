@@ -15,6 +15,7 @@ import { Login } from "./pages/Login";
 import { Signup } from "./pages/Signup";
 import { PrivacyPolicy, TermsOfService } from "./pages/LegalPages";
 import { ForgotPassword } from "./pages/ForgotPassword";
+import { VerifyEmail } from "./pages/VerifyEmail";
 import "./styles.css";
 
 const router = createBrowserRouter([
@@ -22,6 +23,7 @@ const router = createBrowserRouter([
   { path: "/login", element: <Login /> },
   { path: "/signup", element: <Signup /> },
   { path: "/forgot-password", element: <ForgotPassword /> },
+  { path: "/verify-email", element: <VerifyEmail /> },
   { path: "/privacy", element: <PrivacyPolicy /> },
   { path: "/terms", element: <TermsOfService /> },
   {

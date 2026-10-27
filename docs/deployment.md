@@ -130,6 +130,8 @@ Throughline is also containerized for Dokploy (Traefik ingress + Let's Encrypt T
 - `SESSION_SECRET`: recommended for production account/auth deployments.
 - `DISPATCH_TOKEN`: recommended so `/dispatch-due` is not callable without a bearer token.
 - `GOOGLE_CLIENT_ID`, `VITE_GOOGLE_CLIENT_ID`: enable Google sign-in.
+- `RESEND_API_KEY`, `EMAIL_FROM`: send email verification links via Resend. Without them, signup still creates a token and logs/returns it for local testing.
+- `PUBLIC_APP_URL`: web origin used to build `/verify-email?token=` links (falls back to `CORS_ORIGIN`, then localhost).
 - `CORS_ORIGIN`: restrict CORS instead of allowing all origins.
 - `RATE_LIMIT_MAX`: override the default API rate limit.
 - `TRAEFIK_ENTRYPOINT`, `TRAEFIK_CERTRESOLVER`: override Dokploy/Traefik defaults only if your setup differs.

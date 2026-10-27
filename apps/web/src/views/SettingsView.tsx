@@ -45,6 +45,7 @@ import { Button, Card, ConfirmDialog, Notice, TextInput, ToggleRow } from "../ui
 
 type AccountInfo = {
   email: string | null;
+  emailVerified?: boolean | null;
   syncStatus: "idle" | "syncing" | "offline" | "error";
   lastSyncAt: string | null;
 };
@@ -57,6 +58,7 @@ export function SettingsView({
   account,
   onSyncNow,
   onRegenerateRecoveryKey,
+  onResendVerification,
   onSignOut
 }: {
   tasks: Task[];
@@ -66,6 +68,7 @@ export function SettingsView({
   account?: AccountInfo;
   onSyncNow?: () => void | Promise<void>;
   onRegenerateRecoveryKey?: () => Promise<string>;
+  onResendVerification?: () => Promise<{ mailSent: boolean }>;
   onSignOut?: () => void;
 }) {
   const support = useMemo(() => (typeof window === "undefined" ? null : notificationSupport()), []);
@@ -84,6 +87,8 @@ export function SettingsView({
   const [recoveryBusy, setRecoveryBusy] = useState(false);
   const [recoveryConfirmed, setRecoveryConfirmed] = useState(false);
   const [recoveryPartial, setRecoveryPartial] = useState("");
+  const [verifyBusy, setVerifyBusy] = useState(false);
+  const [verifyStatus, setVerifyStatus] = useState("");
   const [importPreview, setImportPreview] = useState<{ name: string; data: unknown } | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -312,6 +317,40 @@ export function SettingsView({
               </Button>
             </div>
             <p>Your data is end-to-end encrypted before it syncs — the server can't read it.</p>
+            {account.emailVerified === false ? (
+              <Notice variant="warning" title="Confirm your email">
+                <p>
+                  Verification keeps account recovery trustworthy. Your local planner stays usable either way — this
+                  never unlocks task content on the server.
+                </p>
+                <div className="button-row" style={{ marginTop: "0.75rem" }}>
+                  <Button
+                    disabled={verifyBusy || !onResendVerification}
+                    onClick={() => {
+                      if (!onResendVerification) return;
+                      setVerifyBusy(true);
+                      setVerifyStatus("");
+                      void onResendVerification()
+                        .then((result) => {
+                          setVerifyStatus(
+                            result.mailSent
+                              ? "Verification email sent — check your inbox."
+                              : "Verification link ready (mail provider not configured on this server)."
+                          );
+                        })
+                        .catch((error) => {
+                          setVerifyStatus(error instanceof Error ? error.message : "Could not resend verification.");
+                        })
+                        .finally(() => setVerifyBusy(false));
+                    }}
+                  >
+                    <PaperPlaneRight size={15} weight="bold" />
+                    {verifyBusy ? "Sending…" : "Resend verification"}
+                  </Button>
+                </div>
+                {verifyStatus ? <span className="status-pill self-start">{verifyStatus}</span> : null}
+              </Notice>
+            ) : null}
           </Card>
         ) : (
           <Card className="settings-card">

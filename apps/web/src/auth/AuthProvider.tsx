@@ -15,12 +15,14 @@ import {
 const API_BASE = (import.meta.env.VITE_PUSH_API_URL ?? "/api").replace(/\/$/, "");
 const EMAIL_KEY = "tl_email";
 const DEK_KEY = "tl_dek";
+const EMAIL_VERIFIED_KEY = "tl_email_verified";
 
 type AuthStatus = "loading" | "authed" | "anon";
 
 type AuthContextValue = {
   status: AuthStatus;
   email: string | null;
+  emailVerified: boolean | null;
   /** In-memory AES-GCM key for record encryption (null until authed). */
   dekKey: CryptoKey | null;
   signup: (email: string, password: string) => Promise<string>;
@@ -28,6 +30,9 @@ type AuthContextValue = {
   loginWithGoogle: (credential: string) => Promise<{ created: boolean }>;
   rotateRecoveryKey: () => Promise<string>;
   resetPassword: (email: string, recoveryKey: string, newPassword: string) => Promise<void>;
+  resendVerification: () => Promise<{ mailSent: boolean }>;
+  refreshEmailVerified: () => Promise<void>;
+  verifyEmailToken: (token: string) => Promise<void>;
   logout: () => Promise<void>;
 };
 
@@ -44,9 +49,27 @@ async function api(path: string, body?: unknown): Promise<Response> {
   });
 }
 
+function readLocalVerified(): boolean | null {
+  if (typeof localStorage === "undefined") return null;
+  const raw = localStorage.getItem(EMAIL_VERIFIED_KEY);
+  if (raw === "1") return true;
+  if (raw === "0") return false;
+  return null;
+}
+
+function writeLocalVerified(verified: boolean | null) {
+  if (typeof localStorage === "undefined") return;
+  if (verified === null) {
+    localStorage.removeItem(EMAIL_VERIFIED_KEY);
+    return;
+  }
+  localStorage.setItem(EMAIL_VERIFIED_KEY, verified ? "1" : "0");
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>("loading");
   const [email, setEmail] = useState<string | null>(null);
+  const [emailVerified, setEmailVerified] = useState<boolean | null>(null);
   const [dekKey, setDekKey] = useState<CryptoKey | null>(null);
 
   // Restore session optimistically from the local marker (offline-friendly),
@@ -65,15 +88,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (cancelled) return;
         setEmail(savedEmail);
         setDekKey(key);
+        setEmailVerified(readLocalVerified());
         setStatus("authed");
         // Background validation; only sign out on a definitive 401.
         try {
           const res = await api("/auth/me");
-          if (!cancelled && res.status === 401) {
+          if (cancelled) return;
+          if (res.status === 401) {
             clearLocal();
             setEmail(null);
             setDekKey(null);
+            setEmailVerified(null);
             setStatus("anon");
+            return;
+          }
+          if (res.ok) {
+            const me = (await res.json()) as { email?: string; emailVerified?: boolean };
+            if (typeof me.emailVerified === "boolean") {
+              writeLocalVerified(me.emailVerified);
+              setEmailVerified(me.emailVerified);
+            }
           }
         } catch {
           // offline — stay optimistically authed
@@ -90,13 +124,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   function clearLocal() {
     localStorage.removeItem(EMAIL_KEY);
     localStorage.removeItem(DEK_KEY);
+    localStorage.removeItem(EMAIL_VERIFIED_KEY);
   }
 
-  async function persistSession(nextEmail: string, dek: Uint8Array) {
+  async function persistSession(nextEmail: string, dek: Uint8Array, verified: boolean | null = false) {
     localStorage.setItem(EMAIL_KEY, nextEmail);
     localStorage.setItem(DEK_KEY, dekToB64(dek));
+    writeLocalVerified(verified);
     setEmail(nextEmail);
     setDekKey(await importDek(dek));
+    setEmailVerified(verified);
     setStatus("authed");
   }
 
@@ -106,7 +143,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { kek, authKey } = await deriveKeys(password, salt);
     const dek = generateDek();
     const wrappedDek = await wrapDek(dek, kek);
-    
+
     // Generate recovery key
     const recoveryKey = generateRecoveryKey();
     const { kek: recoveryKek, authKey: recoveryAuthKey } = await deriveRecoveryKeys(recoveryKey, salt);
@@ -119,7 +156,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!res.ok) {
       throw new AuthError("Could not create the account. Please try again.");
     }
-    await persistSession(userEmail, dek);
+    await persistSession(userEmail, dek, false);
     return recoveryKey;
   }, []);
 
@@ -141,9 +178,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!loginRes.ok) {
       throw new AuthError("Could not sign in. Please try again.");
     }
-    const { wrappedDek } = (await loginRes.json()) as { wrappedDek: string };
+    const { wrappedDek, emailVerified: verified } = (await loginRes.json()) as {
+      wrappedDek: string;
+      emailVerified?: boolean;
+    };
     const dek = await unwrapDek(wrappedDek, kek);
-    await persistSession(userEmail, dek);
+    await persistSession(userEmail, dek, verified ?? false);
   }, []);
 
   const loginWithGoogle = useCallback(async (credential: string) => {
@@ -163,9 +203,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new AuthError(msg);
     }
 
-    const data = (await res.json()) as { email: string; dek: string; created?: boolean };
+    const data = (await res.json()) as { email: string; dek: string; created?: boolean; emailVerified?: boolean };
     const finalDek = dekFromB64(data.dek);
-    await persistSession(data.email, finalDek);
+    await persistSession(data.email, finalDek, data.emailVerified ?? true);
     return { created: Boolean(data.created) };
   }, []);
 
@@ -215,7 +255,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new AuthError("No account found for that email.");
     }
     const { salt } = (await saltRes.json()) as { salt: string };
-    
+
     const { kek: recoveryKek, authKey: recoveryAuthKey } = await deriveRecoveryKeys(recoveryKey, salt);
     const loginRes = await api("/auth/login", { email: userEmail, authKey: recoveryAuthKey });
     if (loginRes.status === 401) {
@@ -224,24 +264,66 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!loginRes.ok) {
       throw new AuthError("Could not sign in with recovery key.");
     }
-    const { wrappedDek } = (await loginRes.json()) as { wrappedDek: string };
-    
+    const { wrappedDek, emailVerified: verified } = (await loginRes.json()) as {
+      wrappedDek: string;
+      emailVerified?: boolean;
+    };
+
     let dek: Uint8Array;
     try {
       dek = await unwrapDek(wrappedDek, recoveryKek);
     } catch {
       throw new AuthError("Failed to decrypt data with that recovery key.");
     }
-    
+
     const { kek: newKek, authKey: newAuthKey } = await deriveKeys(newPassword, salt);
     const newWrappedDek = await wrapDek(dek, newKek);
-    
+
     const updateRes = await api("/auth/update-password", { authKey: newAuthKey, wrappedDek: newWrappedDek });
     if (!updateRes.ok) {
       throw new AuthError("Could not update password.");
     }
-    
-    await persistSession(userEmail, dek);
+
+    await persistSession(userEmail, dek, verified ?? false);
+  }, []);
+
+  const refreshEmailVerified = useCallback(async () => {
+    try {
+      const res = await api("/auth/me");
+      if (!res.ok) return;
+      const me = (await res.json()) as { emailVerified?: boolean };
+      if (typeof me.emailVerified === "boolean") {
+        writeLocalVerified(me.emailVerified);
+        setEmailVerified(me.emailVerified);
+      }
+    } catch {
+      // ignore offline
+    }
+  }, []);
+
+  const resendVerification = useCallback(async () => {
+    const res = await api("/auth/resend-verification", {});
+    if (res.status === 401) {
+      throw new AuthError("Sign in again to resend verification.");
+    }
+    if (!res.ok) {
+      throw new AuthError("Could not resend the verification email.");
+    }
+    const data = (await res.json()) as { emailVerified?: boolean; mailSent?: boolean; alreadyVerified?: boolean };
+    if (data.emailVerified || data.alreadyVerified) {
+      writeLocalVerified(true);
+      setEmailVerified(true);
+    }
+    return { mailSent: Boolean(data.mailSent) };
+  }, []);
+
+  const verifyEmailToken = useCallback(async (token: string) => {
+    const res = await api(`/auth/verify-email?token=${encodeURIComponent(token)}`);
+    if (!res.ok) {
+      throw new AuthError("This verification link is invalid or expired.");
+    }
+    writeLocalVerified(true);
+    setEmailVerified(true);
   }, []);
 
   const logout = useCallback(async () => {
@@ -253,12 +335,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     clearLocal();
     setEmail(null);
     setDekKey(null);
+    setEmailVerified(null);
     setStatus("anon");
   }, []);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ status, email, dekKey, signup, login, loginWithGoogle, rotateRecoveryKey, resetPassword, logout }),
-    [status, email, dekKey, signup, login, loginWithGoogle, rotateRecoveryKey, resetPassword, logout]
+    () => ({
+      status,
+      email,
+      emailVerified,
+      dekKey,
+      signup,
+      login,
+      loginWithGoogle,
+      rotateRecoveryKey,
+      resetPassword,
+      resendVerification,
+      refreshEmailVerified,
+      verifyEmailToken,
+      logout
+    }),
+    [
+      status,
+      email,
+      emailVerified,
+      dekKey,
+      signup,
+      login,
+      loginWithGoogle,
+      rotateRecoveryKey,
+      resetPassword,
+      resendVerification,
+      refreshEmailVerified,
+      verifyEmailToken,
+      logout
+    ]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

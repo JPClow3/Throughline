@@ -70,10 +70,10 @@ A calm cockpit for the day. Shows greeting, date, and a progress hero ("X of Y t
 - End-to-end-encrypted cloud sync (beta).
 
 **Next product milestones**:
-1. Email verification.
-2. Microsoft Store submission (PWABuilder packaging assets, manifest shortcuts, and `microsoft-store.yml` workflow are ready; Partner Center credentials still required to publish).
+1. Microsoft Store submission (PWABuilder packaging assets, manifest shortcuts, and `microsoft-store.yml` workflow are ready; Partner Center credentials still required to publish).
 
 **Recently polished**:
+- Email verification: signup issues a one-time link (Resend when `RESEND_API_KEY`/`EMAIL_FROM` are set); `/verify-email` and `/auth/verify-email` confirm it; `/auth/me` returns `emailVerified`; soft banner + Settings resend — never blocks local planner use. Google sign-in counts as verified; mail never includes task content.
 - Lightweight API observability: `GET /health` exposes VAPID state, dispatch success rate, in-memory dispatch sent/failed counts, and request counters (total / 4xx / 5xx) on Fastify and the Cloudflare Worker; Worker errors also go to Sentry.
 - Public brand color kit aligned to Inkline (paper/ink/hard shadows); unused glass `original_styles.css` removed.
 - Inline subtask editing in the task editor and expandable card step lists.

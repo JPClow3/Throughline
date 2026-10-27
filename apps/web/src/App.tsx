@@ -1,5 +1,5 @@
 import { Goal, Task, createCourse } from "@throughline/domain";
-import { DownloadSimple, X } from "@phosphor-icons/react";
+import { DownloadSimple, EnvelopeSimple, X } from "@phosphor-icons/react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { AnimatePresence, motion } from "motion/react";
 import React from "react";
@@ -84,7 +84,7 @@ export function App() {
   const [focusTask, setFocusTask] = React.useState<Task | null>(null);
   const [cooldownTasks, setCooldownTasks] = React.useState<Task[]>([]);
 
-  const { email, dekKey, rotateRecoveryKey, logout } = useAuth();
+  const { email, emailVerified, dekKey, rotateRecoveryKey, resendVerification, logout } = useAuth();
   const sync = useSync(dekKey);
   const appearanceSettings = useLiveQuery(() => getAppearanceSettings(), []);
   useTheme(appearanceSettings?.theme);
@@ -154,7 +154,9 @@ export function App() {
         setCooldownTasks={setCooldownTasks}
         sync={sync}
         email={email}
+        emailVerified={emailVerified}
         rotateRecoveryKey={rotateRecoveryKey}
+        resendVerification={resendVerification}
         logout={logout}
         appearanceSettings={appearanceSettings}
         showGameLayer={showGameLayer}
@@ -195,7 +197,9 @@ type WorkspaceProps = {
   setCooldownTasks: React.Dispatch<React.SetStateAction<Task[]>>;
   sync: ShellSync;
   email: string | null;
+  emailVerified: boolean | null;
   rotateRecoveryKey: () => Promise<string>;
+  resendVerification: () => Promise<{ mailSent: boolean }>;
   logout: () => Promise<void> | void;
   appearanceSettings?: AppearanceSettings;
   showGameLayer: boolean;
@@ -485,16 +489,73 @@ function Workspace(props: WorkspaceProps) {
     props.setView(input.openSyncSettings ? "settings" : "dashboard");
   };
 
+  const [verifyBannerDismissed, setVerifyBannerDismissed] = React.useState(false);
+  const [verifyBusy, setVerifyBusy] = React.useState(false);
+  const [verifyBannerStatus, setVerifyBannerStatus] = React.useState<string | null>(null);
+  const showVerifyBanner = Boolean(props.email) && props.emailVerified === false && !verifyBannerDismissed;
+
   return (
     <>
       <AnimatePresence>
+        {showVerifyBanner ? (
+          <motion.div
+            key="verify-email-banner"
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 24 }}
+            className="ik-card pwa-install-banner email-verify-banner"
+            role="region"
+            aria-label="Verify your email"
+          >
+            <div className="pwa-install-icon email-verify-icon">
+              <EnvelopeSimple size={19} weight="bold" />
+            </div>
+            <div className="pwa-install-copy">
+              <p className="pwa-install-title">Confirm your email</p>
+              <p className="pwa-install-sub">
+                {verifyBannerStatus ?? "Optional — your local planner stays available either way."}
+              </p>
+            </div>
+            <div className="pwa-install-actions">
+              <Button
+                variant="accent"
+                size="sm"
+                disabled={verifyBusy}
+                onClick={() => {
+                  setVerifyBusy(true);
+                  void props
+                    .resendVerification()
+                    .then((result) => {
+                      setVerifyBannerStatus(
+                        result.mailSent ? "Verification email sent." : "Link created — check server logs if mail is unset."
+                      );
+                    })
+                    .catch((error) => {
+                      setVerifyBannerStatus(error instanceof Error ? error.message : "Could not resend.");
+                    })
+                    .finally(() => setVerifyBusy(false));
+                }}
+              >
+                {verifyBusy ? "Sending…" : "Resend"}
+              </Button>
+              <button
+                type="button"
+                className="icon-toggle"
+                onClick={() => setVerifyBannerDismissed(true)}
+                aria-label="Dismiss email verification reminder"
+              >
+                <X size={14} weight="bold" />
+              </button>
+            </div>
+          </motion.div>
+        ) : null}
         {props.isInstallable && !props.bannerDismissed ? (
           <motion.div
             key="install-banner"
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 24 }}
-            className="ik-card pwa-install-banner"
+            className={`ik-card pwa-install-banner${showVerifyBanner ? " pwa-install-banner-stacked" : ""}`}
             role="region"
             aria-label="Install Throughline"
           >
@@ -643,11 +704,17 @@ function Workspace(props: WorkspaceProps) {
                   onAppearanceChange={saveAppearanceSettings}
                   account={
                     props.email
-                      ? { email: props.email, syncStatus: props.sync.status, lastSyncAt: props.sync.lastSyncAt }
+                      ? {
+                          email: props.email,
+                          emailVerified: props.emailVerified,
+                          syncStatus: props.sync.status,
+                          lastSyncAt: props.sync.lastSyncAt
+                        }
                       : undefined
                   }
                   onSyncNow={props.email ? props.sync.syncNow : undefined}
                   onRegenerateRecoveryKey={props.email ? props.rotateRecoveryKey : undefined}
+                  onResendVerification={props.email ? props.resendVerification : undefined}
                   onSignOut={props.email ? props.logout : undefined}
                 />
               ) : null}

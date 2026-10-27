@@ -10,6 +10,7 @@ import {
   PostgresSyncStore,
   PostgresUserStore
 } from "./postgresStore";
+import { sendVerificationEmail } from "./mail";
 import {
   BulkReminderSyncSchema,
   EndpointHashParamsSchema,
@@ -40,6 +41,9 @@ export interface WorkerEnv {
   SESSION_SECRET?: string;
   COOKIE_SECURE?: string;
   GOOGLE_CLIENT_ID?: string;
+  RESEND_API_KEY?: string;
+  EMAIL_FROM?: string;
+  PUBLIC_APP_URL?: string;
   SENTRY_DSN?: string;
   SENTRY_ENVIRONMENT?: string;
 }
@@ -65,6 +69,7 @@ const UpdateRecoveryKeySchema = z.object({
   recoveryWrappedDek: blob,
   salt: blob.optional()
 });
+const VerifyEmailSchema = z.object({ token: z.string().min(16).max(128) });
 
 const EntitySchema = z.enum(["task", "course", "goal", "note", "focusSession"]);
 const ChangeSchema = z.object({
@@ -356,9 +361,27 @@ async function handleRequestInner(request: Request, env: WorkerEnv, ctx?: Execut
       if (!user) {
         return errorResponse(409, "Email already registered", resHeaders);
       }
+      const verificationToken = await userStore.createEmailVerificationToken(user.id);
+      const mail = await sendVerificationEmail(
+        {
+          resendApiKey: env.RESEND_API_KEY,
+          emailFrom: env.EMAIL_FROM,
+          publicAppUrl: env.PUBLIC_APP_URL || env.CORS_ORIGIN
+        },
+        { to: user.email, token: verificationToken }
+      );
       const token = await userStore.createSession(user.id);
       resHeaders.set("Set-Cookie", buildSetCookieHeader(token, isSecure));
-      return jsonResponse({ userId: user.id, email: user.email }, 201, resHeaders);
+      return jsonResponse(
+        {
+          userId: user.id,
+          email: user.email,
+          emailVerified: false,
+          ...(mail.sent ? {} : { verificationToken })
+        },
+        201,
+        resHeaders
+      );
     }
 
     if (method === "POST" && pathname === "/auth/salt") {
@@ -380,8 +403,14 @@ async function handleRequestInner(request: Request, env: WorkerEnv, ctx?: Execut
       }
       const token = await userStore.createSession(result.userId);
       resHeaders.set("Set-Cookie", buildSetCookieHeader(token, isSecure));
+      const emailVerified = await userStore.isEmailVerified(result.userId);
       return jsonResponse(
-        { userId: result.userId, salt: result.salt, wrappedDek: result.wrappedDek },
+        {
+          userId: result.userId,
+          salt: result.salt,
+          wrappedDek: result.wrappedDek,
+          emailVerified
+        },
         200,
         resHeaders
       );
@@ -411,7 +440,7 @@ async function handleRequestInner(request: Request, env: WorkerEnv, ctx?: Execut
       if (existing) {
         const token = await userStore.createSession(existing.userId);
         resHeaders.set("Set-Cookie", buildSetCookieHeader(token, isSecure));
-        return jsonResponse({ email, dek: existing.dek, created: false }, 200, resHeaders);
+        return jsonResponse({ email, dek: existing.dek, created: false, emailVerified: true }, 200, resHeaders);
       }
 
       // New user signup via Google
@@ -426,7 +455,11 @@ async function handleRequestInner(request: Request, env: WorkerEnv, ctx?: Execut
 
       const token = await userStore.createSession(newUser.id);
       resHeaders.set("Set-Cookie", buildSetCookieHeader(token, isSecure));
-      return jsonResponse({ email, dek: newUser.wrappedDek, created: true }, 201, resHeaders);
+      return jsonResponse(
+        { email, dek: newUser.wrappedDek, created: true, emailVerified: true },
+        201,
+        resHeaders
+      );
     }
 
     if (method === "GET" && pathname === "/auth/me") {
@@ -434,7 +467,66 @@ async function handleRequestInner(request: Request, env: WorkerEnv, ctx?: Execut
       if (!user) {
         return errorResponse(401, "Not authenticated", resHeaders);
       }
-      return jsonResponse({ userId: user.userId, email: user.email }, 200, resHeaders);
+      return jsonResponse(
+        { userId: user.userId, email: user.email, emailVerified: user.emailVerified },
+        200,
+        resHeaders
+      );
+    }
+
+    if (
+      (method === "GET" || method === "POST") &&
+      pathname === "/auth/verify-email"
+    ) {
+      let tokenValue: string | undefined;
+      if (method === "GET") {
+        tokenValue = url.searchParams.get("token") ?? undefined;
+      } else {
+        const body = await request.json().catch(() => null);
+        tokenValue = (body as { token?: string } | null)?.token;
+      }
+      const parsed = VerifyEmailSchema.safeParse({ token: tokenValue });
+      if (!parsed.success) {
+        return errorResponse(400, "missing-token", resHeaders);
+      }
+      const result = await userStore.verifyEmailWithToken(parsed.data.token);
+      if (!result) {
+        return errorResponse(400, "invalid-or-expired-token", resHeaders);
+      }
+      return jsonResponse({ email: result.email, emailVerified: true }, 200, resHeaders);
+    }
+
+    if (method === "POST" && pathname === "/auth/resend-verification") {
+      const user = await getUserFromRequest(request, userStore);
+      if (!user) {
+        return errorResponse(401, "Not authenticated", resHeaders);
+      }
+      if (user.emailVerified) {
+        return jsonResponse(
+          { email: user.email, emailVerified: true, alreadyVerified: true },
+          200,
+          resHeaders
+        );
+      }
+      const verificationToken = await userStore.createEmailVerificationToken(user.userId);
+      const mail = await sendVerificationEmail(
+        {
+          resendApiKey: env.RESEND_API_KEY,
+          emailFrom: env.EMAIL_FROM,
+          publicAppUrl: env.PUBLIC_APP_URL || env.CORS_ORIGIN
+        },
+        { to: user.email, token: verificationToken }
+      );
+      return jsonResponse(
+        {
+          email: user.email,
+          emailVerified: false,
+          mailSent: mail.sent,
+          ...(mail.sent ? {} : { verificationToken })
+        },
+        200,
+        resHeaders
+      );
     }
 
     if (method === "POST" && pathname === "/auth/logout") {

@@ -239,9 +239,17 @@ describe("Cloudflare Worker API (PostgreSQL / Neon)", () => {
     expect(signupRes.status).toBe(201);
     const cookie = signupRes.headers.get("Set-Cookie");
     expect(cookie).toContain(SESSION_COOKIE);
-    const { userId, email } = await signupRes.json() as { userId: string; email: string };
+    const signupBody = await signupRes.json() as {
+      userId: string;
+      email: string;
+      emailVerified: boolean;
+      verificationToken?: string;
+    };
+    const { userId, email } = signupBody;
     expect(userId).toBeDefined();
     expect(email).toBe("student@example.com");
+    expect(signupBody.emailVerified).toBe(false);
+    expect(signupBody.verificationToken).toBeTruthy();
 
     // Duplicate signup should fail with 409
     const dupRes = await handleRequest(
@@ -313,7 +321,8 @@ describe("Cloudflare Worker API (PostgreSQL / Neon)", () => {
       env
     );
     expect(meRes.status).toBe(200);
-    const me = await meRes.json() as { userId: string; email: string };
+    const me = await meRes.json() as { userId: string; email: string; emailVerified: boolean };
+    expect(me.emailVerified).toBe(false);
     expect(me.userId).toBe(userId);
 
     // GET /auth/me without session cookie returns 401

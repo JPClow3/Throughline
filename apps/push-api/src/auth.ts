@@ -2,6 +2,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { OAuth2Client } from "google-auth-library";
 import type { PushApiConfig } from "./config";
+import { sendVerificationEmail, type MailConfig } from "./mail";
 import type { UserStore } from "./userStore";
 
 export const SESSION_COOKIE = "tl_session";
@@ -19,9 +20,18 @@ const SignupSchema = z.object({
 });
 const LoginSchema = z.object({ email: z.string().email().max(254), authKey: blob });
 const SaltSchema = z.object({ email: z.string().email().max(254) });
+const VerifyEmailSchema = z.object({ token: z.string().min(16).max(128) });
 
 // Tighter limit on auth endpoints to slow credential stuffing.
 const authRateLimit = { config: { rateLimit: { max: 12, timeWindow: "1 minute" } } };
+
+function mailConfigFrom(config: PushApiConfig): MailConfig {
+  return {
+    resendApiKey: config.resendApiKey,
+    emailFrom: config.emailFrom,
+    publicAppUrl: config.publicAppUrl
+  };
+}
 
 function setSessionCookie(reply: FastifyReply, token: string, secure: boolean) {
   reply.setCookie(SESSION_COOKIE, token, {
@@ -43,6 +53,12 @@ export function userFromRequest(request: FastifyRequest, userStore: UserStore) {
   return userStore.getSessionUser(token);
 }
 
+async function issueVerification(userStore: UserStore, config: PushApiConfig, userId: string, email: string) {
+  const verificationToken = userStore.createEmailVerificationToken(userId);
+  const mail = await sendVerificationEmail(mailConfigFrom(config), { to: email, token: verificationToken });
+  return { verificationToken, mailSent: mail.sent };
+}
+
 export function registerAuthRoutes(app: FastifyInstance, userStore: UserStore, config: PushApiConfig) {
   const secure = config.cookieSecure ?? true;
 
@@ -52,9 +68,14 @@ export function registerAuthRoutes(app: FastifyInstance, userStore: UserStore, c
     if (!user) {
       return reply.code(409).send({ error: "email-taken" });
     }
+    const { verificationToken, mailSent } = await issueVerification(userStore, config, user.id, user.email);
     const token = userStore.createSession(user.id);
     setSessionCookie(reply, token, secure);
-    return reply.code(201).send({ email: user.email });
+    return reply.code(201).send({
+      email: user.email,
+      emailVerified: false,
+      ...(mailSent ? {} : { verificationToken })
+    });
   });
 
   const GoogleAuthSchema = z.object({ credential: z.string(), dek: z.string().optional() });
@@ -64,9 +85,9 @@ export function registerAuthRoutes(app: FastifyInstance, userStore: UserStore, c
     if (!googleClient || !config.googleClientId) {
       return reply.code(501).send({ error: "google-auth-not-configured" });
     }
-    
+
     const { credential, dek } = GoogleAuthSchema.parse(request.body);
-    
+
     let payload;
     try {
       const ticket = await googleClient.verifyIdToken({
@@ -77,14 +98,14 @@ export function registerAuthRoutes(app: FastifyInstance, userStore: UserStore, c
     } catch {
       return reply.code(401).send({ error: "invalid-google-credential" });
     }
-    
+
     if (!payload || !payload.email || !payload.sub) {
       return reply.code(401).send({ error: "invalid-google-payload" });
     }
-    
+
     const email = payload.email.trim().toLowerCase();
     const googleId = payload.sub;
-    
+
     let result = userStore.verifyGoogleLogin(email, googleId);
     let created = false;
 
@@ -105,7 +126,7 @@ export function registerAuthRoutes(app: FastifyInstance, userStore: UserStore, c
     const token = userStore.createSession(result.userId);
     setSessionCookie(reply, token, secure);
 
-    return { email, dek: result.dek, created };
+    return { email, dek: result.dek, created, emailVerified: true };
   });
 
   // Pre-login: client needs the per-user salt to derive its keys.
@@ -126,7 +147,12 @@ export function registerAuthRoutes(app: FastifyInstance, userStore: UserStore, c
     }
     const token = userStore.createSession(result.userId);
     setSessionCookie(reply, token, secure);
-    return { email: email.trim().toLowerCase(), salt: result.salt, wrappedDek: result.wrappedDek };
+    return {
+      email: email.trim().toLowerCase(),
+      salt: result.salt,
+      wrappedDek: result.wrappedDek,
+      emailVerified: userStore.isEmailVerified(result.userId)
+    };
   });
 
   app.post("/auth/logout", async (request, reply) => {
@@ -143,7 +169,48 @@ export function registerAuthRoutes(app: FastifyInstance, userStore: UserStore, c
     if (!user) {
       return reply.code(401).send({ error: "unauthenticated" });
     }
-    return { email: user.email };
+    return { email: user.email, emailVerified: user.emailVerified };
+  });
+
+  async function handleVerifyEmail(token: string, reply: FastifyReply) {
+    const result = userStore.verifyEmailWithToken(token);
+    if (!result) {
+      return reply.code(400).send({ error: "invalid-or-expired-token" });
+    }
+    return { email: result.email, emailVerified: true };
+  }
+
+  app.get("/auth/verify-email", authRateLimit, async (request, reply) => {
+    const query = VerifyEmailSchema.safeParse(request.query);
+    if (!query.success) {
+      return reply.code(400).send({ error: "missing-token" });
+    }
+    return handleVerifyEmail(query.data.token, reply);
+  });
+
+  app.post("/auth/verify-email", authRateLimit, async (request, reply) => {
+    const body = VerifyEmailSchema.safeParse(request.body);
+    if (!body.success) {
+      return reply.code(400).send({ error: "missing-token" });
+    }
+    return handleVerifyEmail(body.data.token, reply);
+  });
+
+  app.post("/auth/resend-verification", authRateLimit, async (request, reply) => {
+    const user = userFromRequest(request, userStore);
+    if (!user) {
+      return reply.code(401).send({ error: "unauthenticated" });
+    }
+    if (user.emailVerified) {
+      return { email: user.email, emailVerified: true, alreadyVerified: true };
+    }
+    const { verificationToken, mailSent } = await issueVerification(userStore, config, user.userId, user.email);
+    return {
+      email: user.email,
+      emailVerified: false,
+      mailSent,
+      ...(mailSent ? {} : { verificationToken })
+    };
   });
 
   const UpdatePasswordSchema = z.object({ authKey: blob, wrappedDek: blob });

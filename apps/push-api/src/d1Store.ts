@@ -1,7 +1,7 @@
 import { RedactedReminder } from "@throughline/domain";
 import { createHash, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import type { StoredReminder, StoredSubscription, WebPushSubscription } from "./store";
-import type { UserRow } from "./userStore";
+import { EMAIL_VERIFICATION_TTL_MS, type SessionUser, type UserRow } from "./userStore";
 
 export interface D1PreparedStatement {
   bind(...values: unknown[]): D1PreparedStatement;
@@ -305,17 +305,18 @@ export class D1UserStore {
       salt: input.salt,
       authHash: hashAuthKey(input.authKey),
       wrappedDek: input.wrappedDek,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      emailVerifiedAt: null
     };
 
     const recoveryHash = hashAuthKey(input.recoveryAuthKey);
 
     await this.db
       .prepare(
-        `INSERT INTO users (id, email, salt, auth_hash, wrapped_dek, created_at, recovery_hash, recovery_wrapped_dek)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO users (id, email, salt, auth_hash, wrapped_dek, created_at, recovery_hash, recovery_wrapped_dek, email_verified_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
-      .bind(row.id, row.email, row.salt, row.authHash, row.wrappedDek, row.createdAt, recoveryHash, input.recoveryWrappedDek)
+      .bind(row.id, row.email, row.salt, row.authHash, row.wrappedDek, row.createdAt, recoveryHash, input.recoveryWrappedDek, null)
       .run();
 
     return row;
@@ -372,6 +373,7 @@ export class D1UserStore {
     if (existing) {
       return null;
     }
+    const verifiedAt = new Date().toISOString();
     const row: UserRow = {
       id: `user_${Buffer.from(randomBytes(12)).toString("hex")}`,
       email,
@@ -379,15 +381,16 @@ export class D1UserStore {
       authHash: "",
       wrappedDek: input.dek,
       createdAt: new Date().toISOString(),
-      googleId: input.googleId
+      googleId: input.googleId,
+      emailVerifiedAt: verifiedAt
     };
 
     await this.db
       .prepare(
-        `INSERT INTO users (id, email, salt, auth_hash, wrapped_dek, created_at, google_id)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO users (id, email, salt, auth_hash, wrapped_dek, created_at, google_id, email_verified_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
       )
-      .bind(row.id, row.email, row.salt, row.authHash, row.wrappedDek, row.createdAt, input.googleId)
+      .bind(row.id, row.email, row.salt, row.authHash, row.wrappedDek, row.createdAt, input.googleId, verifiedAt)
       .run();
 
     return row;
@@ -410,6 +413,11 @@ export class D1UserStore {
       }
     }
 
+    await this.db
+      .prepare("UPDATE users SET email_verified_at = COALESCE(email_verified_at, ?) WHERE id = ?")
+      .bind(new Date().toISOString(), row.id)
+      .run();
+
     return { userId: row.id, dek: row.wrapped_dek };
   }
 
@@ -426,15 +434,15 @@ export class D1UserStore {
     return token;
   }
 
-  async getSessionUser(token: string): Promise<{ userId: string; email: string } | null> {
+  async getSessionUser(token: string): Promise<SessionUser | null> {
     const row = await this.db
       .prepare(
-        `SELECT u.id AS user_id, u.email AS email, s.expires_at AS expires_at
+        `SELECT u.id AS user_id, u.email AS email, u.email_verified_at AS email_verified_at, s.expires_at AS expires_at
          FROM sessions s JOIN users u ON u.id = s.user_id
          WHERE s.token = ?`
       )
       .bind(token)
-      .first<{ user_id: string; email: string; expires_at: string }>();
+      .first<{ user_id: string; email: string; email_verified_at: string | null; expires_at: string }>();
 
     if (!row) return null;
 
@@ -443,7 +451,57 @@ export class D1UserStore {
       return null;
     }
 
+    return {
+      userId: row.user_id,
+      email: row.email,
+      emailVerified: Boolean(row.email_verified_at)
+    };
+  }
+
+  async createEmailVerificationToken(userId: string): Promise<string> {
+    await this.db.prepare("DELETE FROM email_verification_tokens WHERE user_id = ?").bind(userId).run();
+    const token = Buffer.from(randomBytes(32)).toString("hex");
+    const createdAt = new Date();
+    const expiresAt = new Date(createdAt.getTime() + EMAIL_VERIFICATION_TTL_MS);
+    await this.db
+      .prepare(
+        "INSERT INTO email_verification_tokens (token, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)"
+      )
+      .bind(token, userId, expiresAt.toISOString(), createdAt.toISOString())
+      .run();
+    return token;
+  }
+
+  async verifyEmailWithToken(token: string): Promise<{ userId: string; email: string } | null> {
+    const row = await this.db
+      .prepare(
+        `SELECT t.user_id AS user_id, t.expires_at AS expires_at, u.email AS email
+         FROM email_verification_tokens t
+         JOIN users u ON u.id = t.user_id
+         WHERE t.token = ?`
+      )
+      .bind(token)
+      .first<{ user_id: string; expires_at: string; email: string }>();
+
+    if (!row) return null;
+
+    if (new Date(row.expires_at).getTime() < Date.now()) {
+      await this.db.prepare("DELETE FROM email_verification_tokens WHERE token = ?").bind(token).run();
+      return null;
+    }
+
+    const verifiedAt = new Date().toISOString();
+    await this.db.prepare("UPDATE users SET email_verified_at = ? WHERE id = ?").bind(verifiedAt, row.user_id).run();
+    await this.db.prepare("DELETE FROM email_verification_tokens WHERE user_id = ?").bind(row.user_id).run();
     return { userId: row.user_id, email: row.email };
+  }
+
+  async isEmailVerified(userId: string): Promise<boolean> {
+    const row = await this.db
+      .prepare("SELECT email_verified_at FROM users WHERE id = ?")
+      .bind(userId)
+      .first<{ email_verified_at: string | null }>();
+    return Boolean(row?.email_verified_at);
   }
 
   async updatePassword(userId: string, authKey: string, wrappedDek: string): Promise<void> {
