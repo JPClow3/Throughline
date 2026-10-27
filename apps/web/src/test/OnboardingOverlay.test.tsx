@@ -1,9 +1,10 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { OnboardingOverlay } from "../views/OnboardingOverlay";
+import { OnboardingOverlay, resetOnboardingDraftForTests } from "../views/OnboardingOverlay";
 
 describe("OnboardingOverlay", () => {
   afterEach(() => {
+    resetOnboardingDraftForTests();
     sessionStorage.clear();
   });
 
@@ -50,6 +51,18 @@ describe("OnboardingOverlay", () => {
     render(<OnboardingOverlay onSetup={vi.fn()} onComplete={vi.fn()} />);
     expect(screen.getByRole("heading", { name: "Add your courses" })).toBeInTheDocument();
     expect(screen.getByText("Setup · 2 of 4")).toBeInTheDocument();
+  });
+
+  it("keeps an advanced step when remounted immediately after Next", () => {
+    const { unmount } = render(<OnboardingOverlay onSetup={vi.fn()} onComplete={vi.fn()} />);
+    fireEvent.click(screen.getByTestId("onboarding-next"));
+    fireEvent.click(screen.getByTestId("onboarding-next"));
+    expect(screen.getByRole("heading", { name: "Capture one real task" })).toBeInTheDocument();
+    unmount();
+
+    render(<OnboardingOverlay onSetup={vi.fn()} onComplete={vi.fn()} />);
+    expect(screen.getByRole("heading", { name: "Capture one real task" })).toBeInTheDocument();
+    expect(screen.getByText("Setup · 3 of 4")).toBeInTheDocument();
   });
 });
 

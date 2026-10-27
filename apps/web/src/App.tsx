@@ -112,7 +112,16 @@ export function App() {
   const appearanceSettings = useLiveQuery(() => getAppearanceSettings(), []);
   useTheme(appearanceSettings?.theme);
   const showGameLayer = appearanceSettings?.showGameLayer ?? false;
-  const showOnboarding = appearanceSettings ? !appearanceSettings.hasCompletedOnboarding : false;
+  // Latch onboarding visibility so a liveQuery undefined flicker cannot remount the wizard mid-step.
+  const [onboardingLatched, setOnboardingLatched] = React.useState(false);
+  const [seenAppearanceSettings, setSeenAppearanceSettings] = React.useState(appearanceSettings);
+  if (appearanceSettings !== seenAppearanceSettings) {
+    setSeenAppearanceSettings(appearanceSettings);
+    if (appearanceSettings) {
+      setOnboardingLatched(!appearanceSettings.hasCompletedOnboarding);
+    }
+  }
+  const showOnboarding = onboardingLatched;
   const { isInstallable, promptToInstall } = usePwaInstall();
   const bannerDismissed = appearanceSettings?.pwaBannerDismissed ?? false;
 

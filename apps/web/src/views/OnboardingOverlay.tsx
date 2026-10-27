@@ -42,6 +42,9 @@ type SetupDraft = {
   openSyncSettings: boolean;
 };
 
+/** In-memory draft so remounts (Suspense / liveQuery flicker) never lose an in-flight Next. */
+let memorySetupDraft: SetupDraft | null = null;
+
 function defaultDueValue() {
   const due = new Date();
   due.setHours(18, 0, 0, 0);
@@ -50,6 +53,9 @@ function defaultDueValue() {
 }
 
 function readSetupDraft(): Partial<SetupDraft> | null {
+  if (memorySetupDraft) {
+    return memorySetupDraft;
+  }
   try {
     const raw = sessionStorage.getItem(SETUP_DRAFT_KEY);
     if (!raw) return null;
@@ -59,12 +65,27 @@ function readSetupDraft(): Partial<SetupDraft> | null {
   }
 }
 
+function writeSetupDraft(draft: SetupDraft) {
+  memorySetupDraft = draft;
+  try {
+    sessionStorage.setItem(SETUP_DRAFT_KEY, JSON.stringify(draft));
+  } catch {
+    // Ignore private-mode storage failures.
+  }
+}
+
 function clearSetupDraft() {
+  memorySetupDraft = null;
   try {
     sessionStorage.removeItem(SETUP_DRAFT_KEY);
   } catch {
     // Ignore private-mode storage failures.
   }
+}
+
+/** Test helper — clears both memory and session drafts between cases. */
+export function resetOnboardingDraftForTests() {
+  clearSetupDraft();
 }
 
 export function OnboardingOverlay({ onSetup, onComplete }: { onSetup: (input: OnboardingSetupInput) => void | Promise<void>; onComplete: () => void | Promise<void> }) {
@@ -95,22 +116,24 @@ export function OnboardingOverlay({ onSetup, onComplete }: { onSetup: (input: On
   // dialog helper still traps focus and restores it after setup finishes.
   useDialogA11y(true, () => undefined, panelRef);
 
+  function currentDraft(overrides: Partial<SetupDraft> = {}): SetupDraft {
+    return {
+      step,
+      kind,
+      projectNames,
+      taskTitle,
+      taskProjectIndex,
+      dueAt,
+      enableNotifications,
+      openSyncSettings,
+      ...overrides
+    };
+  }
+
   useEffect(() => {
-    try {
-      const payload: SetupDraft = {
-        step,
-        kind,
-        projectNames,
-        taskTitle,
-        taskProjectIndex,
-        dueAt,
-        enableNotifications,
-        openSyncSettings
-      };
-      sessionStorage.setItem(SETUP_DRAFT_KEY, JSON.stringify(payload));
-    } catch {
-      // Ignore private-mode storage failures.
-    }
+    writeSetupDraft(currentDraft());
+    // currentDraft closes over the latest field snapshot for this render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- persist whenever any draft field changes
   }, [step, kind, projectNames, taskTitle, taskProjectIndex, dueAt, enableNotifications, openSyncSettings]);
 
   function chooseKind(nextKind: OnboardingSetupKind) {
@@ -122,11 +145,15 @@ export function OnboardingOverlay({ onSetup, onComplete }: { onSetup: (input: On
 
   function goNext() {
     if (!canContinue) return;
-    setStep((current) => Math.min(3, current + 1));
+    const nextStep = Math.min(3, step + 1);
+    writeSetupDraft(currentDraft({ step: nextStep }));
+    setStep(nextStep);
   }
 
   function goBack() {
-    setStep((current) => Math.max(0, current - 1));
+    const nextStep = Math.max(0, step - 1);
+    writeSetupDraft(currentDraft({ step: nextStep }));
+    setStep(nextStep);
   }
 
   function addProject() {
@@ -291,11 +318,23 @@ export function OnboardingOverlay({ onSetup, onComplete }: { onSetup: (input: On
               </Button>
             ) : null}
             {step < 3 ? (
-              <Button type="button" variant="primary" disabled={!canContinue} onClick={goNext}>
+              <Button
+                type="button"
+                variant="primary"
+                disabled={!canContinue}
+                data-testid="onboarding-next"
+                onClick={goNext}
+              >
                 Next
               </Button>
             ) : (
-              <Button type="button" variant="accent" disabled={!canContinue || submitting} onClick={() => void finish()}>
+              <Button
+                type="button"
+                variant="accent"
+                disabled={!canContinue || submitting}
+                data-testid="onboarding-finish"
+                onClick={() => void finish()}
+              >
                 Finish setup
                 <Check weight="bold" size={16} />
               </Button>
