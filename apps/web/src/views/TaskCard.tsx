@@ -111,9 +111,15 @@ export function TaskCard({
   const wasDoneRef = useRef(task.status === "done");
   const taskRef = useRef(task);
   const draftTitlesRef = useRef(draftTitles);
-  taskRef.current = task;
-  draftTitlesRef.current = draftTitles;
   const showSubtaskEditor = Boolean(onUpdateTask && (expanded || (offerEmptyStepInput && totalSubtasks === 0)));
+
+  useEffect(() => {
+    taskRef.current = task;
+  }, [task]);
+
+  useEffect(() => {
+    draftTitlesRef.current = draftTitles;
+  }, [draftTitles]);
 
   useEffect(() => {
     if (task.status === "done" && !wasDoneRef.current) {

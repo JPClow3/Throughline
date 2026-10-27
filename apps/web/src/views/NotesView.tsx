@@ -261,7 +261,10 @@ export function NoteEditor({
   const debounceTimerRef = useRef<number | null>(null);
   const draftRef = useRef({ title: note.title, body: note.body });
   const noteRef = useRef(note);
-  noteRef.current = note;
+
+  useEffect(() => {
+    noteRef.current = note;
+  }, [note]);
 
   // Remounted per note via key; flush any pending draft on leave or unload.
   // Always merge onto noteRef so pin/link metadata is not clobbered by a stale closure.

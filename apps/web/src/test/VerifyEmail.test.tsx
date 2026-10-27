@@ -3,9 +3,20 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { VerifyEmail } from "../pages/VerifyEmail";
 
+const verifyEmailToken = vi.fn();
+
+vi.mock("../auth/AuthProvider", () => ({
+  useAuth: () => ({
+    verifyEmailToken,
+    email: null,
+    emailVerified: null,
+    status: "anon"
+  })
+}));
+
 describe("VerifyEmail page", () => {
   afterEach(() => {
-    vi.unstubAllGlobals();
+    verifyEmailToken.mockReset();
   });
 
   it("shows an error when the token is missing", async () => {
@@ -18,16 +29,11 @@ describe("VerifyEmail page", () => {
     );
 
     expect(await screen.findByText(/missing a token/i)).toBeInTheDocument();
+    expect(verifyEmailToken).not.toHaveBeenCalled();
   });
 
-  it("verifies a token from the query string", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({ email: "student@example.com", emailVerified: true })
-      })
-    );
+  it("verifies a token through AuthProvider so the session updates", async () => {
+    verifyEmailToken.mockResolvedValue({ email: "student@example.com", alreadyVerified: false });
 
     render(
       <MemoryRouter initialEntries={["/verify-email?token=abc123tokenvalue"]}>
@@ -39,6 +45,6 @@ describe("VerifyEmail page", () => {
 
     expect(await screen.findByText(/you're all set/i)).toBeInTheDocument();
     expect(screen.getByText(/student@example.com/i)).toBeInTheDocument();
-    await waitFor(() => expect(fetch).toHaveBeenCalled());
+    await waitFor(() => expect(verifyEmailToken).toHaveBeenCalledWith("abc123tokenvalue"));
   });
 });
