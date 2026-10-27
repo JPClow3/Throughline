@@ -1507,8 +1507,9 @@ select.input {
   background: var(--cyan, #7dd3fc);
 }
 .palette-export-notice {
+  /* Top-docked so it never covers the bottom PWA / verify banners. */
   position: fixed;
-  bottom: 96px;
+  top: calc(12px + env(safe-area-inset-top, 0px));
   left: 50%;
   transform: translateX(-50%);
   z-index: var(--z-banner);
@@ -1520,11 +1521,6 @@ select.input {
 }
 .palette-export-notice .notice {
   margin: 0;
-}
-@media (min-width: 1024px) {
-  .palette-export-notice {
-    bottom: 20px;
-  }
 }
 
 /* ============================== Today ================================= */

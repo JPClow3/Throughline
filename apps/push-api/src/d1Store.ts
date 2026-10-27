@@ -41,9 +41,12 @@ export function verifyAuthKey(authKey: string, stored: string): boolean {
 const normalizeEmail = (email: string) => email.trim().toLowerCase();
 
 /**
- * Idempotent catch-up for D1 databases that applied a pre-verify `0001` before
- * `users.email_verified_at` existed. SQLite has no `ADD COLUMN IF NOT EXISTS`,
- * so duplicate-column errors are ignored. Safe to call on every Worker boot.
+ * Idempotent catch-up for legacy D1 databases that applied a pre-verify `0001`
+ * before `users.email_verified_at` existed. SQLite has no
+ * `ADD COLUMN IF NOT EXISTS`, so duplicate-column errors are ignored.
+ *
+ * Production Workers use Hyperdrive/Postgres (`0002_postgres_email_verification.sql`).
+ * Call this before constructing `D1UserStore` if a D1 binding is ever reintroduced.
  */
 export async function ensureD1EmailVerificationSchema(db: D1Database): Promise<void> {
   try {
