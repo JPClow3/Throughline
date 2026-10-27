@@ -63,6 +63,7 @@ const AgendaRow = React.forwardRef<HTMLDivElement, AgendaRowProps & React.HTMLAt
                   <button
                     type="button"
                     className="task-card-edit"
+                    aria-label={`Open task ${task.title}`}
                     onClick={(event) => {
                       event.stopPropagation();
                       onEdit(task);

@@ -717,7 +717,7 @@ describe("Tier 5 Adversarial Hardening: UI Press Physics, Focus Trapping & Gestu
       expect(burst).toHaveAttribute("aria-hidden", "true");
 
       // Interactive edit button is still clickable and interactive
-      const editBtn = screen.getByRole("button", { name: "Celebration Task" });
+      const editBtn = screen.getByRole("button", { name: /Open task Celebration Task/ });
       expect(editBtn).toBeInTheDocument();
       expect(editBtn).not.toBeDisabled();
     });

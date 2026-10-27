@@ -274,7 +274,7 @@ describe("Throughline Inkline E2E Test Suite", () => {
           planner: { tasks: [task], courses: [], courseById: new Map() }
         });
 
-        const editBtn = screen.getByRole("button", { name: "Interactive Board Task" });
+        const editBtn = screen.getByRole("button", { name: /Open task Interactive Board Task/ });
         fireEvent.click(editBtn);
         expect(onEdit).toHaveBeenCalledWith(expect.objectContaining({ id: "task_edit_kb" }));
         restore();
