@@ -21,11 +21,31 @@ describe("mail verification helpers", () => {
       { to: "a@example.com", token: "tokentokentokentoken" }
     );
     expect(result.sent).toBe(false);
+    expect(result.mailConfigured).toBe(false);
     expect(result.verifyUrl).toContain("/verify-email?token=");
     expect(info).toHaveBeenCalled();
     const logged = String(info.mock.calls[0]?.[0] ?? "");
     expect(logged).not.toContain("a@example.com");
     expect(logged).not.toContain("tokentokentokentoken");
+  });
+
+  it("marks mail configured even when Resend returns an error", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 500, text: async () => "boom" });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await sendVerificationEmail(
+      {
+        resendApiKey: "re_test",
+        emailFrom: "Throughline <noreply@example.com>",
+        publicAppUrl: "https://app.example.com"
+      },
+      { to: "a@example.com", token: "tokentokentokentoken" }
+    );
+
+    expect(result.sent).toBe(false);
+    expect(result.mailConfigured).toBe(true);
+    expect(warn).toHaveBeenCalled();
   });
 
   it("posts to Resend when configured", async () => {
@@ -42,6 +62,7 @@ describe("mail verification helpers", () => {
     );
 
     expect(result.sent).toBe(true);
+    expect(result.mailConfigured).toBe(true);
     expect(fetchMock).toHaveBeenCalledWith(
       "https://api.resend.com/emails",
       expect.objectContaining({

@@ -1506,6 +1506,26 @@ select.input {
 .email-verify-icon {
   background: var(--cyan, #7dd3fc);
 }
+.palette-export-notice {
+  position: fixed;
+  bottom: 96px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--z-banner);
+  width: min(420px, calc(100vw - 24px));
+  padding: 0;
+  border: none;
+  box-shadow: none;
+  background: transparent;
+}
+.palette-export-notice .notice {
+  margin: 0;
+}
+@media (min-width: 1024px) {
+  .palette-export-notice {
+    bottom: 20px;
+  }
+}
 
 /* ============================== Today ================================= */
 

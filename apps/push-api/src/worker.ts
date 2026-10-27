@@ -381,12 +381,13 @@ async function handleRequestInner(request: Request, env: WorkerEnv, ctx?: Execut
       );
       const token = await userStore.createSession(user.id);
       resHeaders.set("Set-Cookie", buildSetCookieHeader(token, isSecure));
+      // Echo the one-time token only when mail is unset (local/dev fallback).
       return jsonResponse(
         {
           userId: user.id,
           email: user.email,
           emailVerified: false,
-          ...(mail.sent ? {} : { verificationToken })
+          ...(mail.mailConfigured ? {} : { verificationToken })
         },
         201,
         resHeaders
@@ -547,7 +548,7 @@ async function handleRequestInner(request: Request, env: WorkerEnv, ctx?: Execut
           email: user.email,
           emailVerified: false,
           mailSent: mail.sent,
-          ...(mail.sent ? {} : { verificationToken })
+          ...(mail.mailConfigured ? {} : { verificationToken })
         },
         200,
         resHeaders

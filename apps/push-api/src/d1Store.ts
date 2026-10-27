@@ -41,6 +41,30 @@ export function verifyAuthKey(authKey: string, stored: string): boolean {
 const normalizeEmail = (email: string) => email.trim().toLowerCase();
 
 /**
+ * Idempotent catch-up for D1 databases that applied a pre-verify `0001` before
+ * `users.email_verified_at` existed. SQLite has no `ADD COLUMN IF NOT EXISTS`,
+ * so duplicate-column errors are ignored. Safe to call on every Worker boot.
+ */
+export async function ensureD1EmailVerificationSchema(db: D1Database): Promise<void> {
+  try {
+    await db.exec("ALTER TABLE users ADD COLUMN email_verified_at TEXT");
+  } catch {
+    // Column already present (current 0001 or a prior catch-up).
+  }
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS email_verification_tokens (
+      token TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      expires_at TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_email_verification_user ON email_verification_tokens(user_id);
+    CREATE INDEX IF NOT EXISTS idx_email_verification_expires ON email_verification_tokens(expires_at);
+  `);
+}
+
+/**
  * Cloudflare D1 Implementation of PushStore
  */
 export class D1PushStore {

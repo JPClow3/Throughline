@@ -3,22 +3,40 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { createUserStore } from "./userStore";
+import { createUserStore, type UserStore } from "./userStore";
 
 describe("userStore email verification", () => {
   const dirs: string[] = [];
+  const stores: UserStore[] = [];
 
   afterEach(() => {
+    // Close SQLite handles before deleting temp dirs — Windows CI otherwise
+    // hits EPERM while the WAL/DB files are still locked.
+    while (stores.length) {
+      const open = stores.pop();
+      try {
+        open?.db.close();
+      } catch {
+        // already closed
+      }
+    }
     while (dirs.length) {
       const dir = dirs.pop();
-      if (dir) rmSync(dir, { recursive: true, force: true });
+      if (!dir) continue;
+      try {
+        rmSync(dir, { recursive: true, force: true });
+      } catch {
+        // Best-effort cleanup; locked files on some runners are non-fatal.
+      }
     }
   });
 
   function store() {
     const dir = mkdtempSync(join(tmpdir(), "tl-verify-"));
     dirs.push(dir);
-    return createUserStore(join(dir, "test.db"));
+    const users = createUserStore(join(dir, "test.db"));
+    stores.push(users);
+    return users;
   }
 
   const signupInput = {

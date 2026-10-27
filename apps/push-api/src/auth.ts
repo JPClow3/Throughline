@@ -56,7 +56,12 @@ export function userFromRequest(request: FastifyRequest, userStore: UserStore) {
 async function issueVerification(userStore: UserStore, config: PushApiConfig, userId: string, email: string) {
   const verificationToken = userStore.createEmailVerificationToken(userId);
   const mail = await sendVerificationEmail(mailConfigFrom(config), { to: email, token: verificationToken });
-  return { verificationToken, mailSent: mail.sent };
+  // Only echo the one-time token when mail is unset (local/dev). Configured
+  // Resend failures must not return the secret in the JSON body.
+  return {
+    verificationToken: mail.mailConfigured ? undefined : verificationToken,
+    mailSent: mail.sent
+  };
 }
 
 export function registerAuthRoutes(app: FastifyInstance, userStore: UserStore, config: PushApiConfig) {
@@ -68,13 +73,13 @@ export function registerAuthRoutes(app: FastifyInstance, userStore: UserStore, c
     if (!user) {
       return reply.code(409).send({ error: "email-taken" });
     }
-    const { verificationToken, mailSent } = await issueVerification(userStore, config, user.id, user.email);
+    const { verificationToken } = await issueVerification(userStore, config, user.id, user.email);
     const token = userStore.createSession(user.id);
     setSessionCookie(reply, token, secure);
     return reply.code(201).send({
       email: user.email,
       emailVerified: false,
-      ...(mailSent ? {} : { verificationToken })
+      ...(verificationToken ? { verificationToken } : {})
     });
   });
 
@@ -213,7 +218,7 @@ export function registerAuthRoutes(app: FastifyInstance, userStore: UserStore, c
       email: user.email,
       emailVerified: false,
       mailSent,
-      ...(mailSent ? {} : { verificationToken })
+      ...(verificationToken ? { verificationToken } : {})
     };
   });
 

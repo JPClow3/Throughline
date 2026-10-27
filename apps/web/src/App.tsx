@@ -23,7 +23,7 @@ import { buildVerifyEmailLink } from "./lib/verifyEmailLink";
 import { fireAndForget, reportError } from "./sentry";
 import { AppShell, AppView, ShellSync } from "./shell/AppShell";
 import { PlannerProvider, usePlanner } from "./state/PlannerProvider";
-import { Button, Sheet, ViewSkeleton } from "./ui";
+import { Button, Notice, Sheet, ViewSkeleton } from "./ui";
 import { useSync } from "./sync/useSync";
 import type { TodayPressureKind } from "./views/TodayView";
 
@@ -572,7 +572,15 @@ function Workspace(props: WorkspaceProps) {
   const [verifyBannerDismissed, setVerifyBannerDismissed] = React.useState(false);
   const [verifyBusy, setVerifyBusy] = React.useState(false);
   const [verifyBannerStatus, setVerifyBannerStatus] = React.useState<string | null>(null);
+  const [verifyBannerLink, setVerifyBannerLink] = React.useState<string | null>(null);
+  const [paletteExportNotice, setPaletteExportNotice] = React.useState<string | null>(null);
   const showVerifyBanner = Boolean(props.email) && props.emailVerified === false && !verifyBannerDismissed;
+
+  React.useEffect(() => {
+    if (!paletteExportNotice) return;
+    const timer = window.setTimeout(() => setPaletteExportNotice(null), 4000);
+    return () => window.clearTimeout(timer);
+  }, [paletteExportNotice]);
 
   return (
     <>
@@ -595,6 +603,13 @@ function Workspace(props: WorkspaceProps) {
               <p className="pwa-install-sub">
                 {verifyBannerStatus ?? "Optional — your local planner stays available either way."}
               </p>
+              {verifyBannerLink ? (
+                <p className="pwa-install-sub" style={{ marginTop: "0.35rem" }}>
+                  <a className="btn btn-accent" href={verifyBannerLink}>
+                    Open verification link
+                  </a>
+                </p>
+              ) : null}
             </div>
             <div className="pwa-install-actions">
               <Button
@@ -603,6 +618,7 @@ function Workspace(props: WorkspaceProps) {
                 disabled={verifyBusy}
                 onClick={() => {
                   setVerifyBusy(true);
+                  setVerifyBannerLink(null);
                   void props
                     .resendVerification()
                     .then((result) => {
@@ -611,7 +627,11 @@ function Workspace(props: WorkspaceProps) {
                         return;
                       }
                       if (result.verificationToken) {
-                        window.location.assign(buildVerifyEmailLink(result.verificationToken));
+                        // Stay on /app — match Settings/Signup in-place link UX so
+                        // composer and other in-memory planner state are not wiped.
+                        const link = buildVerifyEmailLink(result.verificationToken);
+                        setVerifyBannerLink(link);
+                        setVerifyBannerStatus("Mail is not configured — use the link to confirm.");
                         return;
                       }
                       setVerifyBannerStatus("Could not create a verification link.");
@@ -667,6 +687,21 @@ function Workspace(props: WorkspaceProps) {
                 <X size={14} weight="bold" />
               </button>
             </div>
+          </motion.div>
+        ) : null}
+        {paletteExportNotice ? (
+          <motion.div
+            key="palette-export-notice"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 16 }}
+            className="ik-card palette-export-notice"
+            role="status"
+            aria-live="polite"
+          >
+            <Notice variant={paletteExportNotice.startsWith("Exported") ? "success" : "error"}>
+              {paletteExportNotice}
+            </Notice>
           </motion.div>
         ) : null}
       </AnimatePresence>
@@ -830,8 +865,13 @@ function Workspace(props: WorkspaceProps) {
           onExportCalendar={() => {
             try {
               downloadIcs(tasks, courses);
+              const dueCount = tasks.filter((task) => task.dueAt).length;
+              setPaletteExportNotice(
+                `Exported ${dueCount} due ${dueCount === 1 ? "task" : "tasks"} to throughline.ics`
+              );
             } catch (error) {
               reportError(error, { source: "palette-ics-export" });
+              setPaletteExportNotice(error instanceof Error ? error.message : "Calendar export failed");
             }
           }}
           onToggleTheme={props.onToggleTheme}
