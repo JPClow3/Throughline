@@ -922,16 +922,19 @@ function Workspace(props: WorkspaceProps) {
             }}
           />
         ) : null}
+      </React.Suspense>
 
-        {props.showOnboarding ? (
+      {/* Own Suspense so sibling overlay lazy-loads cannot remount setup and wipe step state. */}
+      {props.showOnboarding ? (
+        <React.Suspense fallback={null}>
           <OnboardingOverlay
             onSetup={completeOnboardingSetup}
             onComplete={async () => {
               await saveAppearanceSettings({ hasCompletedOnboarding: true });
             }}
           />
-        ) : null}
-      </React.Suspense>
+        </React.Suspense>
+      ) : null}
     </>
   );
 }
