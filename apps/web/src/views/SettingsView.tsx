@@ -511,6 +511,10 @@ export function SettingsView({
               Test
             </Button>
           </div>
+          <p>
+            With permission granted, due reminders fire in this tab at each task&apos;s reminder time using generic copy.
+            Background delivery still needs redacted push below.
+          </p>
         </Card>
 
         <Card className="settings-card">

@@ -172,7 +172,7 @@ export function BoardView({
           onSavePreset={saveCurrentPreset}
           onDeletePreset={deletePreset}
           showDateFilter
-          showStatusFilter={false}
+          showStatusFilter
         />
       </header>
       <div className="sr-only" aria-live="polite">{announcement}</div>

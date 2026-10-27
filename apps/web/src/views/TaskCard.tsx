@@ -8,7 +8,8 @@ import {
   Note as StickyNote,
   Play,
   Plus,
-  Target
+  Target,
+  Trash
 } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "motion/react";
 import * as React from "react";
@@ -136,6 +137,23 @@ export function TaskCard({
     onUpdateTask({ ...task, subtasks: nextSubtasks });
   }
 
+  function removeSubtask(index: number) {
+    if (!onUpdateTask) return;
+    const removed = task.subtasks?.[index];
+    const nextSubtasks = (task.subtasks || []).filter((_, itemIndex) => itemIndex !== index);
+    if (removed) {
+      setDraftTitles((current) => {
+        if (!(removed.id in current)) {
+          return current;
+        }
+        const next = { ...current };
+        delete next[removed.id];
+        return next;
+      });
+    }
+    onUpdateTask({ ...task, subtasks: nextSubtasks });
+  }
+
   function commitSubtaskTitle(index: number, subtaskId: string, rawTitle: string) {
     const nextTitle = rawTitle.trim();
     setDraftTitles((current) => {
@@ -147,6 +165,7 @@ export function TaskCard({
       return next;
     });
     if (!nextTitle) {
+      removeSubtask(index);
       return;
     }
     const currentTitle = task.subtasks?.[index]?.title;
@@ -174,12 +193,11 @@ export function TaskCard({
       layout
       initial={{ opacity: 0, y: 6 }}
       animate={isJustCompleted ? { scale: [1, 1.03, 1] } : { opacity: 1, y: 0, scale: 1 }}
-      whileHover={isJustCompleted ? undefined : { translateX: -2, translateY: -2 }}
-      whileTap={isJustCompleted ? undefined : { translateX: 2, translateY: 2 }}
+      // Hover/press lift lives in CSS (Inkline hard-offset physics); avoid fighting springs.
       transition={
         isJustCompleted
           ? { duration: 0.4, ease: "easeOut" }
-          : { type: "spring", stiffness: 380, damping: 28 }
+          : { duration: 0.12, ease: "easeOut" }
       }
     >
       <AnimatePresence>
@@ -262,30 +280,40 @@ export function TaskCard({
                 className="subtask-editor-inner"
               >
                 {(task.subtasks || []).map((subtask, index) => (
-                  <label key={subtask.id} className={`subtask-row${subtask.completed ? " done" : ""}`}>
-                    <input
-                      type="checkbox"
-                      className="checkbox"
-                      checked={subtask.completed}
-                      onChange={() => updateSubtask(index, { completed: !subtask.completed })}
-                    />
-                    <input
-                      type="text"
-                      className="subtask-title-input"
-                      value={draftTitles[subtask.id] ?? subtask.title}
-                      aria-label={`Edit subtask ${index + 1}`}
-                      onChange={(event) =>
-                        setDraftTitles((current) => ({ ...current, [subtask.id]: event.target.value }))
-                      }
-                      onBlur={(event) => commitSubtaskTitle(index, subtask.id, event.target.value)}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter") {
-                          event.preventDefault();
-                          (event.target as HTMLInputElement).blur();
+                  <div key={subtask.id} className={`subtask-row${subtask.completed ? " done" : ""}`}>
+                    <label className="subtask-row-main">
+                      <input
+                        type="checkbox"
+                        className="checkbox"
+                        checked={subtask.completed}
+                        onChange={() => updateSubtask(index, { completed: !subtask.completed })}
+                      />
+                      <input
+                        type="text"
+                        className="subtask-title-input"
+                        value={draftTitles[subtask.id] ?? subtask.title}
+                        aria-label={`Edit subtask ${index + 1}`}
+                        onChange={(event) =>
+                          setDraftTitles((current) => ({ ...current, [subtask.id]: event.target.value }))
                         }
-                      }}
-                    />
-                  </label>
+                        onBlur={(event) => commitSubtaskTitle(index, subtask.id, event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
+                            event.preventDefault();
+                            (event.target as HTMLInputElement).blur();
+                          }
+                        }}
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      className="subtask-delete"
+                      aria-label={`Delete subtask ${index + 1}`}
+                      onClick={() => removeSubtask(index)}
+                    >
+                      <Trash size={12} weight="bold" />
+                    </button>
+                  </div>
                 ))}
                 <div className="subtask-add-row">
                   <Plus size={14} weight="bold" style={{ color: "var(--ink-faint)" }} />
