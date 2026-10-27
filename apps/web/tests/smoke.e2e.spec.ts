@@ -118,7 +118,7 @@ test("captures, moves, and completes a task", async ({ page }) => {
 
   await page.locator(".today-primary-action").click();
   await page.getByLabel("Title").fill(title);
-  await page.getByLabel("Due").fill("2026-12-04T14:30");
+  await page.getByRole("textbox", { name: "Due" }).fill("2026-12-04T14:30");
   await page.getByRole("button", { name: "Add task", exact: true }).click();
   // The quick-add sheet closes after capture.
   await expect(page.getByLabel("Title")).toHaveCount(0);
@@ -146,7 +146,7 @@ test("first-run onboarding creates a useful Today setup", async ({ page }) => {
   await completeOnboarding(page, { project: "Chemistry", task: "Read lab handout" });
 
   await expectToday(page);
-  await expect(page.getByRole("button", { name: "Read lab handout", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Open task Read lab handout" })).toBeVisible();
   await expect.poll(async () => readTaskTitles(page)).toEqual([{ title: "Read lab handout", tags: ["study"] }]);
 });
 

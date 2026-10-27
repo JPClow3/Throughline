@@ -64,7 +64,7 @@ test.describe("Edge Cases & Boundaries", () => {
     
     // Set a date in the past
     // The format in the composer is typically datetime-local: YYYY-MM-DDTHH:MM
-    await page.getByLabel("Due").fill("2020-01-01T10:00");
+    await page.getByRole("textbox", { name: "Due" }).fill("2020-01-01T10:00");
     await page.getByRole("button", { name: "Add task", exact: true }).click();
     
     await page.locator('a[aria-label="Board"]:visible').click();
