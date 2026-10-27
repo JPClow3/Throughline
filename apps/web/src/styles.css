@@ -1679,6 +1679,62 @@ select.input {
   display: flex;
   flex-direction: column;
 }
+.game-progress-card {
+  background: var(--violet-soft, var(--card-tinted));
+}
+.game-progress-stats {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: var(--space-3);
+}
+.game-progress-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+}
+.game-attribute-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+  margin-top: var(--space-4);
+}
+.game-attribute-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.45rem 0.55rem;
+  border: 2px solid var(--line);
+  border-radius: var(--radius-chip);
+  background: var(--card);
+  box-shadow: var(--shadow-0);
+  font-size: var(--text-label);
+  font-weight: var(--fw-semibold);
+}
+.game-attribute-chip strong {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+.game-badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: var(--space-4);
+}
+.game-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.55rem;
+  border: 2px solid var(--line);
+  border-radius: var(--radius-chip);
+  background: var(--violet, var(--yellow));
+  color: var(--on-signal);
+  font-size: var(--text-label);
+  font-weight: var(--fw-bold);
+  box-shadow: var(--shadow-0);
+}
 .pressure-row {
   position: relative;
   overflow: hidden;

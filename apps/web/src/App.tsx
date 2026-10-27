@@ -783,7 +783,9 @@ function Workspace(props: WorkspaceProps) {
                   highlightedProjectId={props.highlightedProjectId}
                 />
               ) : null}
-              {props.view === "insights" ? <InsightsView onNewTask={props.onOpenComposer} /> : null}
+              {props.view === "insights" ? (
+                <InsightsView onNewTask={props.onOpenComposer} showGameLayer={props.showGameLayer} />
+              ) : null}
               {props.view === "settings" ? (
                 <SettingsView
                   tasks={tasks}

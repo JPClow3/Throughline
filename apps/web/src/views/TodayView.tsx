@@ -1,10 +1,11 @@
-import { FocusSession, Task, deriveTodayBriefing } from "@throughline/domain";
+import { FocusSession, Task, deriveTodayBriefing, deriveUserProgress } from "@throughline/domain";
 import { CheckCircle, Clock, DownloadSimple, LockKey, Plus, Timer, WarningCircle } from "@phosphor-icons/react";
 import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { downloadIcs } from "../lib/downloadIcs";
 import { reportError } from "../sentry";
 import { usePlanner } from "../state/PlannerProvider";
 import { Button, Card, EmptyState, Notice } from "../ui";
+import { GameProgressCard } from "./GameProgressCard";
 import { TaskCard } from "./TaskCard";
 
 export type TodayPressureKind = "due-today" | "overdue" | "blocked";
@@ -27,13 +28,14 @@ export function TodayView({
   onBrowsePressure?: (kind: TodayPressureKind) => void;
   showGameLayer?: boolean;
 }) {
-  const { tasks, courses, focusSessions, completeTask, noteCountByTask } = usePlanner();
+  const { tasks, courses, focusSessions, progress, completeTask, noteCountByTask } = usePlanner();
   const [exportNotice, setExportNotice] = useState("");
   const dueCount = tasks.filter((task) => task.dueAt).length;
 
   const briefing = useMemo(() => deriveTodayBriefing({ tasks, focusSessions: focusSessions as FocusSession[] }), [tasks, focusSessions]);
   const stats = briefing.stats;
   const courseMap = useMemo(() => new Map(courses.map((course) => [course.id, course])), [courses]);
+  const gameProgress = useMemo(() => progress ?? deriveUserProgress(tasks), [progress, tasks]);
 
   function exportCalendar() {
     try {
@@ -149,6 +151,7 @@ export function TodayView({
         </Card>
 
         <aside className="today-side" aria-label="Today pressure and guidance">
+          {showGameLayer ? <GameProgressCard progress={gameProgress} /> : null}
           <Card className="today-panel" aria-label="Guidance">
             <div className="today-section-head">
               <div>

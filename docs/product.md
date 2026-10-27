@@ -85,6 +85,7 @@ A calm cockpit for the day. Shows greeting, date, and a progress hero ("X of Y t
 - Mobile More sheet uses a flat ink wash, focus trap, and arrow-key menu pattern; Today pressure rows and Projects open Board with matching filters; custom filter presets can be deleted; local due-time reminders fire in-tab when permission is granted.
 - Custom weekday recurrence (composer/editor + domain next-due); task-card Inkline press physics without competing springs; expanded card steps can be deleted.
 - Calendar ICS export surfaced on Timeline, Today, and Command Palette (student path), not only Settings; onboarding draft survives remounts; verify-email updates session state and surfaces a local verify link when Resend is unset.
+- Optional game layer surfaces level, streak, RPG attributes, and badges on Today and Insights when enabled (XP chips on cards already existed).
 
 ## 4. Project Map
 
