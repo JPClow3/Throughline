@@ -1917,14 +1917,30 @@ select.input {
   min-width: 0;
   cursor: pointer;
 }
-.subtask-row .subtask-title {
+.subtask-row .subtask-title,
+.subtask-row .subtask-title-input {
   min-width: 0;
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.subtask-row.done > span {
+.subtask-row .subtask-title-input {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  padding: 0.1rem 0.2rem;
+  border-radius: 6px;
+  width: 100%;
+}
+.subtask-row .subtask-title-input:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+  background: var(--card);
+}
+.subtask-row.done > span,
+.subtask-row.done .subtask-title-input {
   text-decoration: line-through;
   opacity: 0.65;
 }
@@ -3905,11 +3921,28 @@ button.meta-chip:hover {
   gap: var(--space-5);
   padding-top: var(--space-8);
 }
+.landing-hero-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin: 0;
+  font-size: clamp(1.55rem, 3.2vw, 2.1rem);
+  font-weight: var(--fw-bold);
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+.landing-hero-brand .shell-brand-mark {
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 12px;
+}
 .landing-hero h1 {
-  font-size: clamp(2.4rem, 6vw, 4.2rem);
-  line-height: 1.02;
+  font-size: clamp(2.15rem, 5.2vw, 3.55rem);
+  line-height: 1.05;
   letter-spacing: -0.02em;
-  max-width: 14ch;
+  max-width: 16ch;
+  color: var(--ink-soft);
+  font-weight: var(--fw-bold);
 }
 .landing-hero-accent {
   display: inline-block;

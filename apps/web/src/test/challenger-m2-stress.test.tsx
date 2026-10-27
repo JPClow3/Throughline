@@ -36,7 +36,7 @@ describe("Challenger M2 Adversarial Stress Suite", () => {
       expect(await screen.findByRole("heading", { name: "New task" })).toBeInTheDocument();
     });
 
-    it("opens task composer when pressing 'n' on goals view", async () => {
+    it("opens goal composer when pressing 'n' on goals view", async () => {
       window.history.replaceState({}, "", "/app?view=goals");
       render(
         <AuthProvider>
@@ -47,10 +47,10 @@ describe("Challenger M2 Adversarial Stress Suite", () => {
       await screen.findByRole("heading", { name: "Goals" });
       fireEvent.keyDown(document.body, { key: "n" });
 
-      expect(await screen.findByRole("heading", { name: "New task" })).toBeInTheDocument();
+      expect(await screen.findByRole("heading", { name: "New goal" })).toBeInTheDocument();
     });
 
-    it("opens task composer when pressing uppercase 'N' (Shift+N) on goals view", async () => {
+    it("opens goal composer when pressing uppercase 'N' (Shift+N) on goals view", async () => {
       window.history.replaceState({}, "", "/app?view=goals");
       render(
         <AuthProvider>
@@ -61,7 +61,7 @@ describe("Challenger M2 Adversarial Stress Suite", () => {
       await screen.findByRole("heading", { name: "Goals" });
       fireEvent.keyDown(document.body, { key: "N", shiftKey: true });
 
-      expect(await screen.findByRole("heading", { name: "New task" })).toBeInTheDocument();
+      expect(await screen.findByRole("heading", { name: "New goal" })).toBeInTheDocument();
     });
 
     it("opens task composer when pressing 'n' on kanban view", async () => {
@@ -132,10 +132,7 @@ describe("Challenger M2 Adversarial Stress Suite", () => {
       await screen.findByRole("heading", { name: "Insights" }, { timeout: 5000 });
       fireEvent.keyDown(document.body, { key: "n" });
 
-      // Document whether task composer opens or not on insights view
-      const composerHeading = screen.queryByRole("heading", { name: "New task" });
-      // In current code, primaryActionLabel is undefined for insights
-      expect(composerHeading).toBeNull();
+      expect(await screen.findByRole("heading", { name: "New task" })).toBeInTheDocument();
     });
 
     it("behavior check: pressing 'n' on settings view", async () => {
@@ -164,16 +161,18 @@ describe("Challenger M2 Adversarial Stress Suite", () => {
 
       await screen.findByRole("heading", { name: "Insights" }, { timeout: 5000 });
 
-      // Find the desktop masthead button
-      const newTaskBtn = screen.getByRole("button", { name: /New Task/i });
+      // Masthead New Task (desktop) — not the mobile FAB, which shares similar labelling.
+      const newTaskBtn = screen.getByRole("button", {
+        name: (_accessibleName, element) =>
+          element instanceof HTMLElement &&
+          element.classList.contains("btn-accent") &&
+          element.textContent?.replace(/\s+/g, " ").trim() === "New Task"
+      });
       expect(newTaskBtn).toBeInTheDocument();
 
       fireEvent.click(newTaskBtn);
 
-      // Check if composer opens
-      const composerHeading = screen.queryByRole("heading", { name: "New task" });
-      // EMPIRICAL OBSERVATION: Does it open or is it dead?
-      expect(composerHeading).toBeNull(); // It is dead on insights!
+      expect(await screen.findByRole("heading", { name: "New task" })).toBeInTheDocument();
     });
 
     it("does NOT open composer when modifier keys are pressed (Ctrl+N, Meta+N, Alt+N)", async () => {

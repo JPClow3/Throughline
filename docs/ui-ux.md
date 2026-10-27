@@ -64,7 +64,7 @@ Depth is communicated by displacement, not blur:
 
 ## 8. Core Workflows
 
-1. **Quick Capture:** Fast, keyboard-accessible sheet with minimal required fields (Title; Project/Due up front; Details collapsed). Pressing `N` in any planner view opens it (new note on Notes).
+1. **Quick Capture:** Fast, keyboard-accessible sheet with minimal required fields (Title; Project/Due up front; Details collapsed). Pressing `N` opens capture for the current view (new task on Today/Board/Timeline/Projects/Insights, new goal on Goals, new note on Notes). The desktop masthead "New Task" always opens task capture so it never becomes a dead control.
 2. **Goal Decomposition:** Break large goals into ordered steps with roll-up progress rings.
 3. **Cross-Linked Context:** Link markdown notes to tasks and goals.
 4. **Workflow Movement:** Process tasks naturally from Backlog to Done by drag, select, or keyboard; drag-reordered columns persist their custom sequence.

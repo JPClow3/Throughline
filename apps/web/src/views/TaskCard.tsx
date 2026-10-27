@@ -102,6 +102,7 @@ export function TaskCard({
 
   const [expanded, setExpanded] = useState(false);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
+  const [draftTitles, setDraftTitles] = useState<Record<string, string>>({});
   const [localJustCompleted, setLocalJustCompleted] = useState(false);
   const isJustCompleted = justCompleted || localJustCompleted;
   const wasDoneRef = useRef(task.status === "done");
@@ -126,11 +127,30 @@ export function TaskCard({
     onComplete?.(task);
   }
 
-  function toggleSubtask(index: number) {
+  function updateSubtask(index: number, updates: Partial<{ title: string; completed: boolean }>) {
     if (!onUpdateTask) return;
     const nextSubtasks = [...(task.subtasks || [])];
-    nextSubtasks[index] = { ...nextSubtasks[index], completed: !nextSubtasks[index].completed };
+    nextSubtasks[index] = { ...nextSubtasks[index], ...updates };
     onUpdateTask({ ...task, subtasks: nextSubtasks });
+  }
+
+  function commitSubtaskTitle(index: number, subtaskId: string, rawTitle: string) {
+    const nextTitle = rawTitle.trim();
+    setDraftTitles((current) => {
+      if (!(subtaskId in current)) {
+        return current;
+      }
+      const next = { ...current };
+      delete next[subtaskId];
+      return next;
+    });
+    if (!nextTitle) {
+      return;
+    }
+    const currentTitle = task.subtasks?.[index]?.title;
+    if (nextTitle !== currentTitle) {
+      updateSubtask(index, { title: nextTitle });
+    }
   }
 
   function handleAddSubtask(event: React.KeyboardEvent<HTMLInputElement>) {
@@ -239,8 +259,28 @@ export function TaskCard({
               >
                 {(task.subtasks || []).map((subtask, index) => (
                   <label key={subtask.id} className={`subtask-row${subtask.completed ? " done" : ""}`}>
-                    <input type="checkbox" className="checkbox" checked={subtask.completed} onChange={() => toggleSubtask(index)} />
-                    <span className="subtask-title">{subtask.title}</span>
+                    <input
+                      type="checkbox"
+                      className="checkbox"
+                      checked={subtask.completed}
+                      onChange={() => updateSubtask(index, { completed: !subtask.completed })}
+                    />
+                    <input
+                      type="text"
+                      className="subtask-title-input"
+                      value={draftTitles[subtask.id] ?? subtask.title}
+                      aria-label={`Edit subtask ${index + 1}`}
+                      onChange={(event) =>
+                        setDraftTitles((current) => ({ ...current, [subtask.id]: event.target.value }))
+                      }
+                      onBlur={(event) => commitSubtaskTitle(index, subtask.id, event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          (event.target as HTMLInputElement).blur();
+                        }
+                      }}
+                    />
                   </label>
                 ))}
                 <div className="subtask-add-row">

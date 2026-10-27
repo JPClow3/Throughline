@@ -23,7 +23,8 @@ describe("AppShell", () => {
       <AppShell
         view="dashboard"
         onViewChange={vi.fn()}
-        onNewTask={onPrimary}
+        onNewTask={vi.fn()}
+        onPrimaryAction={onPrimary}
         primaryActionLabel="New task"
       >
         <h1>Today</h1>
@@ -34,6 +35,26 @@ describe("AppShell", () => {
     expect(mobileAction).toBeInTheDocument();
     fireEvent.click(mobileAction as HTMLElement);
     expect(onPrimary).toHaveBeenCalled();
+  });
+
+  it("keeps masthead New Task live even when the mobile FAB is view-specific", () => {
+    const onNewTask = vi.fn();
+    const onPrimary = vi.fn();
+    render(
+      <AppShell
+        view="goals"
+        onViewChange={vi.fn()}
+        onNewTask={onNewTask}
+        onPrimaryAction={onPrimary}
+        primaryActionLabel="New goal"
+      >
+        <h1>Goals</h1>
+      </AppShell>
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /New Task/i }));
+    expect(onNewTask).toHaveBeenCalled();
+    expect(onPrimary).not.toHaveBeenCalled();
   });
 
   it("omits the mobile primary action when none is configured", () => {

@@ -231,6 +231,7 @@ export function AppShell({
   view,
   onViewChange,
   onNewTask,
+  onPrimaryAction,
   onOpenCommandPalette,
   primaryActionLabel,
   email = null,
@@ -240,7 +241,10 @@ export function AppShell({
 }: {
   view: AppView;
   onViewChange: (view: AppView) => void;
+  /** Always opens quick task capture from the desktop masthead. */
   onNewTask?: () => void;
+  /** View-specific mobile FAB action (new task, note, or goal). */
+  onPrimaryAction?: () => void;
   onOpenCommandPalette?: () => void;
   primaryActionLabel?: string;
   email?: string | null;
@@ -338,7 +342,7 @@ export function AppShell({
             <button
               type="button"
               className="btn btn-accent btn-sm hidden lg:inline-flex"
-              onClick={onNewTask}
+              onClick={() => onNewTask()}
             >
               <Plus size={15} weight="bold" />
               New Task
@@ -374,10 +378,10 @@ export function AppShell({
         </div>
       </main>
 
-      {primaryActionLabel && onNewTask && !mobileMoreOpen ? (
+      {primaryActionLabel && onPrimaryAction && !mobileMoreOpen ? (
         <button
           type="button"
-          onClick={onNewTask}
+          onClick={onPrimaryAction}
           className="shell-mobile-primary-action"
           aria-label={primaryActionLabel}
         >

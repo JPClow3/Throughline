@@ -32,7 +32,7 @@ describe("Landing Page", () => {
       </BrowserRouter>
     );
 
-    expect(screen.getByText(/local-first student planner/i)).toBeInTheDocument();
+    expect(screen.getByText(/local-first student planning/i)).toBeInTheDocument();
     expect(screen.queryByText(/three-dimensional workspace/i)).not.toBeInTheDocument();
   });
 });

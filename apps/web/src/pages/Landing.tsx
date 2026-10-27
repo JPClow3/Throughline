@@ -1,4 +1,4 @@
-import { ArrowRight, CalendarDots, Database, Kanban, LockKey, Note, ShieldCheck } from "@phosphor-icons/react";
+import { ArrowRight, CalendarDots, Database, Kanban, ShieldCheck } from "@phosphor-icons/react";
 import { MotionConfig, motion } from "motion/react";
 import type { CSSProperties, ReactNode } from "react";
 import { Link } from "react-router-dom";
@@ -115,17 +115,12 @@ export function Landing() {
         <main id="top" className="landing-main">
           <section className="landing-hero">
             <Reveal>
-              <div className="landing-hero-badge-row">
-                <span className="chip-static">
-                  <LockKey size={12} weight="bold" /> Local-first
+              <p className="landing-hero-brand">
+                <span className="shell-brand-mark" aria-hidden="true">
+                  <Mark size={22} />
                 </span>
-                <span className="chip-static">
-                  <ShieldCheck size={12} weight="bold" /> End-to-end encrypted sync
-                </span>
-                <span className="chip-static">
-                  <Note size={12} weight="bold" /> Installable PWA
-                </span>
-              </div>
+                Throughline
+              </p>
             </Reveal>
             <Reveal delay={0.05}>
               <h1>
@@ -136,8 +131,7 @@ export function Landing() {
             </Reveal>
             <Reveal delay={0.1}>
               <p className="landing-hero-sub">
-                A local-first student planner for courses, tasks, notes, due dates, and calm academic momentum —
-                without giving up privacy.
+                Local-first student planning for courses, deadlines, and focus — with optional end-to-end encrypted sync.
               </p>
             </Reveal>
             <Reveal delay={0.15}>
@@ -146,7 +140,7 @@ export function Landing() {
                   Start planning free <ArrowRight size={18} weight="bold" />
                 </Link>
                 <a href="#views" className="btn" style={{ minHeight: 50, paddingInline: "1.6rem", fontSize: "1rem" }}>
-                  Explore features
+                  See the app
                 </a>
               </div>
             </Reveal>

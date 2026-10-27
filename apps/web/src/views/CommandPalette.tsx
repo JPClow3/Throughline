@@ -24,6 +24,7 @@ type CommandPaletteProps = {
   setOpen: (open: boolean) => void;
   onNavigate: (view: AppView) => void;
   onNewTask: () => void;
+  onNewGoal?: () => void;
   onToggleTheme: () => void;
   searchResults?: GlobalSearchResult[];
   onOpenResult?: (result: GlobalSearchResult) => void;
@@ -57,6 +58,7 @@ export function CommandPalette({
   setOpen,
   onNavigate,
   onNewTask,
+  onNewGoal,
   onToggleTheme,
   searchResults = [],
   onOpenResult,
@@ -153,6 +155,12 @@ export function CommandPalette({
                 N
               </span>
             </Command.Item>
+            {onNewGoal ? (
+              <Command.Item onSelect={() => runCommand(onNewGoal)} className={ITEM_CLASS}>
+                <Target size={16} weight="bold" />
+                <span className="palette-item-title">Create new goal</span>
+              </Command.Item>
+            ) : null}
           </Command.Group>
 
           <Command.Group heading="Navigation" className="palette-group">

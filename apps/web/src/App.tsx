@@ -324,18 +324,22 @@ function Workspace(props: WorkspaceProps) {
     props.setView("courses");
   };
 
+  // View-specific primary capture for the mobile FAB and the `N` shortcut.
+  // Masthead "New Task" always opens task capture so it never becomes a dead control.
   const primaryActionLabel =
     props.view === "notes"
       ? "New note"
-      : props.view === "dashboard" ||
-        props.view === "kanban" ||
-        props.view === "timeline" ||
-        props.view === "courses" ||
-        props.view === "goals"
-        ? "New task"
-        : undefined;
+      : props.view === "goals"
+        ? "New goal"
+        : props.view === "dashboard" ||
+            props.view === "kanban" ||
+            props.view === "timeline" ||
+            props.view === "courses" ||
+            props.view === "insights"
+          ? "New task"
+          : undefined;
 
-  const { view, setSelectedNoteId, setView, onOpenComposer } = props;
+  const { view, setSelectedNoteId, setView, onOpenComposer, setGoalOpen } = props;
   const cooldownTimerRef = React.useRef<number | null>(null);
 
   React.useEffect(
@@ -354,10 +358,14 @@ function Workspace(props: WorkspaceProps) {
       setView("notes");
       return;
     }
+    if (view === "goals") {
+      setGoalOpen(true);
+      return;
+    }
     if (primaryActionLabel) {
       onOpenComposer();
     }
-  }, [view, addNote, primaryActionLabel, setSelectedNoteId, setView, onOpenComposer]);
+  }, [view, addNote, primaryActionLabel, setSelectedNoteId, setView, onOpenComposer, setGoalOpen]);
 
   // Quick capture: `N` opens the composer (or a new note on Notes) from any
   // planner view, unless the user is typing or a dialog already owns the screen.
@@ -483,7 +491,8 @@ function Workspace(props: WorkspaceProps) {
       <AppShell
         view={props.view}
         onViewChange={props.setView}
-        onNewTask={() => void handlePrimaryAction()}
+        onNewTask={props.onOpenComposer}
+        onPrimaryAction={() => void handlePrimaryAction()}
         onOpenCommandPalette={() => props.setCommandPaletteOpen(true)}
         primaryActionLabel={primaryActionLabel}
         email={props.email}
@@ -605,6 +614,7 @@ function Workspace(props: WorkspaceProps) {
           setOpen={props.setCommandPaletteOpen}
           onNavigate={props.setView}
           onNewTask={() => props.onOpenComposer()}
+          onNewGoal={() => props.setGoalOpen(true)}
           onToggleTheme={props.onToggleTheme}
           tasks={tasks}
           notes={notes}

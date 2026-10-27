@@ -71,9 +71,12 @@ A calm cockpit for the day. Shows greeting, date, and a progress hero ("X of Y t
 
 **Next product milestones**:
 1. Email verification.
-2. Inline subtask editing inside the task editor.
-3. PWA install polish (Microsoft Store packaging).
-4. Lightweight observability on the API.
+2. PWA install polish (Microsoft Store packaging).
+3. Lightweight observability on the API.
+
+**Recently polished**:
+- Inline subtask editing in the task editor and expandable card step lists.
+- View-aware `N` / mobile FAB capture (task, goal, or note) with a always-live masthead New Task action.
 
 ## 4. Project Map
 

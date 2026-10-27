@@ -6,7 +6,9 @@ import { reportError } from "../sentry";
 import { Button, Field, Select, TextArea, TextInput } from "../ui";
 
 function toLocalInput(date?: Date) {
-  if (!date) return "";
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+    return "";
+  }
   const pad = (value: number) => String(value).padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
