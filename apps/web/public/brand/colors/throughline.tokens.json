@@ -1,82 +1,44 @@
 {
-  "brand": {
-    "name": "Throughline",
-    "tagline": "A calm place to plan."
+  "meta": {
+    "name": "Throughline Inkline",
+    "description": "Bold editorial neo-brutalism: paper surfaces, ink borders, hard offset shadows."
   },
   "light": {
-    "background": "#F7F8FB",
-    "backgroundAlt": "#EEF3FA",
-    "surface": "#FFFFFF",
-    "surfaceGlass": "rgba(255,255,255,0.62)",
-    "surfaceGlassStrong": "rgba(255,255,255,0.78)",
-    "surfaceTint": "#F3F6FF",
-    "borderGlass": "rgba(255,255,255,0.74)",
-    "borderSubtle": "#DDE5F2",
-    "textPrimary": "#142033",
-    "textSecondary": "#667389",
-    "textMuted": "#94A0B4",
-    "accentBlue": "#7EA7FF",
-    "accentViolet": "#B9A7FF",
-    "accentAqua": "#8FE7DD",
-    "accentPink": "#F5B8FF",
-    "progress": "#76DCCA",
-    "warning": "#F3B95F",
-    "danger": "#FF8A9A",
-    "focusRing": "#7EA7FF",
-    "shadow": "rgba(23,32,51,0.12)"
+    "bg": "#f1ede3",
+    "bgAlt": "#e7e2d4",
+    "surface": "#faf8f1",
+    "surfaceTint": "#f6f2e9",
+    "border": "#191712",
+    "borderSubtle": "rgba(25, 23, 18, 0.28)",
+    "text": "#191712",
+    "textSecondary": "#57513f",
+    "textMuted": "#8b8570",
+    "accentYellow": "#ffd43b",
+    "accentBlue": "#3d5afe",
+    "accentGreen": "#1fae67",
+    "accentRed": "#ff5d47",
+    "accentViolet": "#8f6bf5",
+    "warning": "#e8a013",
+    "danger": "#e03e2b",
+    "shadowInk": "#191712"
   },
   "dark": {
-    "background": "#0C1220",
-    "backgroundAlt": "#111827",
-    "surface": "#172033",
-    "surfaceGlass": "rgba(24,34,54,0.58)",
-    "surfaceGlassStrong": "rgba(31,43,67,0.76)",
-    "surfaceTint": "#1B2540",
-    "borderGlass": "rgba(255,255,255,0.13)",
-    "borderSubtle": "#2A3650",
-    "textPrimary": "#F6F8FC",
-    "textSecondary": "#BAC5D8",
-    "textMuted": "#7F8DA5",
-    "accentBlue": "#94B8FF",
-    "accentViolet": "#C8B8FF",
-    "accentAqua": "#8FE7DD",
-    "accentPink": "#F2B8FF",
-    "progress": "#8BEAD9",
-    "warning": "#FFD38A",
-    "danger": "#FF9BA8",
-    "focusRing": "#94B8FF",
-    "shadow": "rgba(0,0,0,0.34)"
-  },
-  "gradients": {
-    "lightAppIcon": [
-      "#F8FBFF",
-      "#EAF0FF",
-      "#C9D8FF",
-      "#CDBDFF",
-      "#97EEE2"
-    ],
-    "darkAppIcon": [
-      "#0C1220",
-      "#111B33",
-      "#152446",
-      "#25335D",
-      "#143B4F"
-    ],
-    "heroAurora": [
-      "#F7F8FB",
-      "#EAF0FF",
-      "#F3ECFF",
-      "#E7FFFA"
-    ],
-    "thread": [
-      "#7EA7FF",
-      "#B9A7FF",
-      "#8FE7DD"
-    ],
-    "darkThread": [
-      "#94B8FF",
-      "#C8B8FF",
-      "#8FE7DD"
-    ]
+    "bg": "#15171e",
+    "bgAlt": "#101218",
+    "surface": "#1e212b",
+    "surfaceTint": "#232633",
+    "border": "#ece7da",
+    "borderSubtle": "rgba(236, 231, 218, 0.32)",
+    "text": "#ece7da",
+    "textSecondary": "#b0ab9c",
+    "textMuted": "#77735f",
+    "accentYellow": "#ffd43b",
+    "accentBlue": "#7d92ff",
+    "accentGreen": "#46cd88",
+    "accentRed": "#ff7a68",
+    "accentViolet": "#ab8dff",
+    "warning": "#f0b429",
+    "danger": "#ff6a57",
+    "shadowInk": "#000000"
   }
 }
