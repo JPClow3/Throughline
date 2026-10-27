@@ -1479,6 +1479,17 @@ select.input {
   gap: 0.5rem;
   margin-left: auto;
 }
+.email-verify-banner {
+  bottom: calc(96px + 76px);
+}
+@media (min-width: 1024px) {
+  .email-verify-banner {
+    bottom: calc(20px + 76px);
+  }
+}
+.email-verify-icon {
+  background: var(--cyan, #7dd3fc);
+}
 
 /* ============================== Today ================================= */
 
@@ -3718,6 +3729,10 @@ button.meta-chip:hover {
   color: var(--on-signal);
   transform: translate(2px, 2px);
   box-shadow: none;
+}
+.setup-choice:focus-visible {
+  outline: 3px solid var(--yellow);
+  outline-offset: 2px;
 }
 .setup-toggle {
   display: flex;

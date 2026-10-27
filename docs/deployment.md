@@ -93,6 +93,7 @@ Copy the returned `id` and ensure `apps/push-api/wrangler.jsonc` has the Hyperdr
    - `VAPID_SUBJECT`: `mailto:your-email@example.com`
    - `DISPATCH_TOKEN`: (optional) Bearer token for `/dispatch-due`
    - `GOOGLE_CLIENT_ID`: (optional) Google OAuth client ID
+   - `RESEND_API_KEY` / `EMAIL_FROM` / `PUBLIC_APP_URL`: (optional) send email verification links via Resend; without them signup still succeeds and logs the verify URL
 
 ### Domain & Same-Origin Routing
 To ensure seamless cookies and zero CORS configuration:
