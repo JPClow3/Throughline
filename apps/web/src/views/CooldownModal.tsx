@@ -34,7 +34,7 @@ export function CooldownModal({
           </div>
           <h2 id="cooldown-title">Easy wins while you cool down</h2>
           <p>
-            Great focus. Pick a low-energy backlog task, or close this and keep your streak for later.
+            Great focus. Pick a low-energy backlog task, or close this and take the break.
           </p>
         </div>
 

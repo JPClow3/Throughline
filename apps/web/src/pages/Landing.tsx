@@ -74,11 +74,11 @@ const SHOWCASE = [
 const FAQ = [
   {
     q: "Is my data private?",
-    a: "Yes. With an account, everything is end-to-end encrypted on your device before it syncs — the server only ever stores ciphertext it can't read."
+    a: "Yes. Your planner stays on this device by default — no account required. Optional sync is end-to-end encrypted on your device before it leaves, so the server only ever stores ciphertext it can't read."
   },
   {
     q: "Does it work offline?",
-    a: "Fully. Throughline is local-first: your plan lives in the browser and works with no connection. Sync catches up when you're back online."
+    a: "Fully. Throughline is local-first: your plan lives in the browser and works with no connection. If you opt into sync, it catches up when you're back online."
   },
   {
     q: "How much does it cost?",

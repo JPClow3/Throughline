@@ -78,6 +78,8 @@ A calm cockpit for the day. Shows greeting, date, and a progress hero ("X of Y t
 - Inline subtask editing in the task editor and expandable card step lists.
 - View-aware `N` / mobile FAB capture (task, goal, or note) with a always-live masthead New Task action.
 - Local-only planner access restored: `/app` works without an account; sync remains an optional Settings/signup path.
+- Note chips deep-link from Today, Board, and Goals into Notes; TaskEditor matches composer fields; mobile dock prioritizes Today / Goals / Board / Notes.
+- Optional game-layer XP is gated; recovery key confirmation is a first-class signup/Settings step.
 
 ## 4. Project Map
 
