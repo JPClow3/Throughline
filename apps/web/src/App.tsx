@@ -295,6 +295,18 @@ function Workspace(props: WorkspaceProps) {
     [props]
   );
 
+  /** Note chips deep-link into Notes, selecting a linked note when one exists. */
+  const openTaskNotes = React.useCallback(
+    (taskId: string) => {
+      const linked = notes.find((note) => note.taskIds.includes(taskId));
+      if (linked) {
+        props.setSelectedNoteId(linked.id);
+      }
+      props.setView("notes");
+    },
+    [notes, props]
+  );
+
   /** Board moves arrive as a batch of reordered/retitled-status records. */
   const updateTasks = React.useCallback(
     async (updates: Task[]) => {
@@ -516,6 +528,7 @@ function Workspace(props: WorkspaceProps) {
                   onEdit={openTask}
                   onStartFocus={props.setFocusTask}
                   onUpdateTask={(task) => void updateTask(task)}
+                  onOpenNotes={openTaskNotes}
                   showGameLayer={props.showGameLayer}
                 />
               ) : null}
@@ -527,13 +540,7 @@ function Workspace(props: WorkspaceProps) {
                   onUpdateTasks={(updates) => void updateTasks(updates)}
                   onUpdateTask={(task) => void updateTask(task)}
                   onEdit={openTask}
-                  onOpenNotes={(taskId) => {
-                    const linked = notes.find((note) => note.taskIds.includes(taskId));
-                    if (linked) {
-                      props.setSelectedNoteId(linked.id);
-                    }
-                    props.setView("notes");
-                  }}
+                  onOpenNotes={openTaskNotes}
                   onStartFocus={props.setFocusTask}
                   onNewTask={props.onOpenComposer}
                 />
@@ -574,7 +581,9 @@ function Workspace(props: WorkspaceProps) {
                     props.setSelectedNoteId(noteId);
                     props.setView("notes");
                   }}
+                  onOpenNotes={openTaskNotes}
                   onReorderTask={updateTask}
+                  showGameLayer={props.showGameLayer}
                 />
               ) : null}
               {props.view === "notes" ? (

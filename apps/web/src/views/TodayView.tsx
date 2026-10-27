@@ -10,15 +10,17 @@ export function TodayView({
   onEdit,
   onStartFocus,
   onUpdateTask,
+  onOpenNotes,
   showGameLayer = false
 }: {
   onNewTask: (date?: Date) => void;
   onEdit: (task: Task) => void;
   onStartFocus?: (task: Task) => void;
   onUpdateTask?: (task: Task) => void;
+  onOpenNotes?: (taskId: string) => void;
   showGameLayer?: boolean;
 }) {
-  const { tasks, courses, focusSessions, completeTask } = usePlanner();
+  const { tasks, courses, focusSessions, completeTask, noteCountByTask } = usePlanner();
 
   const briefing = useMemo(() => deriveTodayBriefing({ tasks, focusSessions: focusSessions as FocusSession[] }), [tasks, focusSessions]);
   const stats = briefing.stats;
@@ -76,11 +78,13 @@ export function TodayView({
                   task={task}
                   course={courseMap.get(task.courseId ?? "")}
                   showGameLayer={showGameLayer}
+                  noteCount={noteCountByTask.get(task.id) ?? 0}
                   onComplete={(target) => completeTask(target)}
                   onEdit={onEdit}
                   onUpdateTask={onUpdateTask}
                   offerEmptyStepInput={false}
                   onStartFocus={onStartFocus}
+                  onOpenNotes={onOpenNotes}
                 />
               ))}
             </div>
