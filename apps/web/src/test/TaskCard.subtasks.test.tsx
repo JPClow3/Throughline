@@ -57,4 +57,53 @@ describe("TaskCard subtasks", () => {
       })
     );
   });
+
+  it("commits a renamed title on blur and trims whitespace", () => {
+    const onUpdateTask = vi.fn();
+    render(<TaskCard task={makeTask()} onUpdateTask={onUpdateTask} offerEmptyStepInput />);
+
+    fireEvent.click(screen.getByRole("button", { name: /0 of 2 steps complete/i }));
+    const titleInput = screen.getByLabelText("Edit subtask 1");
+    fireEvent.change(titleInput, { target: { value: "  Thesis statement  " } });
+    fireEvent.blur(titleInput);
+
+    expect(onUpdateTask).toHaveBeenCalledWith(
+      expect.objectContaining({
+        subtasks: expect.arrayContaining([expect.objectContaining({ id: "step-1", title: "Thesis statement" })])
+      })
+    );
+  });
+
+  it("commits a renamed title when Enter blurs the field", () => {
+    const onUpdateTask = vi.fn();
+    render(<TaskCard task={makeTask()} onUpdateTask={onUpdateTask} offerEmptyStepInput />);
+
+    fireEvent.click(screen.getByRole("button", { name: /0 of 2 steps complete/i }));
+    const titleInput = screen.getByLabelText("Edit subtask 1");
+    fireEvent.change(titleInput, { target: { value: "Outline done" } });
+    fireEvent.keyDown(titleInput, { key: "Enter" });
+    fireEvent.blur(titleInput);
+
+    expect(onUpdateTask).toHaveBeenCalledWith(
+      expect.objectContaining({
+        subtasks: expect.arrayContaining([expect.objectContaining({ id: "step-1", title: "Outline done" })])
+      })
+    );
+  });
+
+  it("removes a subtask when the title is cleared on blur", () => {
+    const onUpdateTask = vi.fn();
+    render(<TaskCard task={makeTask()} onUpdateTask={onUpdateTask} offerEmptyStepInput />);
+
+    fireEvent.click(screen.getByRole("button", { name: /0 of 2 steps complete/i }));
+    const titleInput = screen.getByLabelText("Edit subtask 1");
+    fireEvent.change(titleInput, { target: { value: "   " } });
+    fireEvent.blur(titleInput);
+
+    expect(onUpdateTask).toHaveBeenCalledWith(
+      expect.objectContaining({
+        subtasks: [expect.objectContaining({ id: "step-2", title: "Body" })]
+      })
+    );
+  });
 });
