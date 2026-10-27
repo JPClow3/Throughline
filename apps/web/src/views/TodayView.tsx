@@ -5,12 +5,15 @@ import { usePlanner } from "../state/PlannerProvider";
 import { Button, Card, EmptyState } from "../ui";
 import { TaskCard } from "./TaskCard";
 
+export type TodayPressureKind = "due-today" | "overdue" | "blocked";
+
 export function TodayView({
   onNewTask,
   onEdit,
   onStartFocus,
   onUpdateTask,
   onOpenNotes,
+  onBrowsePressure,
   showGameLayer = false
 }: {
   onNewTask: (date?: Date) => void;
@@ -18,6 +21,8 @@ export function TodayView({
   onStartFocus?: (task: Task) => void;
   onUpdateTask?: (task: Task) => void;
   onOpenNotes?: (taskId: string) => void;
+  /** Jump to Board with a matching filter when a pressure row is pressed. */
+  onBrowsePressure?: (kind: TodayPressureKind) => void;
   showGameLayer?: boolean;
 }) {
   const { tasks, courses, focusSessions, completeTask, noteCountByTask } = usePlanner();
@@ -160,9 +165,26 @@ export function TodayView({
                 </div>
               </div>
               <div className="today-pressure-list">
-                <PressureRow icon={<Clock size={16} weight="bold" />} label="Due today" value={`${stats.dueTodayCount}`} />
-                <PressureRow icon={<WarningCircle size={16} weight="bold" />} label="Overdue" value={`${briefing.overdueCount}`} tone={briefing.overdueCount ? "urgent" : undefined} />
-                <PressureRow icon={<LockKey size={16} weight="bold" />} label="Blocked" value={`${briefing.blockedCount}`} tone={briefing.blockedCount ? "blocked" : undefined} />
+                <PressureRow
+                  icon={<Clock size={16} weight="bold" />}
+                  label="Due today"
+                  value={`${stats.dueTodayCount}`}
+                  onClick={onBrowsePressure ? () => onBrowsePressure("due-today") : undefined}
+                />
+                <PressureRow
+                  icon={<WarningCircle size={16} weight="bold" />}
+                  label="Overdue"
+                  value={`${briefing.overdueCount}`}
+                  tone={briefing.overdueCount ? "urgent" : undefined}
+                  onClick={onBrowsePressure ? () => onBrowsePressure("overdue") : undefined}
+                />
+                <PressureRow
+                  icon={<LockKey size={16} weight="bold" />}
+                  label="Blocked"
+                  value={`${briefing.blockedCount}`}
+                  tone={briefing.blockedCount ? "blocked" : undefined}
+                  onClick={onBrowsePressure ? () => onBrowsePressure("blocked") : undefined}
+                />
                 <PressureRow icon={<Timer size={16} weight="bold" />} label="Focus logged" value={formatMinutes(stats.focusMinutesToday)} progress={Math.min(100, (stats.focusMinutesToday / 120) * 100)} />
                 <PressureRow
                   icon={<CheckCircle size={16} weight="bold" />}
@@ -194,18 +216,19 @@ function PressureRow({
   label,
   value,
   tone,
-  progress = 0
+  progress = 0,
+  onClick
 }: {
   icon: ReactNode;
   label: string;
   value: string;
   tone?: "urgent" | "blocked" | "success";
   progress?: number;
+  onClick?: () => void;
 }) {
-  return (
-    <div
-      className={`pressure-row${tone ? ` pressure-${tone}` : ""}`}
-    >
+  const className = `pressure-row${tone ? ` pressure-${tone}` : ""}${onClick ? " is-action" : ""}`;
+  const body = (
+    <>
       {progress > 0 ? (
         <span
           className="pressure-progress"
@@ -216,8 +239,18 @@ function PressureRow({
       <span className="pressure-icon">{icon}</span>
       <span>{label}</span>
       <strong>{value}</strong>
-    </div>
+    </>
   );
+
+  if (onClick) {
+    return (
+      <button type="button" className={className} onClick={onClick} aria-label={`Open Board filtered to ${label}`}>
+        {body}
+      </button>
+    );
+  }
+
+  return <div className={className}>{body}</div>;
 }
 
 function guidanceIcon(kind: string) {

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { AppShell } from "../shell/AppShell";
 
@@ -89,7 +89,7 @@ describe("AppShell", () => {
     }
   });
 
-  it("dismisses the mobile More menu when focus moves outside or Escape is pressed", () => {
+  it("dismisses the mobile More menu when focus moves outside or Escape is pressed", async () => {
     render(
       <AppShell view="dashboard" onViewChange={vi.fn()}>
         <h1>Today</h1>
@@ -102,11 +102,16 @@ describe("AppShell", () => {
 
     fireEvent.keyDown(document, { key: "Escape" });
     expect(screen.queryByRole("menu", { name: "More views" })).not.toBeInTheDocument();
-    expect(more).toHaveFocus();
+    await waitFor(() => expect(more).toHaveFocus());
 
     fireEvent.click(more);
     expect(screen.getByRole("menu", { name: "More views" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Close more menu" })).toBeInTheDocument();
     fireEvent.pointerDown(document.body);
+    expect(screen.queryByRole("menu", { name: "More views" })).not.toBeInTheDocument();
+
+    fireEvent.click(more);
+    fireEvent.click(screen.getByRole("button", { name: "Close more menu" }));
     expect(screen.queryByRole("menu", { name: "More views" })).not.toBeInTheDocument();
   });
 });

@@ -5,10 +5,17 @@ import { AnimatePresence, motion } from "motion/react";
 import React from "react";
 import { useAuth } from "./auth/AuthProvider";
 import type { AppearanceSettings } from "./data/types";
-import { clearAllData, getAppearanceSettings, saveAppearanceSettings, syncRecurringTasks } from "./data/repositories";
+import {
+  browseWithFilters,
+  clearAllData,
+  getAppearanceSettings,
+  saveAppearanceSettings,
+  syncRecurringTasks
+} from "./data/repositories";
 import type { GlobalSearchResult } from "./hooks/useGlobalSearch";
 import { usePwaInstall } from "./hooks/usePwaInstall";
 import { useTheme } from "./hooks/useTheme";
+import { scheduleLocalReminders } from "./lib/localReminders";
 import { PROJECT_COLORS } from "./lib/palette";
 import { requestNotificationPermission } from "./lib/notifications";
 import { fireAndForget } from "./sentry";
@@ -16,6 +23,7 @@ import { AppShell, AppView, ShellSync } from "./shell/AppShell";
 import { PlannerProvider, usePlanner } from "./state/PlannerProvider";
 import { Button, Sheet, ViewSkeleton } from "./ui";
 import { useSync } from "./sync/useSync";
+import type { TodayPressureKind } from "./views/TodayView";
 
 const TodayView = React.lazy(() => import("./views/TodayView").then((module) => ({ default: module.TodayView })));
 const BoardView = React.lazy(() => import("./views/BoardView").then((module) => ({ default: module.BoardView })));
@@ -343,6 +351,35 @@ function Workspace(props: WorkspaceProps) {
     [notes, props]
   );
 
+  /** Today pressure rows and Projects open Board with a matching persisted filter. */
+  const openBoardWithFilters = React.useCallback(
+    (patch: Parameters<typeof browseWithFilters>[0]) => {
+      fireAndForget(browseWithFilters(patch), { source: "board-browse" });
+      props.setView("kanban");
+    },
+    [props]
+  );
+
+  const browsePressure = React.useCallback(
+    (kind: TodayPressureKind) => {
+      if (kind === "due-today") {
+        openBoardWithFilters({ dateRange: "today" });
+        return;
+      }
+      if (kind === "overdue") {
+        openBoardWithFilters({ dateRange: "overdue" });
+        return;
+      }
+      openBoardWithFilters({ status: "blocked" });
+    },
+    [openBoardWithFilters]
+  );
+
+  // Local due-time reminders when the browser already granted notification permission.
+  React.useEffect(() => {
+    return scheduleLocalReminders(tasks);
+  }, [tasks]);
+
   /** Board moves arrive as a batch of reordered/retitled-status records. */
   const updateTasks = React.useCallback(
     async (updates: Task[]) => {
@@ -646,6 +683,7 @@ function Workspace(props: WorkspaceProps) {
                   onStartFocus={props.setFocusTask}
                   onUpdateTask={(task) => void updateTask(task)}
                   onOpenNotes={openTaskNotes}
+                  onBrowsePressure={browsePressure}
                   showGameLayer={props.showGameLayer}
                 />
               ) : null}
@@ -724,6 +762,7 @@ function Workspace(props: WorkspaceProps) {
                   tasks={tasks}
                   onUpsertCourse={upsertCourse}
                   onDeleteCourse={deleteCourse}
+                  onOpenOnBoard={(courseId) => openBoardWithFilters({ projectId: courseId })}
                   highlightedProjectId={props.highlightedProjectId}
                 />
               ) : null}

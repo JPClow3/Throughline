@@ -117,7 +117,7 @@ export function TimelineView({
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const [selectedKey, setSelectedKey] = useState(() => localDayKey(today));
-  const { filters, presets, setFilter, applyFilters, applyPreset, clearFilters, saveCurrentPreset } = useFilters();
+  const { filters, presets, setFilter, applyFilters, applyPreset, clearFilters, saveCurrentPreset, deletePreset } = useFilters();
   const [activeTask, setActiveTask] = useState<Task | null>(null);
 
   const sensors = useSensors(
@@ -223,6 +223,7 @@ export function TimelineView({
             onApplyPreset={applyPreset}
             onClearFilters={clearFilters}
             onSavePreset={saveCurrentPreset}
+            onDeletePreset={deletePreset}
             showDateFilter={false}
             showStatusFilter
           />

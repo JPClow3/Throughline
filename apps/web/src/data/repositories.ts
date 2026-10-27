@@ -512,6 +512,17 @@ export async function getFilterSettings(): Promise<FilterSettings> {
   return defaults;
 }
 
+/** Replace the active Board/Timeline filter set (Today pressure rows, Projects). */
+export async function browseWithFilters(patch: Partial<PersistedFilterState>) {
+  return saveFilterSettings({
+    current: {
+      ...defaultFilterState,
+      ...patch,
+      tags: patch.tags ?? []
+    }
+  });
+}
+
 export async function saveFilterSettings(patch: Partial<Omit<FilterSettings, "id" | "updatedAt">>) {
   const current = await getFilterSettings();
   const next: FilterSettings = {

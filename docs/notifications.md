@@ -33,10 +33,19 @@ Not allowed server-side:
 - Permission request.
 - Generic local test notification.
 
+`apps/web/src/lib/localReminders.ts` schedules due-time reminders on-device when
+notification permission is already granted. Incomplete tasks with `reminderAt`
+get a one-shot timer (capped at one week ahead); each `taskId` + `reminderAt`
+pair fires at most once per browsing session. Copy stays generic — no titles.
+
 Local notification text is also generic:
 
 - Title: `Quest reminder`
 - Body: `A study quest needs your attention.`
+
+Local timers complement push sync: they cover the open tab without sending task
+content to the server. Background delivery still depends on the push API and an
+external `/dispatch-due` caller (Docker ofelia, or another scheduler).
 
 ## Push API Setup
 

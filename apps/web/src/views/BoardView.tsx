@@ -45,7 +45,7 @@ export function BoardView({
   showGameLayer?: boolean;
 }) {
   const { tasks, courses, goals, courseById, noteCountByTask, tags } = usePlanner();
-  const { filters, presets, setFilter, applyFilters, applyPreset, clearFilters, saveCurrentPreset } = useFilters();
+  const { filters, presets, setFilter, applyFilters, applyPreset, clearFilters, saveCurrentPreset, deletePreset } = useFilters();
   const [announcement, setAnnouncement] = useState("");
   const [mobileStatus, setMobileStatus] = useState<TaskStatus>("backlog");
   const [recentlyCompletedIds, setRecentlyCompletedIds] = useState<Set<string>>(new Set());
@@ -170,6 +170,7 @@ export function BoardView({
           onApplyPreset={applyPreset}
           onClearFilters={clearFilters}
           onSavePreset={saveCurrentPreset}
+          onDeletePreset={deletePreset}
           showDateFilter
           showStatusFilter={false}
         />

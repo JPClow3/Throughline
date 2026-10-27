@@ -59,6 +59,30 @@ describe("FilterBar", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
+  it("deletes custom presets without exposing delete on built-ins", () => {
+    const onDeletePreset = vi.fn();
+    render(
+      <FilterBar
+        courses={[]}
+        filters={defaultFilterState}
+        setFilter={vi.fn()}
+        presets={[
+          ...defaultFilterPresets,
+          {
+            id: "custom-lab",
+            name: "Lab day",
+            filters: { ...defaultFilterState, tags: ["lab"] }
+          }
+        ]}
+        onDeletePreset={onDeletePreset}
+      />
+    );
+
+    expect(screen.queryByRole("button", { name: "Delete preset Overdue" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Delete preset Lab day" }));
+    expect(onDeletePreset).toHaveBeenCalledWith("custom-lab");
+  });
+
   it("collapses advanced filters behind a compact filter toggle", () => {
     const originalMatchMedia = window.matchMedia;
     Object.defineProperty(window, "matchMedia", {

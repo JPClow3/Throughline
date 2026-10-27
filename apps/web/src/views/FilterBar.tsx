@@ -1,5 +1,5 @@
 import { Course, Goal, taskStatuses, kanbanColumns, priorities } from "@throughline/domain";
-import { BookmarkSimple, FunnelSimple, MagnifyingGlass as Search, Tag } from "@phosphor-icons/react";
+import { BookmarkSimple, FunnelSimple, MagnifyingGlass as Search, Tag, X } from "@phosphor-icons/react";
 import { useEffect, useState, type CSSProperties } from "react";
 import { FilterState } from "../hooks/useFilters";
 import type { SavedFilterPreset } from "../data/types";
@@ -15,6 +15,7 @@ type FilterBarProps = {
   onApplyPreset?: (preset: SavedFilterPreset) => void;
   onClearFilters?: () => void;
   onSavePreset?: (name: string) => void;
+  onDeletePreset?: (presetId: string) => void;
   showDateFilter?: boolean;
   showStatusFilter?: boolean;
 };
@@ -37,6 +38,7 @@ export function FilterBar({
   onApplyPreset,
   onClearFilters,
   onSavePreset,
+  onDeletePreset,
   showDateFilter = true,
   showStatusFilter = false
 }: FilterBarProps) {
@@ -82,12 +84,30 @@ export function FilterBar({
     <div className="view-toolbar">
       {presets.length ? (
         <div className="filter-presets-row" role="region" aria-label="Filter presets">
-          {presets.map((preset) => (
-            <Chip key={preset.id} onClick={() => onApplyPreset?.(preset)}>
-              <BookmarkSimple size={12} weight="bold" />
-              {preset.name}
-            </Chip>
-          ))}
+          {presets.map((preset) => {
+            const custom = preset.id.startsWith("custom-");
+            return (
+              <span key={preset.id} className="filter-preset-chip">
+                <Chip onClick={() => onApplyPreset?.(preset)}>
+                  <BookmarkSimple size={12} weight="bold" />
+                  {preset.name}
+                </Chip>
+                {custom && onDeletePreset ? (
+                  <button
+                    type="button"
+                    className="filter-preset-delete"
+                    aria-label={`Delete preset ${preset.name}`}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onDeletePreset(preset.id);
+                    }}
+                  >
+                    <X size={11} weight="bold" />
+                  </button>
+                ) : null}
+              </span>
+            );
+          })}
         </div>
       ) : null}
       <label className="toolbar-search">

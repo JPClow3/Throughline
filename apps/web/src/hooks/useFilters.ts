@@ -95,6 +95,14 @@ export function useFilters() {
     },
     [filters, persist, presets]
   );
+  const deletePreset = useCallback(
+    (presetId: string) => {
+      // Built-in presets keep stable ids (`preset_*`); only custom ones are removable.
+      if (!presetId.startsWith("custom-")) return;
+      persist(filters, presets.filter((preset) => preset.id !== presetId));
+    },
+    [filters, persist, presets]
+  );
 
-  return { filters, presets, setFilter, applyFilters, applyPreset, clearFilters, saveCurrentPreset };
+  return { filters, presets, setFilter, applyFilters, applyPreset, clearFilters, saveCurrentPreset, deletePreset };
 }

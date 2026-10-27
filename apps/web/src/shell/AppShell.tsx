@@ -2,6 +2,7 @@ import { ArrowsClockwise, CalendarDots, ChartLine, GearSix, House, Kanban, Magni
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Mark } from "../ui";
+import { useDialogA11y } from "../ui/dialogA11y";
 import { APP_LOCALE } from "../lib/format";
 
 export type AppView = "dashboard" | "goals" | "kanban" | "timeline" | "notes" | "courses" | "insights" | "settings";
@@ -257,6 +258,13 @@ export function AppShell({
   const mainRef = useRef<HTMLElement | null>(null);
   const mobileMoreToggleRef = useRef<HTMLButtonElement | null>(null);
   const mobileMoreSheetRef = useRef<HTMLDivElement | null>(null);
+  const closeMobileMore = useCallback(() => {
+    setMobileMoreOpen(false);
+    // Ensure the More toggle regains focus after Escape / backdrop dismiss.
+    window.setTimeout(() => mobileMoreToggleRef.current?.focus(), 0);
+  }, []);
+
+  useDialogA11y(mobileMoreOpen, closeMobileMore, mobileMoreSheetRef);
 
   // Navigating between views reads like opening a page: start at the top.
   useEffect(() => {
@@ -273,23 +281,42 @@ export function AppShell({
       if (mobileMoreToggleRef.current?.contains(target) || mobileMoreSheetRef.current?.contains(target)) {
         return;
       }
-      setMobileMoreOpen(false);
+      closeMobileMore();
     }
 
-    function closeOnEscape(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setMobileMoreOpen(false);
-        mobileMoreToggleRef.current?.focus();
+    function onMenuKeys(event: KeyboardEvent) {
+      if (!mobileMoreSheetRef.current?.contains(document.activeElement)) {
+        return;
+      }
+      const items = Array.from(
+        mobileMoreSheetRef.current.querySelectorAll<HTMLElement>('[role="menuitem"]')
+      );
+      if (!items.length) {
+        return;
+      }
+      const index = items.indexOf(document.activeElement as HTMLElement);
+      if (event.key === "ArrowDown" || event.key === "ArrowRight") {
+        event.preventDefault();
+        items[(index + 1 + items.length) % items.length]?.focus();
+      } else if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
+        event.preventDefault();
+        items[(index - 1 + items.length) % items.length]?.focus();
+      } else if (event.key === "Home") {
+        event.preventDefault();
+        items[0]?.focus();
+      } else if (event.key === "End") {
+        event.preventDefault();
+        items[items.length - 1]?.focus();
       }
     }
 
     document.addEventListener("pointerdown", closeOnOutsidePointer);
-    document.addEventListener("keydown", closeOnEscape);
+    document.addEventListener("keydown", onMenuKeys);
     return () => {
       document.removeEventListener("pointerdown", closeOnOutsidePointer);
-      document.removeEventListener("keydown", closeOnEscape);
+      document.removeEventListener("keydown", onMenuKeys);
     };
-  }, [mobileMoreOpen]);
+  }, [mobileMoreOpen, closeMobileMore]);
 
   function navigate(next: AppView) {
     setMobileMoreOpen(false);
@@ -308,7 +335,7 @@ export function AppShell({
   );
 
   return (
-    <div className="shell-root">
+    <div className={`shell-root${mobileMoreOpen ? " is-more-open" : ""}`}>
       <a href="#main-content" className="skip-link">Skip to main content</a>
 
       <header className="shell-masthead">
@@ -428,22 +455,37 @@ export function AppShell({
       </nav>
 
       {mobileMoreOpen ? (
-        <div id="mobile-more-menu" ref={mobileMoreSheetRef} className="dock-more-sheet" role="menu" aria-label="More views">
-          {[...mobileMoreItems, { view: "settings" as AppView, label: "Settings", icon: <GearSix size={18} weight="bold" /> }].map(
-            (item) => (
-              <button
-                key={item.view}
-                type="button"
-                role="menuitem"
-                onClick={() => navigate(item.view)}
-                className={`dock-more-link${view === item.view ? " current" : ""}`}
-              >
-                <span aria-hidden="true">{item.icon}</span>
-                {item.label}
-              </button>
-            )
-          )}
-        </div>
+        <>
+          <button
+            type="button"
+            className="dock-more-backdrop"
+            aria-label="Close more menu"
+            onClick={closeMobileMore}
+          />
+          <div
+            id="mobile-more-menu"
+            ref={mobileMoreSheetRef}
+            className="dock-more-sheet"
+            role="menu"
+            aria-label="More views"
+            tabIndex={-1}
+          >
+            {[...mobileMoreItems, { view: "settings" as AppView, label: "Settings", icon: <GearSix size={18} weight="bold" /> }].map(
+              (item) => (
+                <button
+                  key={item.view}
+                  type="button"
+                  role="menuitem"
+                  onClick={() => navigate(item.view)}
+                  className={`dock-more-link${view === item.view ? " current" : ""}`}
+                >
+                  <span aria-hidden="true">{item.icon}</span>
+                  {item.label}
+                </button>
+              )
+            )}
+          </div>
+        </>
       ) : null}
     </div>
   );

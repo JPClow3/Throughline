@@ -81,6 +81,8 @@ A calm cockpit for the day. Shows greeting, date, and a progress hero ("X of Y t
 - Local-only planner access restored: `/app` works without an account; sync remains an optional Settings/signup path.
 - Note chips deep-link from Today, Board, and Goals into Notes; TaskEditor matches composer fields; mobile dock prioritizes Today / Goals / Board / Notes.
 - Optional game-layer XP is gated; recovery key confirmation is a first-class signup/Settings step.
+- Editable study-minute estimates; PWA share-target composer prefill; note draft flush on leave; Google login gated on `VITE_GOOGLE_CLIENT_ID`.
+- Mobile More sheet uses a flat ink wash, focus trap, and arrow-key menu pattern; Today pressure rows and Projects open Board with matching filters; custom filter presets can be deleted; local due-time reminders fire in-tab when permission is granted.
 
 ## 4. Project Map
 
