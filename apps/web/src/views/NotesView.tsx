@@ -261,17 +261,30 @@ export function NoteEditor({
   const debounceTimerRef = useRef<number | null>(null);
   const draftRef = useRef({ title: note.title, body: note.body });
 
-  useEffect(
-    () => () => {
+  // Remounted per note via key; flush any pending draft on leave or unload.
+  useEffect(() => {
+    function flushPending() {
+      if (debounceTimerRef.current !== null) {
+        window.clearTimeout(debounceTimerRef.current);
+        debounceTimerRef.current = null;
+      }
+      const draft = draftRef.current;
+      if (draft.title !== note.title || draft.body !== note.body) {
+        void Promise.resolve(onSave({ ...note, title: draft.title, body: draft.body })).catch((error) => {
+          reportError(error, { source: "note-save-flush" });
+        });
+      }
+    }
+
+    window.addEventListener("beforeunload", flushPending);
+    return () => {
+      window.removeEventListener("beforeunload", flushPending);
       if (savedTimerRef.current !== null) {
         window.clearTimeout(savedTimerRef.current);
       }
-      if (debounceTimerRef.current !== null) {
-        window.clearTimeout(debounceTimerRef.current);
-      }
-    },
-    []
-  );
+      flushPending();
+    };
+  }, [note, onSave]);
 
   const taskMap = new Map(tasks.map((task) => [task.id, task]));
   const goalMap = new Map(goals.map((goal) => [goal.id, goal]));

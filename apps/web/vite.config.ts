@@ -63,21 +63,6 @@ export const appManifest = {
       id: "9PDNH55ZKNZ7"
     }
   ],
-  file_handlers: [
-    {
-      action: "/app",
-      accept: {
-        "text/plain": [".txt", ".md"],
-        "text/csv": [".csv"]
-      }
-    }
-  ],
-  protocol_handlers: [
-    {
-      protocol: "web+throughline",
-      url: "/app?action=%s"
-    }
-  ],
   share_target: {
     action: "/app",
     method: "GET" as const,

@@ -37,32 +37,37 @@ export function Login() {
     }
   }
 
+  const googleEnabled = Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID);
+
   return (
     <AuthShell title="Welcome back" subtitle="Sign in to sync your plan across devices.">
-      <div className="auth-oauth-row">
-        <GoogleLogin
-          onSuccess={async (credentialResponse) => {
-            if (credentialResponse.credential) {
-              try {
-                setBusy(true);
-                await loginWithGoogle(credentialResponse.credential);
-                navigate("/app");
-              } catch (err) {
-                setError(err instanceof Error ? err.message : "Google sign in failed.");
-              } finally {
-                setBusy(false);
-              }
-            }
-          }}
-          onError={() => {
-            setError("Google sign in failed.");
-          }}
-          theme={googleTheme}
-          shape="pill"
-        />
-      </div>
-
-      <div className="auth-divider">or continue with email</div>
+      {googleEnabled ? (
+        <>
+          <div className="auth-oauth-row">
+            <GoogleLogin
+              onSuccess={async (credentialResponse) => {
+                if (credentialResponse.credential) {
+                  try {
+                    setBusy(true);
+                    await loginWithGoogle(credentialResponse.credential);
+                    navigate("/app");
+                  } catch (err) {
+                    setError(err instanceof Error ? err.message : "Google sign in failed.");
+                  } finally {
+                    setBusy(false);
+                  }
+                }
+              }}
+              onError={() => {
+                setError("Google sign in failed.");
+              }}
+              theme={googleTheme}
+              shape="pill"
+            />
+          </div>
+          <div className="auth-divider">or continue with email</div>
+        </>
+      ) : null}
 
       <form className="auth-form" onSubmit={submit}>
         <Field label="Email">

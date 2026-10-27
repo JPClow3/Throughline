@@ -60,6 +60,7 @@ export function TaskEditor({
   );
   const [energy, setEnergy] = useState(task.energy);
   const [difficulty, setDifficulty] = useState(task.difficulty);
+  const [estimatedMinutes, setEstimatedMinutes] = useState(task.estimatedMinutes ?? 45);
   const [attribute, setAttribute] = useState<RpgAttribute>(task.attributes[0] ?? "focus");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -116,6 +117,7 @@ export function TaskEditor({
         description: description.trim(),
         energy,
         difficulty,
+        estimatedMinutes,
         tags: tags
           .split(",")
           .map((tag) => tag.trim())
@@ -250,6 +252,16 @@ export function TaskEditor({
           <TextInput type="datetime-local" value={reminderAt} onChange={(event) => setReminderAt(event.target.value)} />
         </Field>
       </div>
+      <Field label="Study minutes">
+        <TextInput
+          type="number"
+          min={5}
+          max={720}
+          step={5}
+          value={estimatedMinutes}
+          onChange={(event) => setEstimatedMinutes(Math.min(720, Math.max(5, Number(event.target.value) || 5)))}
+        />
+      </Field>
       <Field label="Tags">
         <TextInput value={tags} onChange={(event) => setTags(event.target.value)} placeholder="reading, errand" />
       </Field>

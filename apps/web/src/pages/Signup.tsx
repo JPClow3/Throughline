@@ -113,25 +113,30 @@ export function Signup() {
     );
   }
 
+  const googleEnabled = Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID);
+
   return (
     <AuthShell title="Create your account" subtitle="Local-first by default. Optional sync is end-to-end encrypted before records leave this device.">
-      <div className="auth-oauth-row">
-        <GoogleLogin
-          onSuccess={async (credentialResponse) => {
-            if (credentialResponse.credential) {
-              await handleGoogle(credentialResponse.credential);
-            }
-          }}
-          onError={() => {
-            setError("Google sign in failed.");
-          }}
-          theme={googleTheme}
-          shape="pill"
-          text="signup_with"
-        />
-      </div>
-
-      <div className="auth-divider">or create with email</div>
+      {googleEnabled ? (
+        <>
+          <div className="auth-oauth-row">
+            <GoogleLogin
+              onSuccess={async (credentialResponse) => {
+                if (credentialResponse.credential) {
+                  await handleGoogle(credentialResponse.credential);
+                }
+              }}
+              onError={() => {
+                setError("Google sign in failed.");
+              }}
+              theme={googleTheme}
+              shape="pill"
+              text="signup_with"
+            />
+          </div>
+          <div className="auth-divider">or create with email</div>
+        </>
+      ) : null}
 
       <form className="auth-form" onSubmit={submit}>
         <Field label="Email">

@@ -18,15 +18,17 @@ export function TaskComposer({
   goals = [],
   showGameLayer = false,
   initialDate,
+  initialTitle = "",
   onAddTask
 }: {
   courses: Course[];
   goals?: Goal[];
   showGameLayer?: boolean;
   initialDate?: Date;
+  initialTitle?: string;
   onAddTask: (input: TaskInput) => Promise<void>;
 }) {
-  const [title, setTitle] = useState("");
+  const [title, setTitle] = useState(initialTitle);
   const [description, setDescription] = useState("");
   const [courseId, setCourseId] = useState("");
   const [goalId, setGoalId] = useState("");
@@ -35,6 +37,7 @@ export function TaskComposer({
   const [priority, setPriority] = useState<Priority>("medium");
   const [energy, setEnergy] = useState(2);
   const [difficulty, setDifficulty] = useState(2);
+  const [estimatedMinutes, setEstimatedMinutes] = useState(50);
   const [attribute, setAttribute] = useState<RpgAttribute>("focus");
   const [tags, setTags] = useState("");
   const [subtasks, setSubtasks] = useState<Array<{ id: string; title: string; completed: boolean }>>([]);
@@ -77,6 +80,7 @@ export function TaskComposer({
         priority,
         energy,
         difficulty,
+        estimatedMinutes,
         attributes: [attribute],
         tags: parseTags(tags),
         subtasks: subtasks.map((subtask) => ({ ...subtask, title: subtask.title.trim() })).filter((subtask) => subtask.title),
@@ -92,6 +96,7 @@ export function TaskComposer({
       setTags("");
       setSubtasks([]);
       setPriority("medium");
+      setEstimatedMinutes(50);
       setRecurrence("");
       setAttemptedSubmit(false);
     } catch (error) {
@@ -190,6 +195,16 @@ export function TaskComposer({
                   </option>
                 ))}
               </Select>
+            </Field>
+            <Field label="Study minutes">
+              <TextInput
+                type="number"
+                min={5}
+                max={720}
+                step={5}
+                value={estimatedMinutes}
+                onChange={(event) => setEstimatedMinutes(Math.min(720, Math.max(5, Number(event.target.value) || 5)))}
+              />
             </Field>
             <Field label="Reminder">
               <TextInput type="datetime-local" value={reminderAt} onChange={(event) => setReminderAt(event.target.value)} />

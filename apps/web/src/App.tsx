@@ -72,9 +72,24 @@ function initialView(): AppView {
 
 export function App() {
   const [view, setView] = useStateWithUrl(initialView);
-  const [composerOpen, setComposerOpen] = React.useState(false);
+  const sharedPrefill = React.useMemo(() => {
+    if (typeof window === "undefined") {
+      return "";
+    }
+    const params = new URLSearchParams(window.location.search);
+    const sharedTitle = params.get("title")?.trim() ?? "";
+    const sharedText = params.get("text")?.trim() ?? "";
+    const sharedUrl = params.get("url")?.trim() ?? "";
+    if (!sharedTitle && !sharedText && !sharedUrl) {
+      return "";
+    }
+    return sharedTitle || sharedText.split("\n")[0]?.slice(0, 140) || sharedUrl;
+  }, []);
+
+  const [composerOpen, setComposerOpen] = React.useState(() => Boolean(sharedPrefill));
   const [commandPaletteOpen, setCommandPaletteOpen] = React.useState(false);
   const [composerDate, setComposerDate] = React.useState<Date | undefined>(undefined);
+  const [composerTitle, setComposerTitle] = React.useState(sharedPrefill);
   const [goalOpen, setGoalOpen] = React.useState(false);
   const [editingTaskId, setEditingTaskId] = React.useState<string | null>(null);
   const [editingGoal, setEditingGoal] = React.useState<Goal | null>(null);
@@ -110,15 +125,30 @@ export function App() {
     return () => document.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  const openTaskComposer = React.useCallback((date?: Date) => {
+  const openTaskComposer = React.useCallback((date?: Date, title?: string) => {
     setComposerDate(date);
+    setComposerTitle(title ?? "");
     setComposerOpen(true);
   }, []);
 
   const closeComposer = React.useCallback(() => {
     setComposerOpen(false);
     setComposerDate(undefined);
+    setComposerTitle("");
   }, []);
+
+  // Strip consumed share_target query params after initial capture open.
+  React.useEffect(() => {
+    if (!sharedPrefill) {
+      return;
+    }
+    const params = new URLSearchParams(window.location.search);
+    params.delete("title");
+    params.delete("text");
+    params.delete("url");
+    const next = `${window.location.pathname}${params.toString() ? `?${params}` : ""}${window.location.hash}`;
+    window.history.replaceState({}, "", next);
+  }, [sharedPrefill]);
 
   const toggleTheme = React.useCallback(() => {
     const current = appearanceSettings?.theme;
@@ -135,6 +165,7 @@ export function App() {
         commandPaletteOpen={commandPaletteOpen}
         setCommandPaletteOpen={setCommandPaletteOpen}
         composerDate={composerDate}
+        composerTitle={composerTitle}
         closeComposer={closeComposer}
         goalOpen={goalOpen}
         setGoalOpen={setGoalOpen}
@@ -178,6 +209,7 @@ type WorkspaceProps = {
   commandPaletteOpen: boolean;
   setCommandPaletteOpen: (open: boolean) => void;
   composerDate?: Date;
+  composerTitle?: string;
   closeComposer: () => void;
   goalOpen: boolean;
   setGoalOpen: (open: boolean) => void;
@@ -208,7 +240,7 @@ type WorkspaceProps = {
   bannerDismissed: boolean;
   promptToInstall: () => Promise<void>;
   onToggleTheme: () => void;
-  onOpenComposer: (date?: Date) => void;
+  onOpenComposer: (date?: Date, title?: string) => void;
 };
 
 function getDeepActiveElement(): Element | null {
@@ -752,6 +784,7 @@ function Workspace(props: WorkspaceProps) {
               goals={goals}
               showGameLayer={props.showGameLayer}
               initialDate={props.composerDate}
+              initialTitle={props.composerTitle}
               onAddTask={async (input) => {
                 await addTask(input);
                 props.closeComposer();

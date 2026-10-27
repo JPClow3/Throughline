@@ -50,6 +50,8 @@ export type TaskInput = {
   priority: Priority;
   energy: number;
   difficulty: number;
+  /** Study block length in minutes; defaults from energy when omitted. */
+  estimatedMinutes?: number;
   attributes: RpgAttribute[];
   tags?: string[];
   subtasks?: Subtask[];
@@ -158,7 +160,7 @@ export async function addTask(input: TaskInput) {
     subtasks: input.subtasks ?? [],
     status: "backlog",
     recurrence: input.recurrence,
-    estimatedMinutes: input.energy * 25
+    estimatedMinutes: input.estimatedMinutes ?? input.energy * 25
   });
 
   await db.tasks.put(task);
