@@ -32,6 +32,7 @@ import { AppearanceSettings, ThemePreference } from "../data/types";
 import { usePwaInstall } from "../hooks/usePwaInstall";
 import { downloadIcs } from "../lib/downloadIcs";
 import { APP_LOCALE } from "../lib/format";
+import { buildVerifyEmailLink } from "../lib/verifyEmailLink";
 import { reportError } from "../sentry";
 import {
   notificationSupport,
@@ -40,10 +41,12 @@ import {
   requestNotificationPermission,
   showLocalQuestNotification
 } from "../lib/notifications";
+import { RecoveryKeyPanel } from "../auth/RecoveryKeyPanel";
 import { Button, Card, ConfirmDialog, Notice, TextInput, ToggleRow } from "../ui";
 
 type AccountInfo = {
   email: string | null;
+  emailVerified?: boolean | null;
   syncStatus: "idle" | "syncing" | "offline" | "error";
   lastSyncAt: string | null;
 };
@@ -56,6 +59,7 @@ export function SettingsView({
   account,
   onSyncNow,
   onRegenerateRecoveryKey,
+  onResendVerification,
   onSignOut
 }: {
   tasks: Task[];
@@ -65,6 +69,7 @@ export function SettingsView({
   account?: AccountInfo;
   onSyncNow?: () => void | Promise<void>;
   onRegenerateRecoveryKey?: () => Promise<string>;
+  onResendVerification?: () => Promise<{ mailSent: boolean; verificationToken?: string }>;
   onSignOut?: () => void;
 }) {
   const support = useMemo(() => (typeof window === "undefined" ? null : notificationSupport()), []);
@@ -83,6 +88,8 @@ export function SettingsView({
   const [recoveryBusy, setRecoveryBusy] = useState(false);
   const [recoveryConfirmed, setRecoveryConfirmed] = useState(false);
   const [recoveryPartial, setRecoveryPartial] = useState("");
+  const [verifyBusy, setVerifyBusy] = useState(false);
+  const [verifyStatus, setVerifyStatus] = useState("");
   const [importPreview, setImportPreview] = useState<{ name: string; data: unknown } | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -286,7 +293,7 @@ export function SettingsView({
       </header>
 
       <section className="settings-grid">
-        {account ? (
+        {account?.email ? (
           <Card className="settings-card">
             <header>
               <CloudCheck size={18} weight="bold" />
@@ -295,7 +302,7 @@ export function SettingsView({
             <dl className="support-list">
               <div>
                 <dt>Signed in</dt>
-                <dd>{account.email ?? "—"}</dd>
+                <dd>{account.email}</dd>
               </div>
               <div>
                 <dt>Sync</dt>
@@ -311,10 +318,80 @@ export function SettingsView({
               </Button>
             </div>
             <p>Your data is end-to-end encrypted before it syncs — the server can't read it.</p>
+            {account.emailVerified === false ? (
+              <Notice variant="warning" title="Confirm your email">
+                <p>
+                  Verification keeps account recovery trustworthy. Your local planner stays usable either way — this
+                  never unlocks task content on the server.
+                </p>
+                <div className="button-row" style={{ marginTop: "0.75rem" }}>
+                  <Button
+                    disabled={verifyBusy || !onResendVerification}
+                    onClick={() => {
+                      if (!onResendVerification) return;
+                      setVerifyBusy(true);
+                      setVerifyStatus("");
+                      void onResendVerification()
+                        .then((result) => {
+                          if (result.mailSent) {
+                            setVerifyStatus("Verification email sent — check your inbox.");
+                            return;
+                          }
+                          if (result.verificationToken) {
+                            const link = buildVerifyEmailLink(result.verificationToken);
+                            setVerifyStatus(link);
+                            return;
+                          }
+                          setVerifyStatus("Could not create a verification link. Try again.");
+                        })
+                        .catch((error) => {
+                          setVerifyStatus(error instanceof Error ? error.message : "Could not resend verification.");
+                        })
+                        .finally(() => setVerifyBusy(false));
+                    }}
+                  >
+                    <PaperPlaneRight size={15} weight="bold" />
+                    {verifyBusy ? "Sending…" : "Resend verification"}
+                  </Button>
+                  {verifyStatus?.includes("/verify-email?token=") ? (
+                    <a className="btn btn-accent" href={verifyStatus}>
+                      Open verification link
+                    </a>
+                  ) : null}
+                </div>
+                {verifyStatus && !verifyStatus.includes("/verify-email?token=") ? (
+                  <span className="status-pill self-start">{verifyStatus}</span>
+                ) : null}
+                {verifyStatus?.includes("/verify-email?token=") ? (
+                  <p className="text-sm text-[var(--ink-soft)]" style={{ marginTop: "0.5rem" }}>
+                    Mail is not configured on this server — use the link above to confirm.
+                  </p>
+                ) : null}
+              </Notice>
+            ) : null}
           </Card>
-        ) : null}
+        ) : (
+          <Card className="settings-card">
+            <header>
+              <CloudCheck size={18} weight="bold" />
+              <h2>Account</h2>
+            </header>
+            <p>
+              You&apos;re planning locally on this device. Create an account anytime for optional end-to-end encrypted sync
+              across devices — the server never reads your task content.
+            </p>
+            <div className="button-row">
+              <a href="/signup" className="btn btn-accent">
+                Create account
+              </a>
+              <a href="/login" className="btn">
+                Sign in
+              </a>
+            </div>
+          </Card>
+        )}
 
-        {account ? (
+        {account?.email ? (
           <Card className="settings-card">
             <header>
               <Key size={18} weight="bold" />
@@ -325,28 +402,24 @@ export function SettingsView({
               recovery key are lost, synced task content cannot be recovered.
             </p>
             {recoveryKey ? (
-              <>
-                <p className="recovery-key">{recoveryKey}</p>
-                <ToggleRow checked={recoveryConfirmed} onChange={setRecoveryConfirmed}>
-                  I saved this recovery key
-                </ToggleRow>
-                <label className="field">
-                  <span>Confirm last 4 characters</span>
-                  <TextInput value={recoveryPartial} onChange={(event) => setRecoveryPartial(event.target.value)} maxLength={4} placeholder="last 4" />
-                </label>
-                <span className="status-pill self-start">
-                  {recoveryConfirmed && recoveryPartial.toLowerCase() === recoveryKey.slice(-4).toLowerCase()
-                    ? "Saved confirmation complete"
-                    : "Save and confirm before closing"}
-                </span>
-              </>
-            ) : null}
-            <div>
-              <Button onClick={() => void regenerateRecoveryKey()} disabled={recoveryBusy || !onRegenerateRecoveryKey}>
-                <Key size={15} weight="bold" />
-                {recoveryBusy ? "Generating..." : "Regenerate recovery key"}
-              </Button>
-            </div>
+              <RecoveryKeyPanel
+                recoveryKey={recoveryKey}
+                confirmed={recoveryConfirmed}
+                onConfirmedChange={setRecoveryConfirmed}
+                partialKey={recoveryPartial}
+                onPartialKeyChange={setRecoveryPartial}
+                onRegenerate={regenerateRecoveryKey}
+                regenerateBusy={recoveryBusy}
+                regenerateLabel="Regenerate recovery key"
+              />
+            ) : (
+              <div>
+                <Button onClick={() => void regenerateRecoveryKey()} disabled={recoveryBusy || !onRegenerateRecoveryKey}>
+                  <Key size={15} weight="bold" />
+                  {recoveryBusy ? "Generating..." : "Regenerate recovery key"}
+                </Button>
+              </div>
+            )}
             {recoveryKeyStatus ? <span className="status-pill self-start">{recoveryKeyStatus}</span> : null}
           </Card>
         ) : null}
@@ -412,13 +485,18 @@ export function SettingsView({
               <dd>{isInstalled ? "installed" : isInstallable ? "installable" : "not installable"}</dd>
             </div>
           </dl>
-          {isInstallable && (
+          {isInstallable ? (
             <div className="button-row">
               <Button variant="accent" onClick={promptToInstall}>
                 <DownloadSimple size={15} weight="bold" /> Install App
               </Button>
             </div>
-          )}
+          ) : !isInstalled ? (
+            <Notice variant="info">
+              If Install is unavailable in this browser, use your browser menu: on iPhone/iPad tap Share → Add to Home
+              Screen; on desktop Chrome/Edge open the address-bar install icon or App menu.
+            </Notice>
+          ) : null}
           <p>Throughline is designed to work fully offline once the shell is cached.</p>
         </Card>
 
@@ -451,6 +529,10 @@ export function SettingsView({
               Test
             </Button>
           </div>
+          <p>
+            With permission granted, due reminders fire in this tab at each task&apos;s reminder time using generic copy.
+            Background delivery still needs redacted push below.
+          </p>
         </Card>
 
         <Card className="settings-card">

@@ -1,9 +1,10 @@
 import { Books, ChartLineUp, Clock, Plus, Target, WarningCircle } from "@phosphor-icons/react";
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 import { useMemo, type CSSProperties, type ReactNode } from "react";
-import { deriveCoachingInsights } from "@throughline/domain";
+import { deriveCoachingInsights, deriveUserProgress } from "@throughline/domain";
 import { Button, EmptyState, ViewSkeleton } from "../ui";
 import { usePlanner } from "../state/PlannerProvider";
+import { GameProgressCard } from "./GameProgressCard";
 
 /** Hard-edged tooltip shared by every chart, per the Inkline elevation rules. */
 const CHART_TOOLTIP_STYLE = {
@@ -15,8 +16,12 @@ const CHART_TOOLTIP_STYLE = {
   boxShadow: "3px 3px 0 0 var(--shadow-ink)"
 } as const;
 
-export function InsightsView({ onNewTask }: { onNewTask?: () => void } = {}) {
-  const { tasks, courses, focusSessions, loading } = usePlanner();
+export function InsightsView({
+  onNewTask,
+  showGameLayer = false
+}: { onNewTask?: () => void; showGameLayer?: boolean } = {}) {
+  const { tasks, courses, focusSessions, progress, loading } = usePlanner();
+  const gameProgress = useMemo(() => progress ?? deriveUserProgress(tasks), [progress, tasks]);
 
   const stats = useMemo(() => {
     const now = new Date();
@@ -186,6 +191,8 @@ export function InsightsView({ onNewTask }: { onNewTask?: () => void } = {}) {
           <p className="view-head-sub">Signals from your tasks, courses, and focus sessions.</p>
         </div>
       </header>
+
+      {showGameLayer ? <GameProgressCard progress={gameProgress} /> : null}
 
       <section className="ik-card insights-coaching" aria-labelledby="insights-coaching-title">
         <div>

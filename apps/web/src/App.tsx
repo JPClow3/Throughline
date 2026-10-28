@@ -1,21 +1,31 @@
 import { Goal, Task, createCourse } from "@throughline/domain";
-import { DownloadSimple, X } from "@phosphor-icons/react";
+import { DownloadSimple, EnvelopeSimple, X } from "@phosphor-icons/react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { AnimatePresence, motion } from "motion/react";
 import React from "react";
 import { useAuth } from "./auth/AuthProvider";
 import type { AppearanceSettings } from "./data/types";
-import { clearAllData, getAppearanceSettings, saveAppearanceSettings, syncRecurringTasks } from "./data/repositories";
+import {
+  browseWithFilters,
+  clearAllData,
+  getAppearanceSettings,
+  saveAppearanceSettings,
+  syncRecurringTasks
+} from "./data/repositories";
 import type { GlobalSearchResult } from "./hooks/useGlobalSearch";
 import { usePwaInstall } from "./hooks/usePwaInstall";
 import { useTheme } from "./hooks/useTheme";
+import { downloadIcs } from "./lib/downloadIcs";
+import { scheduleLocalReminders } from "./lib/localReminders";
 import { PROJECT_COLORS } from "./lib/palette";
 import { requestNotificationPermission } from "./lib/notifications";
-import { fireAndForget } from "./sentry";
+import { buildVerifyEmailLink } from "./lib/verifyEmailLink";
+import { fireAndForget, reportError } from "./sentry";
 import { AppShell, AppView, ShellSync } from "./shell/AppShell";
 import { PlannerProvider, usePlanner } from "./state/PlannerProvider";
-import { Button, Sheet, ViewSkeleton } from "./ui";
+import { Button, Notice, Sheet, ViewSkeleton } from "./ui";
 import { useSync } from "./sync/useSync";
+import type { TodayPressureKind } from "./views/TodayView";
 
 const TodayView = React.lazy(() => import("./views/TodayView").then((module) => ({ default: module.TodayView })));
 const BoardView = React.lazy(() => import("./views/BoardView").then((module) => ({ default: module.BoardView })));
@@ -72,9 +82,24 @@ function initialView(): AppView {
 
 export function App() {
   const [view, setView] = useStateWithUrl(initialView);
-  const [composerOpen, setComposerOpen] = React.useState(false);
+  const sharedPrefill = React.useMemo(() => {
+    if (typeof window === "undefined") {
+      return "";
+    }
+    const params = new URLSearchParams(window.location.search);
+    const sharedTitle = params.get("title")?.trim() ?? "";
+    const sharedText = params.get("text")?.trim() ?? "";
+    const sharedUrl = params.get("url")?.trim() ?? "";
+    if (!sharedTitle && !sharedText && !sharedUrl) {
+      return "";
+    }
+    return sharedTitle || sharedText.split("\n")[0]?.slice(0, 140) || sharedUrl;
+  }, []);
+
+  const [composerOpen, setComposerOpen] = React.useState(() => Boolean(sharedPrefill));
   const [commandPaletteOpen, setCommandPaletteOpen] = React.useState(false);
   const [composerDate, setComposerDate] = React.useState<Date | undefined>(undefined);
+  const [composerTitle, setComposerTitle] = React.useState(sharedPrefill);
   const [goalOpen, setGoalOpen] = React.useState(false);
   const [editingTaskId, setEditingTaskId] = React.useState<string | null>(null);
   const [editingGoal, setEditingGoal] = React.useState<Goal | null>(null);
@@ -84,12 +109,21 @@ export function App() {
   const [focusTask, setFocusTask] = React.useState<Task | null>(null);
   const [cooldownTasks, setCooldownTasks] = React.useState<Task[]>([]);
 
-  const { email, dekKey, rotateRecoveryKey, logout } = useAuth();
+  const { email, emailVerified, dekKey, rotateRecoveryKey, resendVerification, logout } = useAuth();
   const sync = useSync(dekKey);
   const appearanceSettings = useLiveQuery(() => getAppearanceSettings(), []);
   useTheme(appearanceSettings?.theme);
   const showGameLayer = appearanceSettings?.showGameLayer ?? false;
-  const showOnboarding = appearanceSettings ? !appearanceSettings.hasCompletedOnboarding : false;
+  // Latch onboarding visibility so a liveQuery undefined flicker cannot remount the wizard mid-step.
+  const [onboardingLatched, setOnboardingLatched] = React.useState(false);
+  const [seenAppearanceSettings, setSeenAppearanceSettings] = React.useState(appearanceSettings);
+  if (appearanceSettings !== seenAppearanceSettings) {
+    setSeenAppearanceSettings(appearanceSettings);
+    if (appearanceSettings) {
+      setOnboardingLatched(!appearanceSettings.hasCompletedOnboarding);
+    }
+  }
+  const showOnboarding = onboardingLatched;
   const { isInstallable, promptToInstall } = usePwaInstall();
   const bannerDismissed = appearanceSettings?.pwaBannerDismissed ?? false;
 
@@ -110,15 +144,30 @@ export function App() {
     return () => document.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  const openTaskComposer = React.useCallback((date?: Date) => {
+  const openTaskComposer = React.useCallback((date?: Date, title?: string) => {
     setComposerDate(date);
+    setComposerTitle(title ?? "");
     setComposerOpen(true);
   }, []);
 
   const closeComposer = React.useCallback(() => {
     setComposerOpen(false);
     setComposerDate(undefined);
+    setComposerTitle("");
   }, []);
+
+  // Strip consumed share_target query params after initial capture open.
+  React.useEffect(() => {
+    if (!sharedPrefill) {
+      return;
+    }
+    const params = new URLSearchParams(window.location.search);
+    params.delete("title");
+    params.delete("text");
+    params.delete("url");
+    const next = `${window.location.pathname}${params.toString() ? `?${params}` : ""}${window.location.hash}`;
+    window.history.replaceState({}, "", next);
+  }, [sharedPrefill]);
 
   const toggleTheme = React.useCallback(() => {
     const current = appearanceSettings?.theme;
@@ -135,6 +184,7 @@ export function App() {
         commandPaletteOpen={commandPaletteOpen}
         setCommandPaletteOpen={setCommandPaletteOpen}
         composerDate={composerDate}
+        composerTitle={composerTitle}
         closeComposer={closeComposer}
         goalOpen={goalOpen}
         setGoalOpen={setGoalOpen}
@@ -154,7 +204,9 @@ export function App() {
         setCooldownTasks={setCooldownTasks}
         sync={sync}
         email={email}
+        emailVerified={emailVerified}
         rotateRecoveryKey={rotateRecoveryKey}
+        resendVerification={resendVerification}
         logout={logout}
         appearanceSettings={appearanceSettings}
         showGameLayer={showGameLayer}
@@ -176,6 +228,7 @@ type WorkspaceProps = {
   commandPaletteOpen: boolean;
   setCommandPaletteOpen: (open: boolean) => void;
   composerDate?: Date;
+  composerTitle?: string;
   closeComposer: () => void;
   goalOpen: boolean;
   setGoalOpen: (open: boolean) => void;
@@ -195,7 +248,9 @@ type WorkspaceProps = {
   setCooldownTasks: React.Dispatch<React.SetStateAction<Task[]>>;
   sync: ShellSync;
   email: string | null;
+  emailVerified: boolean | null;
   rotateRecoveryKey: () => Promise<string>;
+  resendVerification: () => Promise<{ mailSent: boolean; verificationToken?: string }>;
   logout: () => Promise<void> | void;
   appearanceSettings?: AppearanceSettings;
   showGameLayer: boolean;
@@ -204,7 +259,7 @@ type WorkspaceProps = {
   bannerDismissed: boolean;
   promptToInstall: () => Promise<void>;
   onToggleTheme: () => void;
-  onOpenComposer: (date?: Date) => void;
+  onOpenComposer: (date?: Date, title?: string) => void;
 };
 
 function getDeepActiveElement(): Element | null {
@@ -295,6 +350,47 @@ function Workspace(props: WorkspaceProps) {
     [props]
   );
 
+  /** Note chips deep-link into Notes, selecting a linked note when one exists. */
+  const openTaskNotes = React.useCallback(
+    (taskId: string) => {
+      const linked = notes.find((note) => note.taskIds.includes(taskId));
+      if (linked) {
+        props.setSelectedNoteId(linked.id);
+      }
+      props.setView("notes");
+    },
+    [notes, props]
+  );
+
+  /** Today pressure rows and Projects open Board with a matching persisted filter. */
+  const openBoardWithFilters = React.useCallback(
+    (patch: Parameters<typeof browseWithFilters>[0]) => {
+      fireAndForget(browseWithFilters(patch), { source: "board-browse" });
+      props.setView("kanban");
+    },
+    [props]
+  );
+
+  const browsePressure = React.useCallback(
+    (kind: TodayPressureKind) => {
+      if (kind === "due-today") {
+        openBoardWithFilters({ dateRange: "today" });
+        return;
+      }
+      if (kind === "overdue") {
+        openBoardWithFilters({ dateRange: "overdue" });
+        return;
+      }
+      openBoardWithFilters({ status: "blocked" });
+    },
+    [openBoardWithFilters]
+  );
+
+  // Local due-time reminders when the browser already granted notification permission.
+  React.useEffect(() => {
+    return scheduleLocalReminders(tasks);
+  }, [tasks]);
+
   /** Board moves arrive as a batch of reordered/retitled-status records. */
   const updateTasks = React.useCallback(
     async (updates: Task[]) => {
@@ -324,18 +420,22 @@ function Workspace(props: WorkspaceProps) {
     props.setView("courses");
   };
 
+  // View-specific primary capture for the mobile FAB and the `N` shortcut.
+  // Masthead "New Task" always opens task capture so it never becomes a dead control.
   const primaryActionLabel =
     props.view === "notes"
       ? "New note"
-      : props.view === "dashboard" ||
-        props.view === "kanban" ||
-        props.view === "timeline" ||
-        props.view === "courses" ||
-        props.view === "goals"
-        ? "New task"
-        : undefined;
+      : props.view === "goals"
+        ? "New goal"
+        : props.view === "dashboard" ||
+            props.view === "kanban" ||
+            props.view === "timeline" ||
+            props.view === "courses" ||
+            props.view === "insights"
+          ? "New task"
+          : undefined;
 
-  const { view, setSelectedNoteId, setView, onOpenComposer } = props;
+  const { view, setSelectedNoteId, setView, onOpenComposer, setGoalOpen } = props;
   const cooldownTimerRef = React.useRef<number | null>(null);
 
   React.useEffect(
@@ -347,6 +447,30 @@ function Workspace(props: WorkspaceProps) {
     []
   );
 
+  // Honor PWA note_taking `new_note_url` (?view=notes&action=new) once, then strip the flag.
+  const consumedNewNoteAction = React.useRef(false);
+  React.useEffect(() => {
+    if (loading || props.appearanceSettings === undefined || consumedNewNoteAction.current) {
+      return;
+    }
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("action") !== "new") {
+      return;
+    }
+    if (props.view !== "notes" && url.searchParams.get("view") !== "notes") {
+      return;
+    }
+    consumedNewNoteAction.current = true;
+    url.searchParams.delete("action");
+    url.searchParams.set("view", "notes");
+    window.history.replaceState({}, "", url);
+    void (async () => {
+      const note = await addNote({});
+      setSelectedNoteId(note.id);
+      setView("notes");
+    })();
+  }, [addNote, loading, props.appearanceSettings, props.view, setSelectedNoteId, setView]);
+
   const handlePrimaryAction = React.useCallback(async () => {
     if (view === "notes") {
       const note = await addNote({});
@@ -354,10 +478,14 @@ function Workspace(props: WorkspaceProps) {
       setView("notes");
       return;
     }
+    if (view === "goals") {
+      setGoalOpen(true);
+      return;
+    }
     if (primaryActionLabel) {
       onOpenComposer();
     }
-  }, [view, addNote, primaryActionLabel, setSelectedNoteId, setView, onOpenComposer]);
+  }, [view, addNote, primaryActionLabel, setSelectedNoteId, setView, onOpenComposer, setGoalOpen]);
 
   // Quick capture: `N` opens the composer (or a new note on Notes) from any
   // planner view, unless the user is typing or a dialog already owns the screen.
@@ -441,17 +569,100 @@ function Workspace(props: WorkspaceProps) {
     props.setView(input.openSyncSettings ? "settings" : "dashboard");
   };
 
+  const [verifyBannerDismissed, setVerifyBannerDismissed] = React.useState(false);
+  const [verifyBusy, setVerifyBusy] = React.useState(false);
+  const [verifyBannerStatus, setVerifyBannerStatus] = React.useState<string | null>(null);
+  const [verifyBannerLink, setVerifyBannerLink] = React.useState<string | null>(null);
+  const [paletteExportNotice, setPaletteExportNotice] = React.useState<string | null>(null);
+  const showVerifyBanner = Boolean(props.email) && props.emailVerified === false && !verifyBannerDismissed;
+
+  React.useEffect(() => {
+    if (!paletteExportNotice) return;
+    const timer = window.setTimeout(() => setPaletteExportNotice(null), 4000);
+    return () => window.clearTimeout(timer);
+  }, [paletteExportNotice]);
+
   return (
     <>
       <AnimatePresence>
+        {showVerifyBanner ? (
+          <motion.div
+            key="verify-email-banner"
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 24 }}
+            className="ik-card pwa-install-banner email-verify-banner"
+            role="region"
+            aria-label="Verify your email"
+          >
+            <div className="pwa-install-icon email-verify-icon">
+              <EnvelopeSimple size={19} weight="bold" />
+            </div>
+            <div className="pwa-install-copy">
+              <p className="pwa-install-title">Confirm your email</p>
+              <p className="pwa-install-sub">
+                {verifyBannerStatus ?? "Optional — your local planner stays available either way."}
+              </p>
+              {verifyBannerLink ? (
+                <p className="pwa-install-sub" style={{ marginTop: "0.35rem" }}>
+                  <a className="btn btn-accent" href={verifyBannerLink}>
+                    Open verification link
+                  </a>
+                </p>
+              ) : null}
+            </div>
+            <div className="pwa-install-actions">
+              <Button
+                variant="accent"
+                size="sm"
+                disabled={verifyBusy}
+                onClick={() => {
+                  setVerifyBusy(true);
+                  setVerifyBannerLink(null);
+                  void props
+                    .resendVerification()
+                    .then((result) => {
+                      if (result.mailSent) {
+                        setVerifyBannerStatus("Verification email sent.");
+                        return;
+                      }
+                      if (result.verificationToken) {
+                        // Stay on /app — match Settings/Signup in-place link UX so
+                        // composer and other in-memory planner state are not wiped.
+                        const link = buildVerifyEmailLink(result.verificationToken);
+                        setVerifyBannerLink(link);
+                        setVerifyBannerStatus("Mail is not configured — use the link to confirm.");
+                        return;
+                      }
+                      setVerifyBannerStatus("Could not create a verification link.");
+                    })
+                    .catch((error) => {
+                      setVerifyBannerStatus(error instanceof Error ? error.message : "Could not resend.");
+                    })
+                    .finally(() => setVerifyBusy(false));
+                }}
+              >
+                {verifyBusy ? "Sending…" : "Resend"}
+              </Button>
+              <button
+                type="button"
+                className="icon-toggle"
+                onClick={() => setVerifyBannerDismissed(true)}
+                aria-label="Dismiss email verification reminder"
+              >
+                <X size={14} weight="bold" />
+              </button>
+            </div>
+          </motion.div>
+        ) : null}
         {props.isInstallable && !props.bannerDismissed ? (
           <motion.div
             key="install-banner"
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 24 }}
-            className="ik-card pwa-install-banner"
-            role="dialog"
+            className={`ik-card pwa-install-banner${showVerifyBanner ? " pwa-install-banner-stacked" : ""}`}
+            role="region"
             aria-label="Install Throughline"
           >
             <div className="pwa-install-icon">
@@ -478,12 +689,28 @@ function Workspace(props: WorkspaceProps) {
             </div>
           </motion.div>
         ) : null}
+        {paletteExportNotice ? (
+          <motion.div
+            key="palette-export-notice"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 16 }}
+            className="ik-card palette-export-notice"
+            role="status"
+            aria-live="polite"
+          >
+            <Notice variant={paletteExportNotice.startsWith("Exported") ? "success" : "error"}>
+              {paletteExportNotice}
+            </Notice>
+          </motion.div>
+        ) : null}
       </AnimatePresence>
 
       <AppShell
         view={props.view}
         onViewChange={props.setView}
-        onNewTask={() => void handlePrimaryAction()}
+        onNewTask={props.onOpenComposer}
+        onPrimaryAction={() => void handlePrimaryAction()}
         onOpenCommandPalette={() => props.setCommandPaletteOpen(true)}
         primaryActionLabel={primaryActionLabel}
         email={props.email}
@@ -507,6 +734,8 @@ function Workspace(props: WorkspaceProps) {
                   onEdit={openTask}
                   onStartFocus={props.setFocusTask}
                   onUpdateTask={(task) => void updateTask(task)}
+                  onOpenNotes={openTaskNotes}
+                  onBrowsePressure={browsePressure}
                   showGameLayer={props.showGameLayer}
                 />
               ) : null}
@@ -518,7 +747,7 @@ function Workspace(props: WorkspaceProps) {
                   onUpdateTasks={(updates) => void updateTasks(updates)}
                   onUpdateTask={(task) => void updateTask(task)}
                   onEdit={openTask}
-                  onOpenNotes={() => props.setView("notes")}
+                  onOpenNotes={openTaskNotes}
                   onStartFocus={props.setFocusTask}
                   onNewTask={props.onOpenComposer}
                 />
@@ -544,7 +773,12 @@ function Workspace(props: WorkspaceProps) {
                   onDeleteGoal={removeGoal}
                   onEditGoal={props.setEditingGoal}
                   onAddTask={addTask}
-                  onAddNote={addNote}
+                  onAddNote={async (input) => {
+                    const note = await addNote(input);
+                    props.setSelectedNoteId(note.id);
+                    props.setView("notes");
+                    return note;
+                  }}
                   onCompleteTask={(task) => completeTask(task)}
                   onStatusChange={(taskId, status) => void updateTaskStatus(taskId, status)}
                   onEditTask={openTask}
@@ -554,7 +788,9 @@ function Workspace(props: WorkspaceProps) {
                     props.setSelectedNoteId(noteId);
                     props.setView("notes");
                   }}
+                  onOpenNotes={openTaskNotes}
                   onReorderTask={updateTask}
+                  showGameLayer={props.showGameLayer}
                 />
               ) : null}
               {props.view === "notes" ? (
@@ -578,20 +814,33 @@ function Workspace(props: WorkspaceProps) {
                   tasks={tasks}
                   onUpsertCourse={upsertCourse}
                   onDeleteCourse={deleteCourse}
+                  onOpenOnBoard={(courseId) => openBoardWithFilters({ projectId: courseId })}
                   highlightedProjectId={props.highlightedProjectId}
                 />
               ) : null}
-              {props.view === "insights" ? <InsightsView onNewTask={props.onOpenComposer} /> : null}
+              {props.view === "insights" ? (
+                <InsightsView onNewTask={props.onOpenComposer} showGameLayer={props.showGameLayer} />
+              ) : null}
               {props.view === "settings" ? (
                 <SettingsView
                   tasks={tasks}
                   courses={courses}
                   appearanceSettings={props.appearanceSettings}
                   onAppearanceChange={saveAppearanceSettings}
-                  account={{ email: props.email, syncStatus: props.sync.status, lastSyncAt: props.sync.lastSyncAt }}
-                  onSyncNow={props.sync.syncNow}
-                  onRegenerateRecoveryKey={props.rotateRecoveryKey}
-                  onSignOut={props.logout}
+                  account={
+                    props.email
+                      ? {
+                          email: props.email,
+                          emailVerified: props.emailVerified,
+                          syncStatus: props.sync.status,
+                          lastSyncAt: props.sync.lastSyncAt
+                        }
+                      : undefined
+                  }
+                  onSyncNow={props.email ? props.sync.syncNow : undefined}
+                  onRegenerateRecoveryKey={props.email ? props.rotateRecoveryKey : undefined}
+                  onResendVerification={props.email ? props.resendVerification : undefined}
+                  onSignOut={props.email ? props.logout : undefined}
                 />
               ) : null}
             </React.Suspense>
@@ -605,6 +854,26 @@ function Workspace(props: WorkspaceProps) {
           setOpen={props.setCommandPaletteOpen}
           onNavigate={props.setView}
           onNewTask={() => props.onOpenComposer()}
+          onNewGoal={() => props.setGoalOpen(true)}
+          onNewNote={() => {
+            void (async () => {
+              const note = await addNote({});
+              props.setSelectedNoteId(note.id);
+              props.setView("notes");
+            })();
+          }}
+          onExportCalendar={() => {
+            try {
+              downloadIcs(tasks, courses);
+              const dueCount = tasks.filter((task) => task.dueAt).length;
+              setPaletteExportNotice(
+                `Exported ${dueCount} due ${dueCount === 1 ? "task" : "tasks"} to throughline.ics`
+              );
+            } catch (error) {
+              reportError(error, { source: "palette-ics-export" });
+              setPaletteExportNotice(error instanceof Error ? error.message : "Calendar export failed");
+            }
+          }}
           onToggleTheme={props.onToggleTheme}
           tasks={tasks}
           notes={notes}
@@ -620,6 +889,7 @@ function Workspace(props: WorkspaceProps) {
               goals={goals}
               showGameLayer={props.showGameLayer}
               initialDate={props.composerDate}
+              initialTitle={props.composerTitle}
               onAddTask={async (input) => {
                 await addTask(input);
                 props.closeComposer();
@@ -670,6 +940,7 @@ function Workspace(props: WorkspaceProps) {
               task={editingTask}
               courses={courses}
               goals={goals}
+              showGameLayer={props.showGameLayer}
               onSave={async (updated) => {
                 await updateTask(updated);
                 props.setEditingTaskId(null);
@@ -717,16 +988,19 @@ function Workspace(props: WorkspaceProps) {
             }}
           />
         ) : null}
+      </React.Suspense>
 
-        {props.showOnboarding ? (
+      {/* Own Suspense so sibling overlay lazy-loads cannot remount setup and wipe step state. */}
+      {props.showOnboarding ? (
+        <React.Suspense fallback={null}>
           <OnboardingOverlay
             onSetup={completeOnboardingSetup}
             onComplete={async () => {
               await saveAppearanceSettings({ hasCompletedOnboarding: true });
             }}
           />
-        ) : null}
-      </React.Suspense>
+        </React.Suspense>
+      ) : null}
     </>
   );
 }

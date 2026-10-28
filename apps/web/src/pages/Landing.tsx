@@ -1,4 +1,4 @@
-import { ArrowRight, CalendarDots, Database, Kanban, LockKey, Note, ShieldCheck } from "@phosphor-icons/react";
+import { ArrowRight, CalendarDots, Database, Kanban, ShieldCheck } from "@phosphor-icons/react";
 import { MotionConfig, motion } from "motion/react";
 import type { CSSProperties, ReactNode } from "react";
 import { Link } from "react-router-dom";
@@ -74,11 +74,11 @@ const SHOWCASE = [
 const FAQ = [
   {
     q: "Is my data private?",
-    a: "Yes. With an account, everything is end-to-end encrypted on your device before it syncs — the server only ever stores ciphertext it can't read."
+    a: "Yes. Your planner stays on this device by default — no account required. Optional sync is end-to-end encrypted on your device before it leaves, so the server only ever stores ciphertext it can't read."
   },
   {
     q: "Does it work offline?",
-    a: "Fully. Throughline is local-first: your plan lives in the browser and works with no connection. Sync catches up when you're back online."
+    a: "Fully. Throughline is local-first: your plan lives in the browser and works with no connection. If you opt into sync, it catches up when you're back online."
   },
   {
     q: "How much does it cost?",
@@ -115,17 +115,12 @@ export function Landing() {
         <main id="top" className="landing-main">
           <section className="landing-hero">
             <Reveal>
-              <div className="landing-hero-badge-row">
-                <span className="chip-static">
-                  <LockKey size={12} weight="bold" /> Local-first
+              <p className="landing-hero-brand">
+                <span className="shell-brand-mark" aria-hidden="true">
+                  <Mark size={22} />
                 </span>
-                <span className="chip-static">
-                  <ShieldCheck size={12} weight="bold" /> End-to-end encrypted sync
-                </span>
-                <span className="chip-static">
-                  <Note size={12} weight="bold" /> Installable PWA
-                </span>
-              </div>
+                Throughline
+              </p>
             </Reveal>
             <Reveal delay={0.05}>
               <h1>
@@ -136,18 +131,17 @@ export function Landing() {
             </Reveal>
             <Reveal delay={0.1}>
               <p className="landing-hero-sub">
-                A local-first student planner for courses, tasks, notes, due dates, and calm academic momentum —
-                without giving up privacy.
+                Local-first student planning for courses, deadlines, and focus — with optional end-to-end encrypted sync.
               </p>
             </Reveal>
             <Reveal delay={0.15}>
               <div className="landing-hero-actions">
-                <Link to="/signup" className="btn btn-primary" style={{ minHeight: 50, paddingInline: "1.6rem", fontSize: "1rem" }}>
+                <Link to="/app" className="btn btn-primary" style={{ minHeight: 50, paddingInline: "1.6rem", fontSize: "1rem" }}>
                   Start planning free <ArrowRight size={18} weight="bold" />
                 </Link>
-                <a href="#views" className="btn" style={{ minHeight: 50, paddingInline: "1.6rem", fontSize: "1rem" }}>
-                  Explore features
-                </a>
+                <Link to="/signup" className="btn" style={{ minHeight: 50, paddingInline: "1.6rem", fontSize: "1rem" }}>
+                  Create account for sync
+                </Link>
               </div>
             </Reveal>
             <Reveal delay={0.2}>
@@ -290,10 +284,15 @@ export function Landing() {
 
           <section className="ik-card landing-final">
             <h2>Start with one goal.</h2>
-            <p>Add the first step today — Throughline keeps the rest calm.</p>
-            <Link to="/signup" className="btn btn-accent" style={{ minHeight: 50, paddingInline: "1.6rem", fontSize: "1rem" }}>
-              Get started <ArrowRight size={17} weight="bold" />
-            </Link>
+            <p>Add the first step today — Throughline keeps the rest calm. No account required.</p>
+            <div className="landing-hero-actions" style={{ justifyContent: "center" }}>
+              <Link to="/app" className="btn btn-accent" style={{ minHeight: 50, paddingInline: "1.6rem", fontSize: "1rem" }}>
+                Open the planner <ArrowRight size={17} weight="bold" />
+              </Link>
+              <Link to="/signup" className="btn" style={{ minHeight: 50, paddingInline: "1.6rem", fontSize: "1rem" }}>
+                Create account
+              </Link>
+            </div>
           </section>
         </main>
 

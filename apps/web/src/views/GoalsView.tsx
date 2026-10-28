@@ -1,9 +1,10 @@
 import { Course, Goal, GoalStatus, Note, Task, TaskStatus, deriveGoalProgress, nextGoalTaskOrder, noteDisplayTitle, noteExcerpt, notesForGoal, tasksForGoal } from "@throughline/domain";
 import { ArrowLeft, CaretDown, CaretUp, CheckCircle, Confetti, Note as FileText, PencilSimple, Plus, Target, Trash } from "@phosphor-icons/react";
 import { AnimatePresence, motion } from "motion/react";
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useMemo, useRef, useState } from "react";
 import type { NoteInput, TaskInput } from "../data/repositories";
 import { APP_LOCALE } from "../lib/format";
+import { countNotesByTask } from "../lib/noteCounts";
 import { Button, Card, ConfirmDialog, EmptyState, Ring, SectionHeading, TextInput } from "../ui";
 import { TaskCard } from "./TaskCard";
 
@@ -26,7 +27,9 @@ export function GoalsView({
   onUpdateTask,
   onStartFocus,
   onOpenNote,
-  onReorderTask
+  onOpenNotes,
+  onReorderTask,
+  showGameLayer = false
 }: {
   goals: Goal[];
   tasks: Task[];
@@ -46,7 +49,9 @@ export function GoalsView({
   onUpdateTask?: (task: Task) => void;
   onStartFocus?: (task: Task) => void;
   onOpenNote?: (noteId: string) => void;
+  onOpenNotes?: (taskId: string) => void;
   onReorderTask: (task: Task) => Promise<void>;
+  showGameLayer?: boolean;
 }) {
   const selected = selectedId ? goals.find((goal) => goal.id === selectedId) : undefined;
 
@@ -67,8 +72,10 @@ export function GoalsView({
         onStartFocus={onStartFocus}
         onEditGoal={onEditGoal}
         onOpenNote={onOpenNote}
+        onOpenNotes={onOpenNotes}
         onReorderTask={onReorderTask}
         onSetGoalStatus={onSetGoalStatus}
+        showGameLayer={showGameLayer}
         onDeleteGoal={async (id) => {
           await onDeleteGoal(id);
           onSelectGoal(null);
@@ -153,9 +160,11 @@ function GoalDetail({
   onStartFocus,
   onEditGoal,
   onOpenNote,
+  onOpenNotes,
   onReorderTask,
   onSetGoalStatus,
-  onDeleteGoal
+  onDeleteGoal,
+  showGameLayer = false
 }: {
   goal: Goal;
   tasks: Task[];
@@ -171,9 +180,11 @@ function GoalDetail({
   onStartFocus?: (task: Task) => void;
   onEditGoal: (goal: Goal) => void;
   onOpenNote?: (noteId: string) => void;
+  onOpenNotes?: (taskId: string) => void;
   onReorderTask: (task: Task) => Promise<void>;
   onSetGoalStatus: (goalId: string, status: GoalStatus) => Promise<void>;
   onDeleteGoal: (goalId: string) => Promise<void>;
+  showGameLayer?: boolean;
 }) {
   const [stepTitle, setStepTitle] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -183,6 +194,7 @@ function GoalDetail({
   const courseMap = new Map(courses.map((course) => [course.id, course]));
   const children = tasksForGoal(goal.id, tasks);
   const linkedNotes = notesForGoal(goal.id, notes);
+  const noteCountByTask = useMemo(() => countNotesByTask(notes), [notes]);
   const progress = deriveGoalProgress(goal.id, tasks);
   const project = goal.projectId ? courseMap.get(goal.projectId) : undefined;
   const targetDate = goal.targetDate ? new Date(goal.targetDate) : undefined;
@@ -348,11 +360,14 @@ function GoalDetail({
                 <TaskCard
                   task={task}
                   course={courseMap.get(task.courseId ?? "")}
+                  showGameLayer={showGameLayer}
+                  noteCount={noteCountByTask.get(task.id) ?? 0}
                   onComplete={onCompleteTask}
                   onStatusChange={onStatusChange}
                   onEdit={onEditTask}
                   onUpdateTask={onUpdateTask}
                   onStartFocus={onStartFocus}
+                  onOpenNotes={onOpenNotes}
                 />
               </div>
             ))

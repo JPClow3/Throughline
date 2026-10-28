@@ -39,13 +39,13 @@ export function BoardView({
   /** Enables inline subtask editing on the cards (Today/Board parity). */
   onUpdateTask?: (task: Task) => void;
   onEdit: (task: Task) => void;
-  onOpenNotes?: () => void;
+  onOpenNotes?: (taskId: string) => void;
   onStartFocus?: (task: Task) => void;
   onNewTask?: () => void;
   showGameLayer?: boolean;
 }) {
   const { tasks, courses, goals, courseById, noteCountByTask, tags } = usePlanner();
-  const { filters, presets, setFilter, applyFilters, applyPreset, clearFilters, saveCurrentPreset } = useFilters();
+  const { filters, presets, setFilter, applyFilters, applyPreset, clearFilters, saveCurrentPreset, deletePreset } = useFilters();
   const [announcement, setAnnouncement] = useState("");
   const [mobileStatus, setMobileStatus] = useState<TaskStatus>("backlog");
   const [recentlyCompletedIds, setRecentlyCompletedIds] = useState<Set<string>>(new Set());
@@ -170,8 +170,9 @@ export function BoardView({
           onApplyPreset={applyPreset}
           onClearFilters={clearFilters}
           onSavePreset={saveCurrentPreset}
+          onDeletePreset={deletePreset}
           showDateFilter
-          showStatusFilter={false}
+          showStatusFilter
         />
       </header>
       <div className="sr-only" aria-live="polite">{announcement}</div>
@@ -361,7 +362,7 @@ function SortableQuest({
   onStatusChange: (taskId: string, status: TaskStatus) => void;
   onEdit: (task: Task) => void;
   onUpdateTask?: (task: Task) => void;
-  onOpenNotes?: () => void;
+  onOpenNotes?: (taskId: string) => void;
   onStartFocus?: (task: Task) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({

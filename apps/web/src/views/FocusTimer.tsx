@@ -1,10 +1,10 @@
 import { Task } from "@throughline/domain";
 import { CheckCircle, Pause, Play, WarningCircle, X } from "@phosphor-icons/react";
 import { AnimatePresence, motion } from "motion/react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { FocusSessionInput } from "../data/repositories";
 import { reportError } from "../sentry";
-import { Button, IconButton } from "../ui";
+import { Button, IconButton, useDialogA11y } from "../ui";
 
 const FOCUS_MINUTES = 25;
 const FOCUS_SECONDS = FOCUS_MINUTES * 60;
@@ -26,7 +26,12 @@ export function FocusTimer({
   const [showSuccess, setShowSuccess] = useState(false);
   const [saveError, setSaveError] = useState(false);
   const [startedAt, setStartedAt] = useState(() => new Date().toISOString());
+  const panelRef = useRef<HTMLDivElement>(null);
+  const previousTitleRef = useRef<string | null>(null);
+  const closeRequestRef = useRef<() => void>(() => undefined);
   const totalSeconds = Math.max(60, (task?.estimatedMinutes ?? FOCUS_MINUTES) * 60);
+
+  useDialogA11y(isOpen, () => closeRequestRef.current(), panelRef);
 
   const resetTimer = useCallback(() => {
     setIsActive(false);
@@ -100,6 +105,32 @@ export function FocusTimer({
     return () => clearInterval(interval);
   }, [finishSession, isActive, timeLeft, totalSeconds]);
 
+  const minutes = Math.floor(timeLeft / 60);
+  const seconds = timeLeft % 60;
+  const clockLabel = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+  const progress = ((totalSeconds - timeLeft) / totalSeconds) * 100;
+
+  useEffect(() => {
+    if (!isOpen) {
+      if (previousTitleRef.current !== null) {
+        document.title = previousTitleRef.current;
+        previousTitleRef.current = null;
+      }
+      return;
+    }
+    if (previousTitleRef.current === null) {
+      previousTitleRef.current = document.title;
+    }
+    const label = task?.title ? `Focus · ${task.title}` : "Focus session";
+    document.title = showSuccess ? `Logged · ${label}` : `${clockLabel} · ${label}`;
+    return () => {
+      if (previousTitleRef.current !== null) {
+        document.title = previousTitleRef.current;
+        previousTitleRef.current = null;
+      }
+    };
+  }, [clockLabel, isOpen, showSuccess, task?.title]);
+
   const toggleTimer = () => {
     if (!isActive && timeLeft === totalSeconds) {
       setStartedAt(new Date().toISOString());
@@ -107,7 +138,7 @@ export function FocusTimer({
     setIsActive(!isActive);
   };
 
-  const closeTimer = () => {
+  const closeTimer = useCallback(() => {
     // Never throw away real work: closing mid-session logs the elapsed time
     // as a focus record (minimum one minute) instead of discarding it.
     const elapsedSeconds = totalSeconds - timeLeft;
@@ -121,7 +152,11 @@ export function FocusTimer({
     setShowSuccess(false);
     setSaveError(false);
     onTaskClose?.();
-  };
+  }, [finishSession, isActive, onTaskClose, resetTimer, showSuccess, timeLeft, totalSeconds]);
+
+  useEffect(() => {
+    closeRequestRef.current = closeTimer;
+  }, [closeTimer]);
 
   const openUntitledFocus = () => {
     setIsOpen(true);
@@ -137,10 +172,6 @@ export function FocusTimer({
     finishSession(elapsedSeconds);
   };
 
-  const minutes = Math.floor(timeLeft / 60);
-  const seconds = timeLeft % 60;
-  const progress = ((totalSeconds - timeLeft) / totalSeconds) * 100;
-
   if (!isOpen && launcherMode === "hidden") {
     return null;
   }
@@ -150,13 +181,20 @@ export function FocusTimer({
       <AnimatePresence>
         {isOpen ? (
           <motion.div
+            ref={panelRef}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
             className="ik-card focus-timer-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="focus-timer-title"
+            tabIndex={-1}
           >
             <div className="focus-timer-head">
-              <span className="truncate">{task ? `Focus: ${task.title}` : "Focus Session"}</span>
+              <span id="focus-timer-title" className="truncate">
+                {task ? `Focus: ${task.title}` : "Focus Session"}
+              </span>
               <IconButton label="Close focus timer" size="sm" onClick={closeTimer}>
                 <X size={13} weight="bold" />
               </IconButton>
@@ -166,6 +204,8 @@ export function FocusTimer({
               className="focus-ring"
               style={{ "--progress": progress } as React.CSSProperties}
               role="timer"
+              aria-label={showSuccess ? "Focus session logged" : saveError ? "Could not log focus session" : `Time remaining ${clockLabel}`}
+              aria-live="off"
             >
               {showSuccess ? (
                 <span className="focus-timer-success">
@@ -178,11 +218,18 @@ export function FocusTimer({
                   <strong>Couldn't log — try again</strong>
                 </span>
               ) : (
-                <span className="focus-ring-time tabular">
-                  {minutes.toString().padStart(2, "0")}:{seconds.toString().padStart(2, "0")}
-                </span>
+                <span className="focus-ring-time tabular">{clockLabel}</span>
               )}
             </div>
+            <span className="sr-only" aria-live="polite">
+              {isActive
+                ? timeLeft > 0 && timeLeft % 60 === 0
+                  ? `${minutes} minutes remaining`
+                  : ""
+                : showSuccess
+                  ? "Focus session logged"
+                  : "Focus session paused"}
+            </span>
 
             {!showSuccess ? (
               <div className="focus-timer-actions">

@@ -33,10 +33,19 @@ Not allowed server-side:
 - Permission request.
 - Generic local test notification.
 
+`apps/web/src/lib/localReminders.ts` schedules due-time reminders on-device when
+notification permission is already granted. Incomplete tasks with `reminderAt`
+get a one-shot timer (capped at one week ahead); each `taskId` + `reminderAt`
+pair fires at most once per browsing session. Copy stays generic — no titles.
+
 Local notification text is also generic:
 
 - Title: `Quest reminder`
 - Body: `A study quest needs your attention.`
+
+Local timers complement push sync: they cover the open tab without sending task
+content to the server. Background delivery still depends on the push API and an
+external `/dispatch-due` caller (Docker ofelia, or another scheduler).
 
 ## Push API Setup
 
@@ -73,7 +82,7 @@ npm run dev:web
 
 `GET /health`
 
-Returns service health, VAPID configuration state, and counts.
+Returns service health, VAPID configuration state, subscription/reminder counts, dispatch success rate, in-memory dispatch `metrics` (`sent` / `failed`), and process-local `requests` counters (`total` / `status4xx` / `status5xx`). Counters reset on process or Worker isolate recycle.
 
 `POST /subscriptions`
 

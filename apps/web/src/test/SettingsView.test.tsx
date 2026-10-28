@@ -45,8 +45,9 @@ describe("SettingsView", () => {
     fireEvent.click(screen.getByRole("button", { name: /Regenerate recovery key/i }));
 
     expect(await screen.findByText("abcd-efgh-ijkl-mnop")).toBeInTheDocument();
-    fireEvent.click(screen.getByLabelText(/I saved this recovery key/i));
-    fireEvent.change(screen.getByLabelText(/Confirm last 4 characters/i), { target: { value: "mnop" } });
+    expect(screen.getByRole("button", { name: /Copy key/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText(/I have saved this recovery key securely/i));
+    fireEvent.change(screen.getByLabelText(/last 4 characters/i), { target: { value: "mnop" } });
     expect(screen.getByText(/Saved confirmation complete/i)).toBeInTheDocument();
   });
 });

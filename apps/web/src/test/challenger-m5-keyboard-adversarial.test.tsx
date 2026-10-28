@@ -332,7 +332,7 @@ describe("Challenger M5-R3-1 Adversarial Stress Test: Keyboard Shortcuts & Input
     const plannerViews: AppView[] = ["dashboard", "kanban", "timeline", "goals", "courses"];
 
     for (const view of plannerViews) {
-      it(`CHALLENGE 4.1-${view}: Pressing 'n' outside inputs in view='${view}' triggers task composer`, async () => {
+      it(`CHALLENGE 4.1-${view}: Pressing 'n' outside inputs in view='${view}' triggers capture`, async () => {
         window.history.replaceState({}, "", `/app?view=${view}`);
 
         render(
@@ -346,9 +346,10 @@ describe("Challenger M5-R3-1 Adversarial Stress Test: Keyboard Shortcuts & Input
         const ev = new KeyboardEvent("keydown", { key: "n", bubbles: true, cancelable: true });
         window.dispatchEvent(ev);
 
+        const expectedDialog = view === "goals" ? "New goal" : "New task";
         await waitFor(
           () => {
-            expect(screen.getByRole("dialog", { name: "New task" })).toBeInTheDocument();
+            expect(screen.getByRole("dialog", { name: expectedDialog })).toBeInTheDocument();
           },
           { timeout: 2000 }
         );
@@ -393,10 +394,7 @@ describe("Challenger M5-R3-1 Adversarial Stress Test: Keyboard Shortcuts & Input
       const ev = new KeyboardEvent("keydown", { key: "n", bubbles: true, cancelable: true });
       window.dispatchEvent(ev);
 
-      // In insights view, primaryActionLabel is undefined, so 'n' currently does NOT open task composer
-      // Let's empirically measure whether dialog opens
-      const dialog = screen.queryByRole("dialog", { name: "New task" });
-      expect(dialog).toBeNull();
+      expect(await screen.findByRole("dialog", { name: "New task" })).toBeInTheDocument();
     });
 
     it("CHALLENGE 4.4-settings: Empirical probe of 'n' shortcut in settings view", async () => {

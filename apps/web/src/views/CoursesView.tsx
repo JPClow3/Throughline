@@ -28,12 +28,15 @@ export function CoursesView({
   tasks,
   onUpsertCourse,
   onDeleteCourse,
+  onOpenOnBoard,
   highlightedProjectId
 }: {
   courses: Course[];
   tasks: Task[];
   onUpsertCourse: (course: Course) => Promise<void>;
   onDeleteCourse: (courseId: string) => Promise<void>;
+  /** Open Board with this project filter applied. */
+  onOpenOnBoard?: (courseId: string) => void;
   highlightedProjectId?: string | null;
 }) {
   const [name, setName] = useState("");
@@ -179,8 +182,24 @@ export function CoursesView({
                   style={{ "--project-color": course.color } as React.CSSProperties}
                 >
                   <span className="project-dot" aria-hidden="true" />
-                  <span className="project-row-name">{course.name}</span>
+                  {onOpenOnBoard ? (
+                    <button
+                      type="button"
+                      className="project-row-name project-row-open"
+                      onClick={() => onOpenOnBoard(course.id)}
+                      aria-label={`Open ${course.name} on Board`}
+                    >
+                      {course.name}
+                    </button>
+                  ) : (
+                    <span className="project-row-name">{course.name}</span>
+                  )}
                   <span className="project-row-count">{counts.get(course.id) ?? 0}</span>
+                  {onOpenOnBoard ? (
+                    <IconButton label={`Filter Board to ${course.name}`} size="sm" onClick={() => onOpenOnBoard(course.id)}>
+                      <FolderOpen size={13} weight="bold" />
+                    </IconButton>
+                  ) : null}
                   <IconButton label={`Edit ${course.name}`} size="sm" onClick={() => startEdit(course)}>
                     <PencilSimple size={13} weight="bold" />
                   </IconButton>

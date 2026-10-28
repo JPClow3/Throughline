@@ -42,14 +42,14 @@ Depth is communicated by displacement, not blur:
 - **Press physics:** Buttons and cards translate against their shadow on click (see elevation model). Transitions are fast (`~120ms`) and snappy rather than springy-soft.
 - **Completion feedback:** Completing a task fires a brief confetti-square burst plus a "+XP" chip when relevant; it never blocks interaction.
 - **Sheet transitions:** Sheets slide up from the bottom edge (centered dialog on desktop) over a dimmed backdrop using a short spring.
-- **Navigation dock:** Mobile uses a floating bottom dock; desktop uses a top tab strip where the active tab is highlighted with signal yellow.
+- **Navigation dock:** Mobile uses a floating bottom dock with Today, Goals, Board, and Notes as primary tabs (Timeline and the rest live under More); desktop uses a top tab strip where the active tab is highlighted with signal yellow.
 
 ## 6. Shell Chrome & Account
 
 - **Every control is real:** the shell must not render dead affordances. If a control has no behavior yet, it is removed until it does.
 - **Masthead:** Brand mark (yellow tile + line-and-nodes glyph), global search trigger with a `Ctrl K` hint, New Task action, sync pill, and account avatar.
-- **Account Menu:** The avatar shows the signed-in user's initial and opens a bordered popover with the email, an end-to-end-encrypted reassurance, live sync status (Up to date / Syncing… / Offline · saved on this device / Paused · will retry) with relative last-sync time, plus Sync now, Settings, and Sign out actions.
-- **Sync Pill:** Compact status pill in the masthead; clicking it triggers a manual sync. Status colors: green (up to date), pulsing blue (syncing), amber (offline), red (error).
+- **Account Menu:** When signed in, the avatar shows the user's initial and opens a bordered popover with the email, an end-to-end-encrypted reassurance, live sync status (Up to date / Syncing… / Offline · saved on this device / Paused · will retry) with relative last-sync time, plus Sync now, Settings, and Sign out actions. Local-only sessions show a Sign in link instead — accounts stay optional.
+- **Sync Pill:** Compact status pill in the masthead for signed-in sessions only; clicking it triggers a manual sync. Status colors: green (up to date), pulsing blue (syncing), amber (offline), red (error).
 - **Notifications Bell:** There is no notification center yet, so no bell appears in the shell. Add one only together with a real notification surface.
 
 ## 7. Component Specifics
@@ -64,7 +64,7 @@ Depth is communicated by displacement, not blur:
 
 ## 8. Core Workflows
 
-1. **Quick Capture:** Fast, keyboard-accessible sheet with minimal required fields (Title; Project/Due up front; Details collapsed). Pressing `N` in any planner view opens it (new note on Notes).
+1. **Quick Capture:** Fast, keyboard-accessible sheet with minimal required fields (Title; Project/Due up front; Details collapsed). Pressing `N` opens capture for the current view (new task on Today/Board/Timeline/Projects/Insights, new goal on Goals, new note on Notes). The desktop masthead "New Task" always opens task capture so it never becomes a dead control.
 2. **Goal Decomposition:** Break large goals into ordered steps with roll-up progress rings.
 3. **Cross-Linked Context:** Link markdown notes to tasks and goals.
 4. **Workflow Movement:** Process tasks naturally from Backlog to Done by drag, select, or keyboard; drag-reordered columns persist their custom sequence.

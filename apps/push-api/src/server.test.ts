@@ -39,9 +39,31 @@ describe("push API", () => {
     const created = await app.inject({ method: "POST", url: "/subscriptions", payload: fakeSubscription() });
 
     expect(health.statusCode).toBe(200);
-    expect(health.json()).toMatchObject({ ok: true, vapidConfigured: false });
+    expect(health.json()).toMatchObject({
+      ok: true,
+      vapidConfigured: false,
+      metrics: { sent: 0, failed: 0 },
+      requests: { total: 1, status4xx: 0, status5xx: 0 }
+    });
     expect(created.statusCode).toBe(201);
     expect(created.json().endpointHash).toHaveLength(64);
+
+    await app.close();
+  });
+
+  it("counts total, 4xx, and 5xx requests in the health payload", async () => {
+    const app = await createServer({ config, store, configureWebPush: false });
+
+    await app.inject({ method: "GET", url: "/health" });
+    await app.inject({ method: "POST", url: "/subscriptions", payload: { endpoint: 123 } });
+    await app.inject({
+      method: "DELETE",
+      url: "/subscriptions/0000000000000000000000000000000000000000000000000000000000000000"
+    });
+
+    const health = await app.inject({ method: "GET", url: "/health" });
+    expect(health.statusCode).toBe(200);
+    expect(health.json().requests).toEqual({ total: 4, status4xx: 2, status5xx: 0 });
 
     await app.close();
   });
@@ -276,13 +298,14 @@ describe("auth", () => {
 
     const signup = await app.inject({ method: "POST", url: "/auth/signup", payload: account });
     expect(signup.statusCode).toBe(201);
-    expect(signup.json()).toEqual({ email: account.email });
+    expect(signup.json()).toMatchObject({ email: account.email, emailVerified: false });
+    expect(typeof signup.json().verificationToken).toBe("string");
     const token = cookieFrom(signup);
     expect(token).toBeTruthy();
 
     const me = await app.inject({ method: "GET", url: "/auth/me", cookies: { tl_session: token! } });
     expect(me.statusCode).toBe(200);
-    expect(me.json()).toEqual({ email: account.email });
+    expect(me.json()).toEqual({ email: account.email, emailVerified: false });
 
     const meAnon = await app.inject({ method: "GET", url: "/auth/me" });
     expect(meAnon.statusCode).toBe(401);
@@ -364,7 +387,12 @@ describe("auth", () => {
       payload: { email: account.email, authKey: account.authKey }
     });
     expect(login.statusCode).toBe(200);
-    expect(login.json()).toEqual({ email: account.email, salt: account.salt, wrappedDek: account.wrappedDek });
+    expect(login.json()).toEqual({
+      email: account.email,
+      salt: account.salt,
+      wrappedDek: account.wrappedDek,
+      emailVerified: false
+    });
 
     const bad = await app.inject({
       method: "POST",
@@ -372,6 +400,82 @@ describe("auth", () => {
       payload: { email: account.email, authKey: "wrong" }
     });
     expect(bad.statusCode).toBe(401);
+
+    await app.close();
+  });
+
+  it("verifies email via token and supports resend for signed-in users", async () => {
+    const app = await createServer({ config, store, configureWebPush: false });
+    const signup = await app.inject({ method: "POST", url: "/auth/signup", payload: account });
+    const session = cookieFrom(signup)!;
+    const { verificationToken } = signup.json() as { verificationToken: string };
+    expect(verificationToken).toBeTruthy();
+
+    const verifyGet = await app.inject({
+      method: "GET",
+      url: `/auth/verify-email?token=${verificationToken}`
+    });
+    expect(verifyGet.statusCode).toBe(404);
+
+    const verifyPost = await app.inject({
+      method: "POST",
+      url: "/auth/verify-email",
+      payload: { token: verificationToken }
+    });
+    expect(verifyPost.statusCode).toBe(200);
+    expect(verifyPost.json()).toEqual({ email: account.email, emailVerified: true });
+
+    const me = await app.inject({ method: "GET", url: "/auth/me", cookies: { tl_session: session } });
+    expect(me.json()).toEqual({ email: account.email, emailVerified: true });
+
+    const reuse = await app.inject({
+      method: "POST",
+      url: "/auth/verify-email",
+      payload: { token: verificationToken }
+    });
+    expect(reuse.statusCode).toBe(200);
+    expect(reuse.json()).toMatchObject({
+      email: account.email,
+      emailVerified: true,
+      alreadyVerified: true
+    });
+
+    const other = {
+      ...account,
+      email: "unverified@example.com",
+      authKey: "auth-2",
+      recoveryAuthKey: "rec-2"
+    };
+    const signup2 = await app.inject({ method: "POST", url: "/auth/signup", payload: other });
+    const session2 = cookieFrom(signup2)!;
+
+    const resend = await app.inject({
+      method: "POST",
+      url: "/auth/resend-verification",
+      cookies: { tl_session: session2 }
+    });
+    expect(resend.statusCode).toBe(200);
+    expect(resend.json()).toMatchObject({ email: other.email, emailVerified: false, mailSent: false });
+    const nextToken = (resend.json() as { verificationToken: string }).verificationToken;
+    expect(nextToken).toBeTruthy();
+
+    const verifyResend = await app.inject({
+      method: "POST",
+      url: "/auth/verify-email",
+      payload: { token: nextToken }
+    });
+    expect(verifyResend.statusCode).toBe(200);
+    expect(verifyResend.json()).toEqual({ email: other.email, emailVerified: true });
+
+    const already = await app.inject({
+      method: "POST",
+      url: "/auth/resend-verification",
+      cookies: { tl_session: session2 }
+    });
+    expect(already.json()).toMatchObject({ emailVerified: true, alreadyVerified: true });
+
+    const anonResend = await app.inject({ method: "POST", url: "/auth/resend-verification" });
+    expect(anonResend.statusCode).toBe(401);
 
     await app.close();
   });

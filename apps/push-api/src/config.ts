@@ -21,6 +21,12 @@ export type PushApiConfig = {
   trustProxy?: boolean;
   /** Google OAuth Client ID for verification */
   googleClientId?: string;
+  /** Resend API key for verification emails (optional; signup still succeeds without it). */
+  resendApiKey?: string;
+  /** From address for outbound mail, e.g. `Throughline <noreply@example.com>`. */
+  emailFrom?: string;
+  /** Public web app origin used to build /verify-email links. */
+  publicAppUrl?: string;
 };
 
 export function readPushApiConfig(env: NodeJS.ProcessEnv = process.env): PushApiConfig {
@@ -38,7 +44,10 @@ export function readPushApiConfig(env: NodeJS.ProcessEnv = process.env): PushApi
     sessionSecret: env.SESSION_SECRET || undefined,
     cookieSecure: env.COOKIE_SECURE !== "false",
     trustProxy: env.TRUST_PROXY !== "false",
-    googleClientId: env.GOOGLE_CLIENT_ID || undefined
+    googleClientId: env.GOOGLE_CLIENT_ID || undefined,
+    resendApiKey: env.RESEND_API_KEY || undefined,
+    emailFrom: env.EMAIL_FROM || undefined,
+    publicAppUrl: env.PUBLIC_APP_URL || env.CORS_ORIGIN || undefined
   };
 }
 

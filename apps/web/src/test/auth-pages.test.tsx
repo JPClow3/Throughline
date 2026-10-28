@@ -18,8 +18,10 @@ describe("Auth Pages", () => {
       </GoogleOAuthProvider>
     );
     expect(screen.getByRole("heading", { name: /Welcome back/i })).toBeInTheDocument();
-    expect(screen.getByLabelText(/Password or Recovery Key/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Password$/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Sign in/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /recovery with your key/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Continue without an account/i })).toHaveAttribute("href", "/app");
   });
 
   it("renders Signup page correctly", () => {

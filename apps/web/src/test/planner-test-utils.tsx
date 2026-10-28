@@ -1,4 +1,16 @@
-import { Course, FocusSession, Goal, Note, Task, createCourse, createGoal, createNote, createTask } from "@throughline/domain";
+import {
+  Course,
+  FocusSession,
+  Goal,
+  Note,
+  Task,
+  UserProgress,
+  createCourse,
+  createGoal,
+  createNote,
+  createTask,
+  deriveUserProgress
+} from "@throughline/domain";
 import { render } from "@testing-library/react";
 import type { ReactElement, ReactNode } from "react";
 import type { TaskStatus } from "@throughline/domain";
@@ -32,6 +44,7 @@ export type PlannerStub = {
   goals: Goal[];
   notes: Note[];
   focusSessions: FocusSession[];
+  progress: UserProgress | undefined;
   loading: boolean;
   courseById: Map<string, Course>;
   noteCountByTask: Map<string, number>;
@@ -64,6 +77,7 @@ export const DEFAULT_PLANNER: PlannerStub = {
   goals: [],
   notes: [],
   focusSessions: [],
+  progress: deriveUserProgress([]),
   loading: false,
   courseById: new Map<string, Course>(),
   noteCountByTask: new Map<string, number>(),

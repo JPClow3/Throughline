@@ -1,16 +1,5 @@
 import { expect, test } from "@playwright/test";
-
-async function completeOnboarding(page: import("@playwright/test").Page) {
-  const heading = page.getByRole("heading", { name: "Make Today useful" });
-  await heading.waitFor({ state: "visible", timeout: 10000 });
-  await page.getByRole("button", { name: "Next" }).click();
-  await page.getByLabel("Course 1").fill("Biology");
-  await page.getByRole("button", { name: "Next" }).click();
-  await page.getByLabel("First task").fill("Review biology notes");
-  await page.getByRole("button", { name: "Next" }).click();
-  await page.getByRole("button", { name: /Finish setup/i }).click();
-  await heading.waitFor({ state: "hidden", timeout: 5000 });
-}
+import { completeOnboarding } from "./helpers/completeOnboarding";
 
 test("handles repeated task capture and board rendering", async ({ page }) => {
   await page.route("**/auth/me", route => route.fulfill({ status: 200 }));

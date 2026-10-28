@@ -8,7 +8,8 @@ import {
   Note as StickyNote,
   Play,
   Plus,
-  Target
+  Target,
+  Trash
 } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "motion/react";
 import * as React from "react";
@@ -27,7 +28,7 @@ type TaskCardProps = {
   onStatusChange?: (taskId: string, status: TaskStatus) => void;
   onEdit?: (task: Task) => void;
   onUpdateTask?: (task: Task) => void;
-  onOpenNotes?: () => void;
+  onOpenNotes?: (taskId: string) => void;
   onStartFocus?: (task: Task) => void;
   /**
    * Dense lists (Today, the Board) keep cards quiet: the inline step input
@@ -39,7 +40,7 @@ type TaskCardProps = {
 
 type DueTone = "done" | "overdue" | "soon" | "normal";
 
-function CompletionBurst({ task }: { task: Task }) {
+function CompletionBurst({ task, showGameLayer }: { task: Task; showGameLayer: boolean }) {
   const [particles] = useState(() =>
     Array.from({ length: 14 }, (_, index) => ({
       x: Math.cos((index / 14) * Math.PI * 2) * (36 + (index % 4) * 14),
@@ -50,14 +51,16 @@ function CompletionBurst({ task }: { task: Task }) {
 
   return (
     <div className="completion-burst" aria-hidden="true">
-      <motion.span
-        className="xp-burst"
-        initial={{ opacity: 0, y: 6, scale: 0.7 }}
-        animate={{ opacity: [0, 1, 1, 0], y: [-4, -26, -34, -44], scale: 1 }}
-        transition={{ duration: 1.5, times: [0, 0.15, 0.75, 1], ease: "easeOut" }}
-      >
-        +{task.xp} XP
-      </motion.span>
+      {showGameLayer ? (
+        <motion.span
+          className="xp-burst"
+          initial={{ opacity: 0, y: 6, scale: 0.7 }}
+          animate={{ opacity: [0, 1, 1, 0], y: [-4, -26, -34, -44], scale: 1 }}
+          transition={{ duration: 1.5, times: [0, 0.15, 0.75, 1], ease: "easeOut" }}
+        >
+          +{task.xp} XP
+        </motion.span>
+      ) : null}
       {particles.map((particle, index) => (
         <motion.span
           key={index}
@@ -102,10 +105,21 @@ export function TaskCard({
 
   const [expanded, setExpanded] = useState(false);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
+  const [draftTitles, setDraftTitles] = useState<Record<string, string>>({});
   const [localJustCompleted, setLocalJustCompleted] = useState(false);
   const isJustCompleted = justCompleted || localJustCompleted;
   const wasDoneRef = useRef(task.status === "done");
+  const taskRef = useRef(task);
+  const draftTitlesRef = useRef(draftTitles);
   const showSubtaskEditor = Boolean(onUpdateTask && (expanded || (offerEmptyStepInput && totalSubtasks === 0)));
+
+  useEffect(() => {
+    taskRef.current = task;
+  }, [task]);
+
+  useEffect(() => {
+    draftTitlesRef.current = draftTitles;
+  }, [draftTitles]);
 
   useEffect(() => {
     if (task.status === "done" && !wasDoneRef.current) {
@@ -126,18 +140,67 @@ export function TaskCard({
     onComplete?.(task);
   }
 
-  function toggleSubtask(index: number) {
+  /** Merge in-flight title drafts so checkbox/delete cannot clobber an unsaved rename. */
+  function subtasksWithDrafts() {
+    const drafts = draftTitlesRef.current;
+    return (taskRef.current.subtasks || []).map((subtask) => {
+      if (!(subtask.id in drafts)) {
+        return subtask;
+      }
+      const drafted = drafts[subtask.id].trim();
+      return drafted ? { ...subtask, title: drafted } : subtask;
+    });
+  }
+
+  function clearDraftTitle(subtaskId: string) {
+    setDraftTitles((current) => {
+      if (!(subtaskId in current)) {
+        return current;
+      }
+      const next = { ...current };
+      delete next[subtaskId];
+      return next;
+    });
+  }
+
+  function updateSubtask(index: number, updates: Partial<{ title: string; completed: boolean }>) {
     if (!onUpdateTask) return;
-    const nextSubtasks = [...(task.subtasks || [])];
-    nextSubtasks[index] = { ...nextSubtasks[index], completed: !nextSubtasks[index].completed };
-    onUpdateTask({ ...task, subtasks: nextSubtasks });
+    const nextSubtasks = subtasksWithDrafts();
+    const current = nextSubtasks[index];
+    if (!current) return;
+    nextSubtasks[index] = { ...current, ...updates };
+    if (updates.title !== undefined) {
+      clearDraftTitle(current.id);
+    }
+    onUpdateTask({ ...taskRef.current, subtasks: nextSubtasks });
+  }
+
+  function removeSubtask(index: number) {
+    if (!onUpdateTask) return;
+    const nextSubtasks = subtasksWithDrafts();
+    const removed = nextSubtasks[index];
+    const remaining = nextSubtasks.filter((_, itemIndex) => itemIndex !== index);
+    if (removed) {
+      clearDraftTitle(removed.id);
+    }
+    onUpdateTask({ ...taskRef.current, subtasks: remaining });
+  }
+
+  function commitSubtaskTitle(index: number, subtaskId: string, rawTitle: string) {
+    const nextTitle = rawTitle.trim();
+    if (!nextTitle) {
+      clearDraftTitle(subtaskId);
+      removeSubtask(index);
+      return;
+    }
+    updateSubtask(index, { title: nextTitle });
   }
 
   function handleAddSubtask(event: React.KeyboardEvent<HTMLInputElement>) {
     if (event.key === "Enter" && newSubtaskTitle.trim() && onUpdateTask) {
       event.preventDefault();
       const newSubtask = { id: crypto.randomUUID(), title: newSubtaskTitle.trim(), completed: false };
-      onUpdateTask({ ...task, subtasks: [...(task.subtasks || []), newSubtask] });
+      onUpdateTask({ ...taskRef.current, subtasks: [...subtasksWithDrafts(), newSubtask] });
       setNewSubtaskTitle("");
       setExpanded(true);
     }
@@ -152,20 +215,26 @@ export function TaskCard({
       layout
       initial={{ opacity: 0, y: 6 }}
       animate={isJustCompleted ? { scale: [1, 1.03, 1] } : { opacity: 1, y: 0, scale: 1 }}
-      whileHover={isJustCompleted ? undefined : { translateX: -2, translateY: -2 }}
-      whileTap={isJustCompleted ? undefined : { translateX: 2, translateY: 2 }}
+      // Hover/press lift lives in CSS (Inkline hard-offset physics); avoid fighting springs.
       transition={
         isJustCompleted
           ? { duration: 0.4, ease: "easeOut" }
-          : { type: "spring", stiffness: 380, damping: 28 }
+          : { duration: 0.12, ease: "easeOut" }
       }
     >
-      <AnimatePresence>{isJustCompleted ? <CompletionBurst task={task} /> : null}</AnimatePresence>
+      <AnimatePresence>
+        {isJustCompleted ? <CompletionBurst task={task} showGameLayer={showGameLayer} /> : null}
+      </AnimatePresence>
 
       <div className="task-card-top">
         <h3 className={`task-card-title ${compact ? "line-clamp-2" : ""}`}>
           {onEdit ? (
-            <button type="button" className={`task-card-edit ${compact ? "w-full text-left" : ""}`} onClick={() => onEdit(task)}>
+            <button
+              type="button"
+              className={`task-card-edit ${compact ? "w-full text-left" : ""}`}
+              onClick={() => onEdit(task)}
+              aria-label={`Open task ${task.title}`}
+            >
               {task.title}
             </button>
           ) : (
@@ -196,12 +265,7 @@ export function TaskCard({
             <ProjectDot />
             {course.code ?? course.name}
           </span>
-        ) : (
-          <span className="chip-static">
-            <span className="project-dot" aria-hidden="true" style={{ background: "transparent" }} />
-            No project
-          </span>
-        )}
+        ) : null}
         {dueInfo ? (
           <span className={`meta-due chip-static meta-due-${dueInfo.tone}`}>
             <Clock size={12} weight="bold" />
@@ -238,10 +302,40 @@ export function TaskCard({
                 className="subtask-editor-inner"
               >
                 {(task.subtasks || []).map((subtask, index) => (
-                  <label key={subtask.id} className={`subtask-row${subtask.completed ? " done" : ""}`}>
-                    <input type="checkbox" className="checkbox" checked={subtask.completed} onChange={() => toggleSubtask(index)} />
-                    <span className="subtask-title">{subtask.title}</span>
-                  </label>
+                  <div key={subtask.id} className={`subtask-row${subtask.completed ? " done" : ""}`}>
+                    <label className="subtask-row-main">
+                      <input
+                        type="checkbox"
+                        className="checkbox"
+                        checked={subtask.completed}
+                        onChange={() => updateSubtask(index, { completed: !subtask.completed })}
+                      />
+                      <input
+                        type="text"
+                        className="subtask-title-input"
+                        value={draftTitles[subtask.id] ?? subtask.title}
+                        aria-label={`Edit subtask ${index + 1}`}
+                        onChange={(event) =>
+                          setDraftTitles((current) => ({ ...current, [subtask.id]: event.target.value }))
+                        }
+                        onBlur={(event) => commitSubtaskTitle(index, subtask.id, event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
+                            event.preventDefault();
+                            (event.target as HTMLInputElement).blur();
+                          }
+                        }}
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      className="subtask-delete"
+                      aria-label={`Delete subtask ${index + 1}`}
+                      onClick={() => removeSubtask(index)}
+                    >
+                      <Trash size={12} weight="bold" />
+                    </button>
+                  </div>
                 ))}
                 <div className="subtask-add-row">
                   <Plus size={14} weight="bold" style={{ color: "var(--ink-faint)" }} />
@@ -290,7 +384,7 @@ export function TaskCard({
             <button
               type="button"
               className="meta-chip"
-              onClick={onOpenNotes}
+              onClick={() => onOpenNotes(task.id)}
               aria-label={`${noteCount} linked ${noteCount === 1 ? "note" : "notes"} — open Notes`}
             >
               <StickyNote size={12} weight="bold" />

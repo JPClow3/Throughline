@@ -50,6 +50,8 @@ export type TaskInput = {
   priority: Priority;
   energy: number;
   difficulty: number;
+  /** Study block length in minutes; defaults from energy when omitted. */
+  estimatedMinutes?: number;
   attributes: RpgAttribute[];
   tags?: string[];
   subtasks?: Subtask[];
@@ -158,7 +160,7 @@ export async function addTask(input: TaskInput) {
     subtasks: input.subtasks ?? [],
     status: "backlog",
     recurrence: input.recurrence,
-    estimatedMinutes: input.energy * 25
+    estimatedMinutes: input.estimatedMinutes ?? input.energy * 25
   });
 
   await db.tasks.put(task);
@@ -508,6 +510,17 @@ export async function getFilterSettings(): Promise<FilterSettings> {
   }
 
   return defaults;
+}
+
+/** Replace the active Board/Timeline filter set (Today pressure rows, Projects). */
+export async function browseWithFilters(patch: Partial<PersistedFilterState>) {
+  return saveFilterSettings({
+    current: {
+      ...defaultFilterState,
+      ...patch,
+      tags: patch.tags ?? []
+    }
+  });
 }
 
 export async function saveFilterSettings(patch: Partial<Omit<FilterSettings, "id" | "updatedAt">>) {

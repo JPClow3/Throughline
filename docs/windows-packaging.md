@@ -19,6 +19,8 @@ Before running PWABuilder, confirm the checked-in PWA asset set is current:
 - `apps/web/public/store-assets/microsoft-store/manifest-icon-192.maskable.png` and `manifest-icon-512.maskable.png` are square PNGs referenced by the web manifest.
 - `apps/web/public/store-assets/windows-icons/` contains the Windows tile images used during Store packaging.
 - `apps/web/public/screenshot-1.png` is a 1366x768 wide manifest screenshot, and `screenshot-2.png` is a 720x1280 narrow screenshot.
+- Manifest shortcuts target Today (`dashboard`), Goals, Board, and Notes; `note_taking.new_note_url` uses `/app?view=notes&action=new` and creates a blank note on open.
+- `share_target` opens task capture with the shared title/text; unused file/protocol handlers are omitted so the manifest does not advertise dead entry points.
 
 1. Navigate to [PWABuilder](https://www.pwabuilder.com/).
 2. Enter the production URL of the Throughline PWA (e.g., `https://throughline.app`) and click **Start**.

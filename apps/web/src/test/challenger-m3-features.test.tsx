@@ -79,7 +79,7 @@ describe("Challenger M3 Features Adversarial Stress Suite", () => {
         }
       );
 
-      const titleButton = screen.getByRole("button", { name: "Timeline Chemistry Lab" });
+      const titleButton = screen.getByRole("button", { name: /Open task Timeline Chemistry Lab/ });
       expect(titleButton).toBeInTheDocument();
       expect(titleButton).toHaveClass("task-card-edit");
 
@@ -107,7 +107,7 @@ describe("Challenger M3 Features Adversarial Stress Suite", () => {
         }
       );
 
-      const titleButton = screen.getByRole("button", { name: "Timeline Chemistry Lab" });
+      const titleButton = screen.getByRole("button", { name: /Open task Timeline Chemistry Lab/ });
       const pointerDownEvent = new MouseEvent("pointerdown", { bubbles: true, cancelable: true });
       const stopPropagationSpy = vi.spyOn(pointerDownEvent, "stopPropagation");
 
@@ -186,12 +186,12 @@ describe("Challenger M3 Features Adversarial Stress Suite", () => {
         }
       );
 
-      const maxButton = screen.getByRole("button", { name: maxTitle });
+      const maxButton = screen.getByRole("button", { name: `Open task ${maxTitle}` });
       expect(maxButton).toBeInTheDocument();
       fireEvent.click(maxButton);
       expect(onEdit).toHaveBeenCalledWith(expect.objectContaining({ id: "task-max" }));
 
-      const specButton = screen.getByRole("button", { name: specialTitle });
+      const specButton = screen.getByRole("button", { name: `Open task ${specialTitle}` });
       expect(specButton).toBeInTheDocument();
       fireEvent.click(specButton);
       expect(onEdit).toHaveBeenCalledWith(expect.objectContaining({ id: "task-spec" }));
@@ -214,13 +214,13 @@ describe("Challenger M3 Features Adversarial Stress Suite", () => {
         }
       );
 
-      expect(screen.getByRole("button", { name: "Task Parallel 1" })).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: "Task Parallel 2" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /Open task Task Parallel 1/ })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /Open task Task Parallel 2/ })).toBeInTheDocument();
 
-      fireEvent.click(screen.getByRole("button", { name: "Task Parallel 1" }));
+      fireEvent.click(screen.getByRole("button", { name: /Open task Task Parallel 1/ }));
       expect(onEdit).toHaveBeenCalledWith(expect.objectContaining({ id: "t1" }));
 
-      fireEvent.click(screen.getByRole("button", { name: "Task Parallel 2" }));
+      fireEvent.click(screen.getByRole("button", { name: /Open task Task Parallel 2/ }));
       expect(onEdit).toHaveBeenCalledWith(expect.objectContaining({ id: "t2" }));
     });
   });

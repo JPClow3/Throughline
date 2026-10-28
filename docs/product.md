@@ -38,7 +38,7 @@ This document outlines the product requirements, features, current roadmap, and 
 A calm cockpit for the day. Shows greeting, date, and a progress hero ("X of Y tasks done") backed only by real task data. Focus time, planned study time, completed-by-day activity, overdue count, and the next study block are derived from local tasks and focus sessions. An "Also on the radar" list surfaces the next few actionable tasks that are not already prioritized, so the main panel stays useful on quiet days.
 
 ### Task Composer & Cards
-- **Composer**: Fast capture via a floating glass sheet. Up-front fields are minimal (Title, Project, Due).
+- **Composer**: Fast capture via a solid Inkline sheet. Up-front fields are minimal (Title, Project, Due).
 - **Cards**: Calm, scannable task representation. Show project colour, title, due date (quietly), and quiet glyphs. Clicking the card title opens the task in an Edit task sheet.
 - **Focus**: Focus sessions can start from a task or as untitled focus. Completed sessions are stored as focus-session records, not as fake completed tasks.
 
@@ -70,10 +70,22 @@ A calm cockpit for the day. Shows greeting, date, and a progress hero ("X of Y t
 - End-to-end-encrypted cloud sync (beta).
 
 **Next product milestones**:
-1. Email verification.
-2. Inline subtask editing inside the task editor.
-3. PWA install polish (Microsoft Store packaging).
-4. Lightweight observability on the API.
+1. Microsoft Store submission (PWABuilder packaging assets, manifest shortcuts, and `microsoft-store.yml` workflow are ready; Partner Center credentials still required to publish).
+
+**Recently polished**:
+- Email verification: signup issues a one-time link (Resend when `RESEND_API_KEY`/`EMAIL_FROM` are set); `/verify-email` and `/auth/verify-email` confirm it; `/auth/me` returns `emailVerified`; soft banner + Settings resend — never blocks local planner use. Google sign-in counts as verified; mail never includes task content.
+- Lightweight API observability: `GET /health` exposes VAPID state, dispatch success rate, in-memory dispatch sent/failed counts, and request counters (total / 4xx / 5xx) on Fastify and the Cloudflare Worker; Worker errors also go to Sentry.
+- Public brand color kit aligned to Inkline (paper/ink/hard shadows); unused glass `original_styles.css` removed.
+- Inline subtask editing in the task editor and expandable card step lists.
+- View-aware `N` / mobile FAB capture (task, goal, or note) with a always-live masthead New Task action.
+- Local-only planner access restored: `/app` works without an account; sync remains an optional Settings/signup path.
+- Note chips deep-link from Today, Board, and Goals into Notes; TaskEditor matches composer fields; mobile dock prioritizes Today / Goals / Board / Notes.
+- Optional game-layer XP is gated; recovery key confirmation is a first-class signup/Settings step.
+- Editable study-minute estimates; PWA share-target composer prefill; note draft flush on leave; Google login gated on `VITE_GOOGLE_CLIENT_ID`.
+- Mobile More sheet uses a flat ink wash, focus trap, and arrow-key menu pattern; Today pressure rows and Projects open Board with matching filters; custom filter presets can be deleted; local due-time reminders fire in-tab when permission is granted.
+- Custom weekday recurrence (composer/editor + domain next-due); task-card Inkline press physics without competing springs; expanded card steps can be deleted.
+- Calendar ICS export surfaced on Timeline, Today, and Command Palette (student path), not only Settings; onboarding draft survives remounts; verify-email updates session state and surfaces a local verify link when Resend is unset.
+- Optional game layer surfaces level, streak, RPG attributes, and badges on Today and Insights when enabled (XP chips on cards already existed).
 
 ## 4. Project Map
 
@@ -87,7 +99,7 @@ A calm cockpit for the day. Shows greeting, date, and a progress hero ("X of Y t
 - `src/styles.css`: Inkline token system and component layer.
 - `src/state/PlannerProvider.tsx`: context over the Dexie-backed hooks (`usePlanner()`).
 - `src/shell/AppShell.tsx`: masthead, tab strip, mobile dock, account menu.
-- `src/views/`: Today, Board, Timeline, Goals, Notes, Courses, Insights, Settings views plus composers/editors/overlays.
+- `src/views/`: Today, Board, Timeline, Goals, Notes, Projects (`CoursesView`), Insights, Settings views plus composers/editors/overlays.
 - `src/ui/`: shared primitives (buttons, cards, fields, chips, sheets/modals, feedback).
 - `src/data/`: Dexie database (`db.ts`), repositories, reminder sync.
 - `src/hooks/`: React hooks for data (`useTasks.ts`, `useGoals.ts`, etc).

@@ -393,9 +393,13 @@ describe("Tier 5 Adversarial Hardening: UI Press Physics, Focus Trapping & Gestu
     });
 
     it("STRESS 2.7: Adversarial Audit: Secondary inline controls (.complete-button & .note-link-unlink) dimensions", () => {
-      // In TaskCard: .complete-button is 34x34px base
+      // In TaskCard: .complete-button is 34x34px base, expands to 44px on coarse/mobile
       const completeMatch = cssContent.match(/\.complete-button\s*\{[\s\S]*?width:\s*34px;[\s\S]*?height:\s*34px;/);
       expect(completeMatch).not.toBeNull();
+      const completeTouchMatch = cssContent.match(
+        /@media\s*\([^)]*pointer:\s*coarse[^)]*\)[^{]*\{[\s\S]*?\.complete-button\s*\{[\s\S]*?min-width:\s*44px[\s\S]*?min-height:\s*44px/
+      );
+      expect(completeTouchMatch).not.toBeNull();
 
       // In Notes: .note-link-unlink is 26x26px base
       const unlinkMatch = cssContent.match(/\.note-link-unlink\s*\{[\s\S]*?width:\s*26px;[\s\S]*?height:\s*26px;/);
@@ -713,7 +717,7 @@ describe("Tier 5 Adversarial Hardening: UI Press Physics, Focus Trapping & Gestu
       expect(burst).toHaveAttribute("aria-hidden", "true");
 
       // Interactive edit button is still clickable and interactive
-      const editBtn = screen.getByRole("button", { name: "Celebration Task" });
+      const editBtn = screen.getByRole("button", { name: /Open task Celebration Task/ });
       expect(editBtn).toBeInTheDocument();
       expect(editBtn).not.toBeDisabled();
     });

@@ -2,8 +2,10 @@ import { FormEvent, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
 import { useAuth } from "../auth/AuthProvider";
+import { RecoveryKeyPanel } from "../auth/RecoveryKeyPanel";
+import { buildVerifyEmailLink } from "../lib/verifyEmailLink";
 import { AuthShell } from "./AuthShell";
-import { Button, Field, TextInput, ToggleRow } from "../ui";
+import { Button, Field, Notice, TextInput } from "../ui";
 
 export function Signup() {
   const { signup, loginWithGoogle, rotateRecoveryKey, status } = useAuth();
@@ -14,6 +16,7 @@ export function Signup() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [recoveryKey, setRecoveryKey] = useState("");
+  const [verificationToken, setVerificationToken] = useState("");
   const [confirmedSaved, setConfirmedSaved] = useState(false);
   const [partialKey, setPartialKey] = useState("");
   const [recoveryBusy, setRecoveryBusy] = useState(false);
@@ -41,8 +44,9 @@ export function Signup() {
     setBusy(true);
     setError("");
     try {
-      const key = await signup(email, password);
-      setRecoveryKey(key);
+      const result = await signup(email, password);
+      setRecoveryKey(result.recoveryKey);
+      setVerificationToken(result.verificationToken ?? "");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create the account.");
     } finally {
@@ -50,9 +54,29 @@ export function Signup() {
     }
   }
 
+  async function handleGoogle(credential: string) {
+    setBusy(true);
+    setError("");
+    try {
+      const result = await loginWithGoogle(credential);
+      if (result.created) {
+        const key = await rotateRecoveryKey();
+        setRecoveryKey(key);
+        setConfirmedSaved(false);
+        setPartialKey("");
+        return;
+      }
+      navigate("/app");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Google sign in failed.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   if (recoveryKey) {
-    const expectedPartial = recoveryKey.slice(-4);
-    const canProceed = confirmedSaved && partialKey.toLowerCase() === expectedPartial.toLowerCase();
+    const canProceed =
+      confirmedSaved && partialKey.toLowerCase() === recoveryKey.slice(-4).toLowerCase();
 
     async function regenerateRecoveryKey() {
       setRecoveryBusy(true);
@@ -71,68 +95,68 @@ export function Signup() {
 
     return (
       <AuthShell title="Save your recovery key" subtitle="Your records are end-to-end encrypted. This key is required if you lose your password.">
-        <div className="recovery-key-display">{recoveryKey}</div>
-        <p className="text-center text-sm text-[var(--ink-soft)]">
-          Save this in a password manager before continuing. The server cannot read your task content, and Throughline
-          cannot recover encrypted data if both your password and recovery key are lost.
-        </p>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-          <ToggleRow checked={confirmedSaved} onChange={setConfirmedSaved}>
-            I have saved this recovery key securely
-          </ToggleRow>
-          <Field label="To confirm, enter the last 4 characters of your key">
-            <TextInput
-              type="text"
-              value={partialKey}
-              onChange={(event) => setPartialKey(event.target.value)}
-              placeholder="last 4"
-              maxLength={4}
-              style={{ fontFamily: "monospace", width: "8rem", textAlign: "center" }}
-            />
-          </Field>
-        </div>
-
-        {error ? <p className="auth-error">{error}</p> : null}
-        <div className="flex flex-col items-center gap-3">
-          <Button onClick={() => void regenerateRecoveryKey()} disabled={recoveryBusy}>
-            {recoveryBusy ? "Generating..." : "Generate a different key"}
-          </Button>
-          <Button variant="primary" disabled={!canProceed} onClick={() => navigate("/app")}>
-            Continue to Planner
-          </Button>
-        </div>
+        <RecoveryKeyPanel
+          recoveryKey={recoveryKey}
+          confirmed={confirmedSaved}
+          onConfirmedChange={setConfirmedSaved}
+          partialKey={partialKey}
+          onPartialKeyChange={setPartialKey}
+          onRegenerate={regenerateRecoveryKey}
+          regenerateBusy={recoveryBusy}
+          footer={
+            <>
+              {verificationToken ? (
+                <Notice variant="info" title="Confirm your email when you can">
+                  <p>
+                    Mail delivery is optional on this server. Open the verification link below (or from Settings later).
+                    Your planner already works locally.
+                  </p>
+                  <div className="button-row" style={{ marginTop: "0.75rem" }}>
+                    <a className="btn btn-accent" href={buildVerifyEmailLink(verificationToken)}>
+                      Open verification link
+                    </a>
+                  </div>
+                </Notice>
+              ) : (
+                <p className="text-sm text-[var(--ink-soft)]">
+                  We also sent a confirmation email when mail is configured — you can resend it anytime from Settings.
+                </p>
+              )}
+              {error ? <p className="auth-error">{error}</p> : null}
+              <Button variant="primary" disabled={!canProceed} onClick={() => navigate("/app")}>
+                Continue to Planner
+              </Button>
+            </>
+          }
+        />
       </AuthShell>
     );
   }
 
+  const googleEnabled = Boolean(import.meta.env.VITE_GOOGLE_CLIENT_ID);
+
   return (
     <AuthShell title="Create your account" subtitle="Local-first by default. Optional sync is end-to-end encrypted before records leave this device.">
-      <div style={{ display: "flex", justifyContent: "center", marginBottom: "0.5rem" }}>
-        <GoogleLogin
-          onSuccess={async (credentialResponse) => {
-            if (credentialResponse.credential) {
-              try {
-                setBusy(true);
-                await loginWithGoogle(credentialResponse.credential);
-                navigate("/app");
-              } catch (err) {
-                setError(err instanceof Error ? err.message : "Google sign in failed.");
-              } finally {
-                setBusy(false);
-              }
-            }
-          }}
-          onError={() => {
-            setError("Google sign in failed.");
-          }}
-          theme={googleTheme}
-          shape="pill"
-          text="signup_with"
-        />
-      </div>
-
-      <div className="auth-divider">or create with email</div>
+      {googleEnabled ? (
+        <>
+          <div className="auth-oauth-row">
+            <GoogleLogin
+              onSuccess={async (credentialResponse) => {
+                if (credentialResponse.credential) {
+                  await handleGoogle(credentialResponse.credential);
+                }
+              }}
+              onError={() => {
+                setError("Google sign in failed.");
+              }}
+              theme={googleTheme}
+              shape="pill"
+              text="signup_with"
+            />
+          </div>
+          <div className="auth-divider">or create with email</div>
+        </>
+      ) : null}
 
       <form className="auth-form" onSubmit={submit}>
         <Field label="Email">
@@ -164,9 +188,14 @@ export function Signup() {
           {busy ? "Creating…" : "Create account"}
         </Button>
       </form>
-      <p className="auth-switch">
-        Already have an account? <Link to="/login">Sign in</Link>
-      </p>
+      <div className="auth-switch auth-switch-stack">
+        <p>
+          Already have an account? <Link to="/login">Sign in</Link>
+        </p>
+        <p className="auth-switch-secondary">
+          Prefer offline? <Link to="/app">Continue without an account</Link>
+        </p>
+      </div>
     </AuthShell>
   );
 }

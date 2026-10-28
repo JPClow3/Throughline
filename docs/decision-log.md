@@ -1,5 +1,7 @@
 # Decision Log
 
+Historical notes below. Visual decisions that mention Liquid Glass / frosted chrome are superseded by Inkline (`docs/ui-ux.md`, `DESIGN.md`, decision 013). Prefer Inkline paper surfaces, ink borders, and hard offset shadows for current UI work.
+
 ## 001 - PWA Instead Of Native Wrapper
 
 Decision: Windows support is an installable/store-ready PWA in v1.

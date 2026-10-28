@@ -1,4 +1,4 @@
-import { Course, FocusSession, Goal, Note, Task, TaskStatus } from "@throughline/domain";
+import { Course, FocusSession, Goal, Note, Task, TaskStatus, UserProgress } from "@throughline/domain";
 import { createContext, useContext, useMemo, type ReactNode } from "react";
 import type { FocusSessionInput, GoalInput, NoteInput, TaskInput } from "../data/repositories";
 import { useFocusSessions } from "../hooks/useFocusSessions";
@@ -13,6 +13,7 @@ type PlannerContextValue = {
   goals: Goal[];
   notes: Note[];
   focusSessions: FocusSession[];
+  progress: UserProgress | undefined;
   loading: boolean;
   courseById: Map<string, Course>;
   noteCountByTask: Map<string, number>;
@@ -49,6 +50,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
   const {
     tasks,
     courses,
+    progress,
     loading: tasksLoading,
     addTask,
     updateTask,
@@ -72,6 +74,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
       goals,
       notes,
       focusSessions,
+      progress,
       loading: tasksLoading || focusLoading,
       courseById,
       noteCountByTask,
@@ -99,6 +102,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
     goals,
     notes,
     focusSessions,
+    progress,
     tasksLoading,
     focusLoading,
     addTask,

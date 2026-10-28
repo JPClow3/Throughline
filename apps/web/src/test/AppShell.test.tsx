@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { AppShell } from "../shell/AppShell";
 
@@ -23,7 +23,8 @@ describe("AppShell", () => {
       <AppShell
         view="dashboard"
         onViewChange={vi.fn()}
-        onNewTask={onPrimary}
+        onNewTask={vi.fn()}
+        onPrimaryAction={onPrimary}
         primaryActionLabel="New task"
       >
         <h1>Today</h1>
@@ -36,6 +37,26 @@ describe("AppShell", () => {
     expect(onPrimary).toHaveBeenCalled();
   });
 
+  it("keeps masthead New Task live even when the mobile FAB is view-specific", () => {
+    const onNewTask = vi.fn();
+    const onPrimary = vi.fn();
+    render(
+      <AppShell
+        view="goals"
+        onViewChange={vi.fn()}
+        onNewTask={onNewTask}
+        onPrimaryAction={onPrimary}
+        primaryActionLabel="New goal"
+      >
+        <h1>Goals</h1>
+      </AppShell>
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /New Task/i }));
+    expect(onNewTask).toHaveBeenCalled();
+    expect(onPrimary).not.toHaveBeenCalled();
+  });
+
   it("omits the mobile primary action when none is configured", () => {
     const { container } = render(
       <AppShell view="settings" onViewChange={vi.fn()} onNewTask={vi.fn()}>
@@ -44,6 +65,16 @@ describe("AppShell", () => {
     );
 
     expect(container.querySelector(".shell-mobile-primary-action")).not.toBeInTheDocument();
+  });
+
+  it("shows Sign in when there is no account session", () => {
+    render(
+      <AppShell view="dashboard" onViewChange={vi.fn()} onNewTask={vi.fn()}>
+        <h1>Today</h1>
+      </AppShell>
+    );
+
+    expect(screen.getByRole("link", { name: "Sign in" })).toHaveAttribute("href", "/login");
   });
 
   it("exposes every view as a labelled navigation anchor", () => {
@@ -58,7 +89,7 @@ describe("AppShell", () => {
     }
   });
 
-  it("dismisses the mobile More menu when focus moves outside or Escape is pressed", () => {
+  it("dismisses the mobile More menu when focus moves outside or Escape is pressed", async () => {
     render(
       <AppShell view="dashboard" onViewChange={vi.fn()}>
         <h1>Today</h1>
@@ -71,11 +102,16 @@ describe("AppShell", () => {
 
     fireEvent.keyDown(document, { key: "Escape" });
     expect(screen.queryByRole("menu", { name: "More views" })).not.toBeInTheDocument();
-    expect(more).toHaveFocus();
+    await waitFor(() => expect(more).toHaveFocus());
 
     fireEvent.click(more);
     expect(screen.getByRole("menu", { name: "More views" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Close more menu" })).toBeInTheDocument();
     fireEvent.pointerDown(document.body);
+    expect(screen.queryByRole("menu", { name: "More views" })).not.toBeInTheDocument();
+
+    fireEvent.click(more);
+    fireEvent.click(screen.getByRole("button", { name: "Close more menu" }));
     expect(screen.queryByRole("menu", { name: "More views" })).not.toBeInTheDocument();
   });
 });

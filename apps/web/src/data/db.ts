@@ -27,7 +27,8 @@ export type Tombstone = {
   deletedAt: string;
 };
 
-class LiquidGlassDb extends Dexie {
+/** IndexedDB name stays `liquidglass-study-quests` for existing installs. */
+class ThroughlineDb extends Dexie {
   tasks!: Table<Task, string>;
   courses!: Table<Course, string>;
   progress!: Table<UserProgress, string>;
@@ -122,7 +123,7 @@ class LiquidGlassDb extends Dexie {
   }
 }
 
-export const db = new LiquidGlassDb();
+export const db = new ThroughlineDb();
 
 export async function seedIfEmpty() {
   const taskCount = await db.tasks.count();

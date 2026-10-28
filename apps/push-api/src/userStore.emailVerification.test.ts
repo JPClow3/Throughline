@@ -1,0 +1,98 @@
+// @vitest-environment node
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, describe, expect, it } from "vitest";
+import { createUserStore, type UserStore } from "./userStore";
+
+describe("userStore email verification", () => {
+  const dirs: string[] = [];
+  const stores: UserStore[] = [];
+
+  afterEach(() => {
+    // Close SQLite handles before deleting temp dirs — Windows CI otherwise
+    // hits EPERM while the WAL/DB files are still locked.
+    while (stores.length) {
+      const open = stores.pop();
+      try {
+        open?.db.close();
+      } catch {
+        // already closed
+      }
+    }
+    while (dirs.length) {
+      const dir = dirs.pop();
+      if (!dir) continue;
+      try {
+        rmSync(dir, { recursive: true, force: true });
+      } catch {
+        // Best-effort cleanup; locked files on some runners are non-fatal.
+      }
+    }
+  });
+
+  function store() {
+    const dir = mkdtempSync(join(tmpdir(), "tl-verify-"));
+    dirs.push(dir);
+    const users = createUserStore(join(dir, "test.db"));
+    stores.push(users);
+    return users;
+  }
+
+  const signupInput = {
+    email: "student@example.com",
+    salt: "salt",
+    authKey: "auth",
+    wrappedDek: "wrap",
+    recoveryAuthKey: "rec-auth",
+    recoveryWrappedDek: "rec-wrap"
+  };
+
+  it("creates password users unverified and consumes one-time tokens", () => {
+    const users = store();
+    const user = users.createUser(signupInput);
+    expect(user).toBeTruthy();
+    expect(users.isEmailVerified(user!.id)).toBe(false);
+
+    const token = users.createEmailVerificationToken(user!.id);
+    expect(token.length).toBeGreaterThan(16);
+
+    const session = users.createSession(user!.id);
+    expect(users.getSessionUser(session)).toMatchObject({
+      email: "student@example.com",
+      emailVerified: false
+    });
+
+    const verified = users.verifyEmailWithToken(token);
+    expect(verified).toEqual({ userId: user!.id, email: "student@example.com", alreadyVerified: false });
+    expect(users.isEmailVerified(user!.id)).toBe(true);
+    expect(users.getSessionUser(session)?.emailVerified).toBe(true);
+
+    // Same token stays valid until expiry / resend so refresh is idempotent
+    expect(users.verifyEmailWithToken(token)).toEqual({
+      userId: user!.id,
+      email: "student@example.com",
+      alreadyVerified: true
+    });
+  });
+
+  it("replaces prior tokens on resend", () => {
+    const users = store();
+    const user = users.createUser({ ...signupInput, email: "resend@example.com" });
+    const first = users.createEmailVerificationToken(user!.id);
+    const second = users.createEmailVerificationToken(user!.id);
+    expect(users.verifyEmailWithToken(first)).toBeNull();
+    expect(users.verifyEmailWithToken(second)?.email).toBe("resend@example.com");
+  });
+
+  it("marks Google users verified at creation", () => {
+    const users = store();
+    const user = users.createGoogleUser({
+      email: "google@example.com",
+      googleId: "gid-1",
+      dek: "dek-blob"
+    });
+    expect(user?.emailVerifiedAt).toBeTruthy();
+    expect(users.isEmailVerified(user!.id)).toBe(true);
+  });
+});

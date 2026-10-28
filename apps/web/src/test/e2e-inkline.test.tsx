@@ -274,7 +274,7 @@ describe("Throughline Inkline E2E Test Suite", () => {
           planner: { tasks: [task], courses: [], courseById: new Map() }
         });
 
-        const editBtn = screen.getByRole("button", { name: "Interactive Board Task" });
+        const editBtn = screen.getByRole("button", { name: /Open task Interactive Board Task/ });
         fireEvent.click(editBtn);
         expect(onEdit).toHaveBeenCalledWith(expect.objectContaining({ id: "task_edit_kb" }));
         restore();
@@ -865,8 +865,9 @@ describe("Throughline Inkline E2E Test Suite", () => {
         fireEvent.click(screen.getByRole("button", { name: /Regenerate recovery key/i }));
         expect(await screen.findByText("test-sec-key-1234")).toBeInTheDocument();
 
-        fireEvent.click(screen.getByLabelText(/I saved this recovery key/i));
-        fireEvent.change(screen.getByLabelText(/Confirm last 4 characters/i), { target: { value: "1234" } });
+        expect(screen.getByRole("button", { name: /Copy key/i })).toBeInTheDocument();
+        fireEvent.click(screen.getByLabelText(/I have saved this recovery key securely/i));
+        fireEvent.change(screen.getByLabelText(/last 4 characters/i), { target: { value: "1234" } });
         expect(screen.getByText(/Saved confirmation complete/i)).toBeInTheDocument();
       });
 

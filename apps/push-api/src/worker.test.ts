@@ -66,10 +66,50 @@ describe("Cloudflare Worker API (PostgreSQL / Neon)", () => {
       env
     );
     expect(healthRes.status).toBe(200);
-    const health = await healthRes.json() as { ok: boolean; subscriptions: number; reminders: number };
+    const health = await healthRes.json() as {
+      ok: boolean;
+      subscriptions: number;
+      reminders: number;
+      metrics: { sent: number; failed: number };
+      requests: { total: number; status4xx: number; status5xx: number };
+    };
     expect(health.ok).toBe(true);
     expect(health.subscriptions).toBe(0);
     expect(health.reminders).toBe(0);
+    expect(health.metrics).toMatchObject({ sent: expect.any(Number), failed: expect.any(Number) });
+    expect(health.requests).toMatchObject({
+      total: expect.any(Number),
+      status4xx: expect.any(Number),
+      status5xx: expect.any(Number)
+    });
+    expect(health.requests.total).toBeGreaterThanOrEqual(1);
+  });
+
+  it("counts total, 4xx, and 5xx requests in the health payload", async () => {
+    const baselineRes = await handleRequest(new Request("http://localhost/health"), env);
+    const baseline = await baselineRes.json() as {
+      requests: { total: number; status4xx: number; status5xx: number };
+    };
+
+    await handleRequest(
+      new Request("http://localhost/subscriptions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ endpoint: 123 })
+      }),
+      env
+    );
+    await handleRequest(new Request("http://localhost/nonexistent-route", { method: "GET" }), env);
+
+    const healthRes = await handleRequest(new Request("http://localhost/health"), env);
+    const health = await healthRes.json() as {
+      requests: { total: number; status4xx: number; status5xx: number };
+    };
+
+    // baseline GET + bad POST (400) + unknown GET (404) + this health GET
+    expect(health.requests.total).toBe(baseline.requests.total + 3);
+    expect(health.requests.status4xx).toBe(baseline.requests.status4xx + 2);
+    expect(health.requests.status5xx).toBe(baseline.requests.status5xx);
   });
 
   it("manages push subscriptions and reminders", async () => {
@@ -199,9 +239,17 @@ describe("Cloudflare Worker API (PostgreSQL / Neon)", () => {
     expect(signupRes.status).toBe(201);
     const cookie = signupRes.headers.get("Set-Cookie");
     expect(cookie).toContain(SESSION_COOKIE);
-    const { userId, email } = await signupRes.json() as { userId: string; email: string };
+    const signupBody = await signupRes.json() as {
+      userId: string;
+      email: string;
+      emailVerified: boolean;
+      verificationToken?: string;
+    };
+    const { userId, email } = signupBody;
     expect(userId).toBeDefined();
     expect(email).toBe("student@example.com");
+    expect(signupBody.emailVerified).toBe(false);
+    expect(signupBody.verificationToken).toBeTruthy();
 
     // Duplicate signup should fail with 409
     const dupRes = await handleRequest(
@@ -273,7 +321,8 @@ describe("Cloudflare Worker API (PostgreSQL / Neon)", () => {
       env
     );
     expect(meRes.status).toBe(200);
-    const me = await meRes.json() as { userId: string; email: string };
+    const me = await meRes.json() as { userId: string; email: string; emailVerified: boolean };
+    expect(me.emailVerified).toBe(false);
     expect(me.userId).toBe(userId);
 
     // GET /auth/me without session cookie returns 401

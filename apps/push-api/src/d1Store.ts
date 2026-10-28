@@ -1,7 +1,7 @@
 import { RedactedReminder } from "@throughline/domain";
 import { createHash, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import type { StoredReminder, StoredSubscription, WebPushSubscription } from "./store";
-import type { UserRow } from "./userStore";
+import { EMAIL_VERIFICATION_TTL_MS, type SessionUser, type UserRow } from "./userStore";
 
 export interface D1PreparedStatement {
   bind(...values: unknown[]): D1PreparedStatement;
@@ -39,6 +39,33 @@ export function verifyAuthKey(authKey: string, stored: string): boolean {
 }
 
 const normalizeEmail = (email: string) => email.trim().toLowerCase();
+
+/**
+ * Idempotent catch-up for legacy D1 databases that applied a pre-verify `0001`
+ * before `users.email_verified_at` existed. SQLite has no
+ * `ADD COLUMN IF NOT EXISTS`, so duplicate-column errors are ignored.
+ *
+ * Production Workers use Hyperdrive/Postgres (`0002_postgres_email_verification.sql`).
+ * Call this before constructing `D1UserStore` if a D1 binding is ever reintroduced.
+ */
+export async function ensureD1EmailVerificationSchema(db: D1Database): Promise<void> {
+  try {
+    await db.exec("ALTER TABLE users ADD COLUMN email_verified_at TEXT");
+  } catch {
+    // Column already present (current 0001 or a prior catch-up).
+  }
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS email_verification_tokens (
+      token TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      expires_at TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_email_verification_user ON email_verification_tokens(user_id);
+    CREATE INDEX IF NOT EXISTS idx_email_verification_expires ON email_verification_tokens(expires_at);
+  `);
+}
 
 /**
  * Cloudflare D1 Implementation of PushStore
@@ -305,17 +332,18 @@ export class D1UserStore {
       salt: input.salt,
       authHash: hashAuthKey(input.authKey),
       wrappedDek: input.wrappedDek,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      emailVerifiedAt: null
     };
 
     const recoveryHash = hashAuthKey(input.recoveryAuthKey);
 
     await this.db
       .prepare(
-        `INSERT INTO users (id, email, salt, auth_hash, wrapped_dek, created_at, recovery_hash, recovery_wrapped_dek)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO users (id, email, salt, auth_hash, wrapped_dek, created_at, recovery_hash, recovery_wrapped_dek, email_verified_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
-      .bind(row.id, row.email, row.salt, row.authHash, row.wrappedDek, row.createdAt, recoveryHash, input.recoveryWrappedDek)
+      .bind(row.id, row.email, row.salt, row.authHash, row.wrappedDek, row.createdAt, recoveryHash, input.recoveryWrappedDek, null)
       .run();
 
     return row;
@@ -326,7 +354,18 @@ export class D1UserStore {
       .prepare("SELECT salt FROM users WHERE email = ?")
       .bind(normalizeEmail(email))
       .first<{ salt: string }>();
-    return row?.salt ?? null;
+    return row?.salt ? row.salt : null;
+  }
+
+  async ensureSalt(userId: string, salt: string): Promise<void> {
+    const row = await this.db.prepare("SELECT salt FROM users WHERE id = ?").bind(userId).first<{ salt?: string }>();
+    if (!row || row.salt) {
+      return;
+    }
+    await this.db
+      .prepare("UPDATE users SET salt = ? WHERE id = ? AND (salt IS NULL OR salt = '')")
+      .bind(salt, userId)
+      .run();
   }
 
   async verifyLogin(email: string, authKey: string): Promise<{ userId: string; salt: string; wrappedDek: string } | null> {
@@ -361,22 +400,24 @@ export class D1UserStore {
     if (existing) {
       return null;
     }
+    const verifiedAt = new Date().toISOString();
     const row: UserRow = {
       id: `user_${Buffer.from(randomBytes(12)).toString("hex")}`,
       email,
-      salt: "",
+      salt: Buffer.from(randomBytes(16)).toString("base64"),
       authHash: "",
       wrappedDek: input.dek,
       createdAt: new Date().toISOString(),
-      googleId: input.googleId
+      googleId: input.googleId,
+      emailVerifiedAt: verifiedAt
     };
 
     await this.db
       .prepare(
-        `INSERT INTO users (id, email, salt, auth_hash, wrapped_dek, created_at, google_id)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO users (id, email, salt, auth_hash, wrapped_dek, created_at, google_id, email_verified_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
       )
-      .bind(row.id, row.email, row.salt, row.authHash, row.wrappedDek, row.createdAt, input.googleId)
+      .bind(row.id, row.email, row.salt, row.authHash, row.wrappedDek, row.createdAt, input.googleId, verifiedAt)
       .run();
 
     return row;
@@ -399,6 +440,11 @@ export class D1UserStore {
       }
     }
 
+    await this.db
+      .prepare("UPDATE users SET email_verified_at = COALESCE(email_verified_at, ?) WHERE id = ?")
+      .bind(new Date().toISOString(), row.id)
+      .run();
+
     return { userId: row.id, dek: row.wrapped_dek };
   }
 
@@ -415,15 +461,15 @@ export class D1UserStore {
     return token;
   }
 
-  async getSessionUser(token: string): Promise<{ userId: string; email: string } | null> {
+  async getSessionUser(token: string): Promise<SessionUser | null> {
     const row = await this.db
       .prepare(
-        `SELECT u.id AS user_id, u.email AS email, s.expires_at AS expires_at
+        `SELECT u.id AS user_id, u.email AS email, u.email_verified_at AS email_verified_at, s.expires_at AS expires_at
          FROM sessions s JOIN users u ON u.id = s.user_id
          WHERE s.token = ?`
       )
       .bind(token)
-      .first<{ user_id: string; email: string; expires_at: string }>();
+      .first<{ user_id: string; email: string; email_verified_at: string | null; expires_at: string }>();
 
     if (!row) return null;
 
@@ -432,7 +478,62 @@ export class D1UserStore {
       return null;
     }
 
-    return { userId: row.user_id, email: row.email };
+    return {
+      userId: row.user_id,
+      email: row.email,
+      emailVerified: Boolean(row.email_verified_at)
+    };
+  }
+
+  async createEmailVerificationToken(userId: string): Promise<string> {
+    await this.db.prepare("DELETE FROM email_verification_tokens WHERE user_id = ?").bind(userId).run();
+    const token = Buffer.from(randomBytes(32)).toString("hex");
+    const createdAt = new Date();
+    const expiresAt = new Date(createdAt.getTime() + EMAIL_VERIFICATION_TTL_MS);
+    await this.db
+      .prepare(
+        "INSERT INTO email_verification_tokens (token, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)"
+      )
+      .bind(token, userId, expiresAt.toISOString(), createdAt.toISOString())
+      .run();
+    return token;
+  }
+
+  async verifyEmailWithToken(
+    token: string
+  ): Promise<{ userId: string; email: string; alreadyVerified?: boolean } | null> {
+    const row = await this.db
+      .prepare(
+        `SELECT t.user_id AS user_id, t.expires_at AS expires_at, u.email AS email, u.email_verified_at AS email_verified_at
+         FROM email_verification_tokens t
+         JOIN users u ON u.id = t.user_id
+         WHERE t.token = ?`
+      )
+      .bind(token)
+      .first<{ user_id: string; expires_at: string; email: string; email_verified_at: string | null }>();
+
+    if (!row) return null;
+
+    if (new Date(row.expires_at).getTime() < Date.now()) {
+      await this.db.prepare("DELETE FROM email_verification_tokens WHERE token = ?").bind(token).run();
+      return null;
+    }
+
+    const alreadyVerified = Boolean(row.email_verified_at);
+    if (!alreadyVerified) {
+      const verifiedAt = new Date().toISOString();
+      await this.db.prepare("UPDATE users SET email_verified_at = ? WHERE id = ?").bind(verifiedAt, row.user_id).run();
+    }
+    // Keep the token until expiry / resend so refresh and Strict Mode remounts stay idempotent.
+    return { userId: row.user_id, email: row.email, alreadyVerified };
+  }
+
+  async isEmailVerified(userId: string): Promise<boolean> {
+    const row = await this.db
+      .prepare("SELECT email_verified_at FROM users WHERE id = ?")
+      .bind(userId)
+      .first<{ email_verified_at: string | null }>();
+    return Boolean(row?.email_verified_at);
   }
 
   async updatePassword(userId: string, authKey: string, wrappedDek: string): Promise<void> {

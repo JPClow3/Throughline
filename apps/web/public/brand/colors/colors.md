@@ -1,77 +1,51 @@
-# Throughline Color System
+# Throughline Color System (Inkline)
 
-Throughline should feel calm, local-first, private, and spatial. The palette is light-by-default, with a softer dark mode rather than a harsh black UI.
+Throughline should feel calm, local-first, and private. The live visual system is **Inkline**: warm paper surfaces, hard ink borders, and unblurred offset shadows — no glass, blur, or translucency.
 
 ## Core idea
 
-- Light mode: porcelain, mist, and glass with soft blue/violet/aqua light.
-- Dark mode: blue-black glass, muted contrast, and the same thread accents slightly lifted.
-- Accent system: the blue-violet-aqua thread is the brand signature.
+- Light mode: warm newsprint paper (`#f1ede3`) with near-black ink.
+- Dark mode: matte slate (`#15171e`) with bone-white ink and black offset shadows.
+- Signal accents: highlighter yellow (primary intent), electric blue (focus), mint green (success), coral red (danger), violet (optional game layer).
 
 ## Light mode
 
 | Token | Hex / value | Purpose |
 |---|---:|---|
-| Background | `#F7F8FB` | Main app background |
-| Background alt | `#EEF3FA` | Secondary panels / empty states |
-| Surface | `#FFFFFF` | Solid cards and sheets |
-| Glass surface | `rgba(255,255,255,0.62)` | Liquid glass cards |
-| Strong glass | `rgba(255,255,255,0.78)` | Modals, menus, focused panels |
-| Surface tint | `#F3F6FF` | Subtle blue card tint |
-| Glass border | `rgba(255,255,255,0.74)` | Frosted border highlight |
-| Subtle border | `#DDE5F2` | Non-glass dividers |
-| Text primary | `#142033` | Main readable text |
-| Text secondary | `#667389` | Descriptions |
-| Text muted | `#94A0B4` | Metadata / disabled states |
-| Accent blue | `#7EA7FF` | Primary actions / focus |
-| Accent violet | `#B9A7FF` | Secondary brand accent |
-| Accent aqua | `#8FE7DD` | Sync, privacy, completion |
-| Accent pink | `#F5B8FF` | Optional aurora highlight |
-| Progress | `#76DCCA` | Task/goal progress |
-| Warning | `#F3B95F` | Caution |
-| Danger | `#FF8A9A` | Destructive actions |
+| Background | `#f1ede3` | Paper canvas |
+| Background alt | `#e7e2d4` | Inset / recessed paper |
+| Surface | `#faf8f1` | Cardstock cards and sheets |
+| Surface tint | `#f6f2e9` | Quiet elevated panels |
+| Border | `#191712` | 2px ink borders |
+| Soft border | `rgba(25, 23, 18, 0.28)` | Dot-grid / subtle dividers |
+| Text primary | `#191712` | Headings and body |
+| Text secondary | `#57513f` | Descriptions |
+| Text muted | `#8b8570` | Metadata / placeholders |
+| Yellow | `#ffd43b` | Primary CTA / active tabs |
+| Blue | `#3d5afe` | Focus / secondary actions |
+| Green | `#1fae67` | Completion / success |
+| Red | `#ff5d47` | Danger / overdue |
+| Violet | `#8f6bf5` | Game layer only |
 
 ## Dark mode
 
 | Token | Hex / value | Purpose |
 |---|---:|---|
-| Background | `#0C1220` | Main dark background |
-| Background alt | `#111827` | Navigation / secondary areas |
-| Surface | `#172033` | Solid cards and sheets |
-| Glass surface | `rgba(24,34,54,0.58)` | Liquid glass cards |
-| Strong glass | `rgba(31,43,67,0.76)` | Modals, menus, focused panels |
-| Surface tint | `#1B2540` | Blue-tinted panels |
-| Glass border | `rgba(255,255,255,0.13)` | Frosted border highlight |
-| Subtle border | `#2A3650` | Dividers |
-| Text primary | `#F6F8FC` | Main readable text |
-| Text secondary | `#BAC5D8` | Descriptions |
-| Text muted | `#7F8DA5` | Metadata / disabled states |
-| Accent blue | `#94B8FF` | Primary actions / focus |
-| Accent violet | `#C8B8FF` | Secondary brand accent |
-| Accent aqua | `#8FE7DD` | Sync, privacy, completion |
-| Accent pink | `#F2B8FF` | Optional aurora highlight |
-| Progress | `#8BEAD9` | Task/goal progress |
-| Warning | `#FFD38A` | Caution |
-| Danger | `#FF9BA8` | Destructive actions |
+| Background | `#15171e` | Matte slate canvas |
+| Background alt | `#101218` | Inset surfaces |
+| Surface | `#1e212b` | Cards and sheets |
+| Surface tint | `#232633` | Quiet panels |
+| Border | `#ece7da` | Bone ink borders |
+| Soft border | `rgba(236, 231, 218, 0.32)` | Subtle dividers |
+| Text primary | `#ece7da` | Headings and body |
+| Text secondary | `#b0ab9c` | Descriptions |
+| Text muted | `#77735f` | Metadata |
+| Yellow | `#ffd43b` | Primary CTA |
+| Blue | `#7d92ff` | Focus / secondary |
+| Green | `#46cd88` | Success |
+| Red | `#ff7a68` | Danger |
+| Violet | `#ab8dff` | Game layer |
 
-## Gradients
+## Elevation
 
-```css
---tl-gradient-hero: linear-gradient(135deg, #F7F8FB 0%, #EAF0FF 42%, #F3ECFF 72%, #E7FFFA 100%);
---tl-gradient-thread: linear-gradient(135deg, #7EA7FF 0%, #B9A7FF 52%, #8FE7DD 100%);
-
-[data-theme="dark"] {
-  --tl-gradient-hero: linear-gradient(135deg, #0C1220 0%, #111B33 44%, #202548 72%, #123747 100%);
-  --tl-gradient-thread: linear-gradient(135deg, #94B8FF 0%, #C8B8FF 52%, #8FE7DD 100%);
-}
-```
-
-## Suggested semantic usage
-
-- Goals: `accentBlue`
-- Tasks: `accentViolet`
-- Notes: `accentAqua`
-- Projects: use customizable colors, but keep saturation low in calm mode
-- Sync/private states: `accentAqua`
-- Progress rollup: `progress`
-- Focus / selected states: blue ring + glass surface
+Depth comes from hard offset shadows (`2px/3px/5px/8px`) in `--tl-shadow-ink`, plus press physics — never blur or frosted glass.

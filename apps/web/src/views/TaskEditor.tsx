@@ -1,17 +1,31 @@
-import { Course, Goal, Priority, Task, TaskStatus, kanbanColumns, priorities, taskStatuses } from "@throughline/domain";
+import {
+  Course,
+  Goal,
+  Priority,
+  RpgAttribute,
+  Task,
+  TaskStatus,
+  kanbanColumns,
+  priorities,
+  rpgAttributes,
+  taskStatuses
+} from "@throughline/domain";
 import { DotsSixVertical as GripVertical, Plus, Trash } from "@phosphor-icons/react";
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { FormEvent, useState } from "react";
 import { reportError } from "../sentry";
-import { Button, ConfirmDialog, Field, Select, TextArea, TextInput } from "../ui";
+import { Button, ConfirmDialog, Field, Select, TextArea, TextInput, WeekdayPicker } from "../ui";
 
 function toLocalInput(iso?: string) {
   if (!iso) {
     return "";
   }
   const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
   const pad = (value: number) => String(value).padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
@@ -20,12 +34,14 @@ export function TaskEditor({
   task,
   courses,
   goals = [],
+  showGameLayer = false,
   onSave,
   onDelete
 }: {
   task: Task;
   courses: Course[];
   goals?: Goal[];
+  showGameLayer?: boolean;
   onSave: (task: Task) => Promise<void>;
   onDelete: (taskId: string) => Promise<void>;
 }) {
@@ -33,6 +49,7 @@ export function TaskEditor({
   const [courseId, setCourseId] = useState(task.courseId ?? "");
   const [goalId, setGoalId] = useState(task.goalId ?? "");
   const [dueAt, setDueAt] = useState(toLocalInput(task.dueAt));
+  const [reminderAt, setReminderAt] = useState(toLocalInput(task.reminderAt));
   const [status, setStatus] = useState<TaskStatus>(task.status);
   const [priority, setPriority] = useState<Priority>(task.priority);
   const [description, setDescription] = useState(task.description);
@@ -41,7 +58,13 @@ export function TaskEditor({
   const [recurrence, setRecurrence] = useState<"daily" | "weekly" | "biweekly" | "monthly" | "custom" | "">(
     task.recurrence?.pattern ?? ""
   );
-  const [attributes, setAttributes] = useState(task.attributes);
+  const [customDays, setCustomDays] = useState<number[]>(
+    task.recurrence?.daysOfWeek?.length ? [...task.recurrence.daysOfWeek] : [1, 2, 3, 4, 5]
+  );
+  const [energy, setEnergy] = useState(task.energy);
+  const [difficulty, setDifficulty] = useState(task.difficulty);
+  const [estimatedMinutes, setEstimatedMinutes] = useState(task.estimatedMinutes ?? 45);
+  const [attribute, setAttribute] = useState<RpgAttribute>(task.attributes[0] ?? "focus");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -82,6 +105,10 @@ export function TaskEditor({
       setError("Give the task a title before saving.");
       return;
     }
+    if (recurrence === "custom" && customDays.length === 0) {
+      setError("Pick at least one weekday for custom recurrence.");
+      return;
+    }
     setError("");
     setSaving(true);
     try {
@@ -91,16 +118,25 @@ export function TaskEditor({
         courseId: courseId || undefined,
         goalId: goalId || undefined,
         dueAt: dueAt ? new Date(dueAt).toISOString() : undefined,
+        reminderAt: reminderAt ? new Date(reminderAt).toISOString() : undefined,
         status,
         priority,
         description: description.trim(),
+        energy,
+        difficulty,
+        estimatedMinutes,
         tags: tags
           .split(",")
           .map((tag) => tag.trim())
           .filter(Boolean),
         subtasks: subtasks.map((subtask) => ({ ...subtask, title: subtask.title.trim() })).filter((subtask) => subtask.title),
-        recurrence: recurrence ? { pattern: recurrence as "daily" | "weekly" | "biweekly" | "monthly" | "custom" } : undefined,
-        attributes,
+        recurrence: recurrence
+          ? {
+              pattern: recurrence as "daily" | "weekly" | "biweekly" | "monthly" | "custom",
+              ...(recurrence === "custom" ? { daysOfWeek: customDays } : {})
+            }
+          : undefined,
+        attributes: [attribute],
         completedAt: status === "done" ? task.completedAt ?? new Date().toISOString() : undefined
       });
     } catch (error) {
@@ -134,8 +170,8 @@ export function TaskEditor({
               const nextCourseId = event.target.value;
               setCourseId(nextCourseId);
               const course = courses.find((item) => item.id === nextCourseId);
-              if (course?.defaultAttributes?.length) {
-                setAttributes(course.defaultAttributes);
+              if (course?.defaultAttributes?.[0]) {
+                setAttribute(course.defaultAttributes[0]);
               }
             }}
           >
@@ -222,12 +258,60 @@ export function TaskEditor({
             <option value="weekly">Weekly</option>
             <option value="biweekly">Biweekly</option>
             <option value="monthly">Monthly</option>
+            <option value="custom">Custom weekdays</option>
           </Select>
         </Field>
-        <Field label="Tags">
-          <TextInput value={tags} onChange={(event) => setTags(event.target.value)} placeholder="reading, errand" />
+        <Field label="Reminder">
+          <TextInput type="datetime-local" value={reminderAt} onChange={(event) => setReminderAt(event.target.value)} />
         </Field>
       </div>
+      {recurrence === "custom" ? (
+        <Field label="Repeat on">
+          <WeekdayPicker value={customDays} onChange={setCustomDays} />
+        </Field>
+      ) : null}
+      <Field label="Study minutes">
+        <TextInput
+          type="number"
+          min={5}
+          max={720}
+          step={5}
+          value={estimatedMinutes}
+          onChange={(event) => setEstimatedMinutes(Math.min(720, Math.max(5, Number(event.target.value) || 5)))}
+        />
+      </Field>
+      <Field label="Tags">
+        <TextInput value={tags} onChange={(event) => setTags(event.target.value)} placeholder="reading, errand" />
+      </Field>
+
+      {showGameLayer ? (
+        <>
+          <div className="range-row">
+            <Field label={`Energy ${energy}`}>
+              <input type="range" className="range" min="1" max="5" value={energy} onChange={(event) => setEnergy(Number(event.target.value))} />
+            </Field>
+            <Field label={`Difficulty ${difficulty}`}>
+              <input
+                type="range"
+                className="range"
+                min="1"
+                max="5"
+                value={difficulty}
+                onChange={(event) => setDifficulty(Number(event.target.value))}
+              />
+            </Field>
+          </div>
+          <Field label="Attribute">
+            <Select value={attribute} onChange={(event) => setAttribute(event.target.value as RpgAttribute)}>
+              {rpgAttributes.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        </>
+      ) : null}
 
       <div className="button-row editor-actions">
         <Button variant="primary" type="submit" disabled={saving}>

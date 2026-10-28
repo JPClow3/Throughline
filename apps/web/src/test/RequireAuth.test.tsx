@@ -26,13 +26,13 @@ describe("RequireAuth", () => {
     expect(container.querySelector("svg")).not.toBeNull();
   });
 
-  it("redirects when anon", () => {
+  it("allows local-only access when anon", () => {
     vi.spyOn(AuthProvider, "useAuth").mockReturnValue({ status: "anon" } as unknown as ReturnType<typeof AuthProvider.useAuth>);
     const { container } = render(
       <MemoryRouter>
         <RequireAuth><div>Content</div></RequireAuth>
       </MemoryRouter>
     );
-    expect(container.textContent).toBe("");
+    expect(container.textContent).toBe("Content");
   });
 });

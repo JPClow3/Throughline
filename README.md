@@ -7,9 +7,10 @@
 Throughline is a calm, local-first planner where **goals hold the work**. Set an end
 goal, break it into real tasks, and watch progress roll up — alongside a cross-linked
 **notes** notebook, a **board**, and a **timeline**. It's an installable PWA (browser,
-phone, and Windows) with an Apple-inspired, light-by-default Liquid Glass interface and a
-softer dark mode. It works fully offline; with an account, your data syncs across your
-devices **end-to-end encrypted** — the server only ever stores ciphertext it can't read.
+phone, and Windows) with the **Inkline** visual system — bold editorial neo-brutalism:
+paper surfaces, ink borders, hard offset shadows — and a softer matte dark mode. It works
+fully offline; with an account, your data syncs across your devices **end-to-end encrypted**
+— the server only ever stores ciphertext it can't read.
 
 ## Start here
 

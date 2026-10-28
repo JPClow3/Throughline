@@ -10,6 +10,8 @@ import {
   PostgresSyncStore,
   PostgresUserStore
 } from "./postgresStore";
+import { consumeAuthRateLimit } from "./authRateLimit";
+import { sendVerificationEmail } from "./mail";
 import {
   BulkReminderSyncSchema,
   EndpointHashParamsSchema,
@@ -40,6 +42,9 @@ export interface WorkerEnv {
   SESSION_SECRET?: string;
   COOKIE_SECURE?: string;
   GOOGLE_CLIENT_ID?: string;
+  RESEND_API_KEY?: string;
+  EMAIL_FROM?: string;
+  PUBLIC_APP_URL?: string;
   SENTRY_DSN?: string;
   SENTRY_ENVIRONMENT?: string;
 }
@@ -60,7 +65,12 @@ const LoginSchema = z.object({ email: z.string().email().max(254), authKey: blob
 const SaltSchema = z.object({ email: z.string().email().max(254) });
 const GoogleAuthSchema = z.object({ credential: z.string(), dek: z.string().optional() });
 const UpdatePasswordSchema = z.object({ authKey: blob, wrappedDek: blob });
-const UpdateRecoveryKeySchema = z.object({ recoveryAuthKey: blob, recoveryWrappedDek: blob });
+const UpdateRecoveryKeySchema = z.object({
+  recoveryAuthKey: blob,
+  recoveryWrappedDek: blob,
+  salt: blob.optional()
+});
+const VerifyEmailSchema = z.object({ token: z.string().min(16).max(128) });
 
 const EntitySchema = z.enum(["task", "course", "goal", "note", "focusSession"]);
 const ChangeSchema = z.object({
@@ -74,8 +84,9 @@ const ChangeSchema = z.object({
 const PushSchema = z.object({ changes: z.array(ChangeSchema).max(5000) });
 const PullQuerySchema = z.object({ since: z.string().max(40).optional() });
 
-// In-memory metrics tracking for the worker isolate
+// In-memory metrics tracking for the worker isolate (reset on isolate recycle).
 const dispatchMetrics = { sent: 0, failed: 0 };
+const requestMetrics = { total: 0, status4xx: 0, status5xx: 0 };
 
 export function getDb(env: WorkerEnv): Sql {
   if (env.SQL) {
@@ -224,6 +235,18 @@ export async function dispatchDueReminders(env: WorkerEnv): Promise<{ sent: numb
 }
 
 export async function handleRequest(request: Request, env: WorkerEnv, ctx?: ExecutionContext): Promise<Response> {
+  // Increment total up front so /health includes the current call; class buckets update after status is known.
+  requestMetrics.total += 1;
+  const response = await handleRequestInner(request, env, ctx);
+  if (response.status >= 500) {
+    requestMetrics.status5xx += 1;
+  } else if (response.status >= 400) {
+    requestMetrics.status4xx += 1;
+  }
+  return response;
+}
+
+async function handleRequestInner(request: Request, env: WorkerEnv, ctx?: ExecutionContext): Promise<Response> {
   const url = new URL(request.url);
   // Strip optional /api prefix to support same-origin proxy or direct routing
   const pathname = url.pathname.replace(/^\/api/, "") || "/";
@@ -262,6 +285,7 @@ export async function handleRequest(request: Request, env: WorkerEnv, ctx?: Exec
           vapidConfigured: hasVapidConfig(env),
           dispatchSuccessRate: totalDispatches > 0 ? dispatchMetrics.sent / totalDispatches : 1,
           metrics: dispatchMetrics,
+          requests: requestMetrics,
           ...counts
         },
         200,
@@ -332,15 +356,42 @@ export async function handleRequest(request: Request, env: WorkerEnv, ctx?: Exec
     // Authentication Endpoints
     // ----------------------------------------------------
     if (method === "POST" && pathname === "/auth/signup") {
+      const limited = consumeAuthRateLimit(request, {
+        max: Number(env.RATE_LIMIT_MAX ?? 12),
+        key: "signup"
+      });
+      if (!limited.ok) {
+        resHeaders.set("Retry-After", String(limited.retryAfterSec));
+        return errorResponse(429, "rate-limited", resHeaders);
+      }
       const body = await request.json();
       const input = SignupSchema.parse(body);
       const user = await userStore.createUser(input);
       if (!user) {
         return errorResponse(409, "Email already registered", resHeaders);
       }
+      const verificationToken = await userStore.createEmailVerificationToken(user.id);
+      const mail = await sendVerificationEmail(
+        {
+          resendApiKey: env.RESEND_API_KEY,
+          emailFrom: env.EMAIL_FROM,
+          publicAppUrl: env.PUBLIC_APP_URL || env.CORS_ORIGIN
+        },
+        { to: user.email, token: verificationToken }
+      );
       const token = await userStore.createSession(user.id);
       resHeaders.set("Set-Cookie", buildSetCookieHeader(token, isSecure));
-      return jsonResponse({ userId: user.id, email: user.email }, 201, resHeaders);
+      // Echo the one-time token only when mail is unset (local/dev fallback).
+      return jsonResponse(
+        {
+          userId: user.id,
+          email: user.email,
+          emailVerified: false,
+          ...(mail.mailConfigured ? {} : { verificationToken })
+        },
+        201,
+        resHeaders
+      );
     }
 
     if (method === "POST" && pathname === "/auth/salt") {
@@ -362,8 +413,14 @@ export async function handleRequest(request: Request, env: WorkerEnv, ctx?: Exec
       }
       const token = await userStore.createSession(result.userId);
       resHeaders.set("Set-Cookie", buildSetCookieHeader(token, isSecure));
+      const emailVerified = await userStore.isEmailVerified(result.userId);
       return jsonResponse(
-        { userId: result.userId, salt: result.salt, wrappedDek: result.wrappedDek },
+        {
+          userId: result.userId,
+          salt: result.salt,
+          wrappedDek: result.wrappedDek,
+          emailVerified
+        },
         200,
         resHeaders
       );
@@ -393,7 +450,7 @@ export async function handleRequest(request: Request, env: WorkerEnv, ctx?: Exec
       if (existing) {
         const token = await userStore.createSession(existing.userId);
         resHeaders.set("Set-Cookie", buildSetCookieHeader(token, isSecure));
-        return jsonResponse({ userId: existing.userId, dek: existing.dek, isNew: false }, 200, resHeaders);
+        return jsonResponse({ email, dek: existing.dek, created: false, emailVerified: true }, 200, resHeaders);
       }
 
       // New user signup via Google
@@ -408,7 +465,11 @@ export async function handleRequest(request: Request, env: WorkerEnv, ctx?: Exec
 
       const token = await userStore.createSession(newUser.id);
       resHeaders.set("Set-Cookie", buildSetCookieHeader(token, isSecure));
-      return jsonResponse({ userId: newUser.id, dek: newUser.wrappedDek, isNew: true }, 201, resHeaders);
+      return jsonResponse(
+        { email, dek: newUser.wrappedDek, created: true, emailVerified: true },
+        201,
+        resHeaders
+      );
     }
 
     if (method === "GET" && pathname === "/auth/me") {
@@ -416,7 +477,85 @@ export async function handleRequest(request: Request, env: WorkerEnv, ctx?: Exec
       if (!user) {
         return errorResponse(401, "Not authenticated", resHeaders);
       }
-      return jsonResponse({ userId: user.userId, email: user.email }, 200, resHeaders);
+      return jsonResponse(
+        { userId: user.userId, email: user.email, emailVerified: user.emailVerified },
+        200,
+        resHeaders
+      );
+    }
+
+    // POST only — never accept the one-time token as a query string (access logs).
+    // The web app opens /verify-email?token=… then POSTs the secret in the body.
+    if (method === "POST" && pathname === "/auth/verify-email") {
+      const limited = consumeAuthRateLimit(request, {
+        max: Number(env.RATE_LIMIT_MAX ?? 12),
+        key: "verify-email"
+      });
+      if (!limited.ok) {
+        resHeaders.set("Retry-After", String(limited.retryAfterSec));
+        return errorResponse(429, "rate-limited", resHeaders);
+      }
+      const body = await request.json().catch(() => null);
+      const parsed = VerifyEmailSchema.safeParse({
+        token: (body as { token?: string } | null)?.token
+      });
+      if (!parsed.success) {
+        return errorResponse(400, "missing-token", resHeaders);
+      }
+      const result = await userStore.verifyEmailWithToken(parsed.data.token);
+      if (!result) {
+        return errorResponse(400, "invalid-or-expired-token", resHeaders);
+      }
+      return jsonResponse(
+        {
+          email: result.email,
+          emailVerified: true,
+          ...(result.alreadyVerified ? { alreadyVerified: true } : {})
+        },
+        200,
+        resHeaders
+      );
+    }
+
+    if (method === "POST" && pathname === "/auth/resend-verification") {
+      const limited = consumeAuthRateLimit(request, {
+        max: Number(env.RATE_LIMIT_MAX ?? 12),
+        key: "resend-verification"
+      });
+      if (!limited.ok) {
+        resHeaders.set("Retry-After", String(limited.retryAfterSec));
+        return errorResponse(429, "rate-limited", resHeaders);
+      }
+      const user = await getUserFromRequest(request, userStore);
+      if (!user) {
+        return errorResponse(401, "Not authenticated", resHeaders);
+      }
+      if (user.emailVerified) {
+        return jsonResponse(
+          { email: user.email, emailVerified: true, alreadyVerified: true },
+          200,
+          resHeaders
+        );
+      }
+      const verificationToken = await userStore.createEmailVerificationToken(user.userId);
+      const mail = await sendVerificationEmail(
+        {
+          resendApiKey: env.RESEND_API_KEY,
+          emailFrom: env.EMAIL_FROM,
+          publicAppUrl: env.PUBLIC_APP_URL || env.CORS_ORIGIN
+        },
+        { to: user.email, token: verificationToken }
+      );
+      return jsonResponse(
+        {
+          email: user.email,
+          emailVerified: false,
+          mailSent: mail.sent,
+          ...(mail.mailConfigured ? {} : { verificationToken })
+        },
+        200,
+        resHeaders
+      );
     }
 
     if (method === "POST" && pathname === "/auth/logout") {
@@ -446,6 +585,9 @@ export async function handleRequest(request: Request, env: WorkerEnv, ctx?: Exec
       }
       const body = await request.json();
       const input = UpdateRecoveryKeySchema.parse(body);
+      if (input.salt) {
+        await userStore.ensureSalt(user.userId, input.salt);
+      }
       await userStore.updateRecoveryKey(user.userId, input.recoveryAuthKey, input.recoveryWrappedDek);
       return new Response(null, { status: 204, headers: resHeaders });
     }

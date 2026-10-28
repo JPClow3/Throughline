@@ -1,6 +1,6 @@
 import { Bell, Briefcase, Check, GraduationCap, House, Plus, SlidersHorizontal } from "@phosphor-icons/react";
 import { motion } from "motion/react";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { reportError } from "../sentry";
 import { Button, Field, Select, TextInput, useDialogA11y } from "../ui";
@@ -29,6 +29,22 @@ const DEFAULT_PROJECTS: Record<OnboardingSetupKind, string> = {
   personal: "Personal admin"
 };
 
+const SETUP_DRAFT_KEY = "throughline:onboarding-draft";
+
+type SetupDraft = {
+  step: number;
+  kind: OnboardingSetupKind;
+  projectNames: string[];
+  taskTitle: string;
+  taskProjectIndex: number;
+  dueAt: string;
+  enableNotifications: boolean;
+  openSyncSettings: boolean;
+};
+
+/** In-memory draft so remounts (Suspense / liveQuery flicker) never lose an in-flight Next. */
+let memorySetupDraft: SetupDraft | null = null;
+
 function defaultDueValue() {
   const due = new Date();
   due.setHours(18, 0, 0, 0);
@@ -36,16 +52,60 @@ function defaultDueValue() {
   return `${due.getFullYear()}-${pad(due.getMonth() + 1)}-${pad(due.getDate())}T${pad(due.getHours())}:${pad(due.getMinutes())}`;
 }
 
+function readSetupDraft(): Partial<SetupDraft> | null {
+  if (memorySetupDraft) {
+    return memorySetupDraft;
+  }
+  try {
+    const raw = sessionStorage.getItem(SETUP_DRAFT_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as Partial<SetupDraft>;
+  } catch {
+    return null;
+  }
+}
+
+function writeSetupDraft(draft: SetupDraft) {
+  memorySetupDraft = draft;
+  try {
+    sessionStorage.setItem(SETUP_DRAFT_KEY, JSON.stringify(draft));
+  } catch {
+    // Ignore private-mode storage failures.
+  }
+}
+
+function clearSetupDraft() {
+  memorySetupDraft = null;
+  try {
+    sessionStorage.removeItem(SETUP_DRAFT_KEY);
+  } catch {
+    // Ignore private-mode storage failures.
+  }
+}
+
+/** Test helper — clears both memory and session drafts between cases. */
+export function resetOnboardingDraftForTests() {
+  clearSetupDraft();
+}
+
 export function OnboardingOverlay({ onSetup, onComplete }: { onSetup: (input: OnboardingSetupInput) => void | Promise<void>; onComplete: () => void | Promise<void> }) {
   const panelRef = useRef<HTMLDivElement>(null);
-  const [step, setStep] = useState(0);
-  const [kind, setKind] = useState<OnboardingSetupKind>("school");
-  const [projectNames, setProjectNames] = useState<string[]>([DEFAULT_PROJECTS.school]);
-  const [taskTitle, setTaskTitle] = useState("Review notes for 25 minutes");
-  const [taskProjectIndex, setTaskProjectIndex] = useState(0);
-  const [dueAt, setDueAt] = useState(defaultDueValue);
-  const [enableNotifications, setEnableNotifications] = useState(false);
-  const [openSyncSettings, setOpenSyncSettings] = useState(false);
+  const draft = useMemo(() => readSetupDraft(), []);
+  const [step, setStep] = useState(() => {
+    const value = draft?.step;
+    return typeof value === "number" && value >= 0 && value <= 3 ? value : 0;
+  });
+  const [kind, setKind] = useState<OnboardingSetupKind>(() =>
+    draft?.kind === "school" || draft?.kind === "work" || draft?.kind === "personal" ? draft.kind : "school"
+  );
+  const [projectNames, setProjectNames] = useState<string[]>(() =>
+    Array.isArray(draft?.projectNames) && draft.projectNames.length ? draft.projectNames : [DEFAULT_PROJECTS.school]
+  );
+  const [taskTitle, setTaskTitle] = useState(() => draft?.taskTitle ?? "Review notes for 25 minutes");
+  const [taskProjectIndex, setTaskProjectIndex] = useState(() => draft?.taskProjectIndex ?? 0);
+  const [dueAt, setDueAt] = useState(() => draft?.dueAt ?? defaultDueValue());
+  const [enableNotifications, setEnableNotifications] = useState(() => Boolean(draft?.enableNotifications));
+  const [openSyncSettings, setOpenSyncSettings] = useState(() => Boolean(draft?.openSyncSettings));
   const [submitting, setSubmitting] = useState(false);
   const [setupError, setSetupError] = useState("");
 
@@ -56,11 +116,44 @@ export function OnboardingOverlay({ onSetup, onComplete }: { onSetup: (input: On
   // dialog helper still traps focus and restores it after setup finishes.
   useDialogA11y(true, () => undefined, panelRef);
 
+  function currentDraft(overrides: Partial<SetupDraft> = {}): SetupDraft {
+    return {
+      step,
+      kind,
+      projectNames,
+      taskTitle,
+      taskProjectIndex,
+      dueAt,
+      enableNotifications,
+      openSyncSettings,
+      ...overrides
+    };
+  }
+
+  useEffect(() => {
+    writeSetupDraft(currentDraft());
+    // currentDraft closes over the latest field snapshot for this render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- persist whenever any draft field changes
+  }, [step, kind, projectNames, taskTitle, taskProjectIndex, dueAt, enableNotifications, openSyncSettings]);
+
   function chooseKind(nextKind: OnboardingSetupKind) {
     setKind(nextKind);
     if (projectNames.length === 1 && Object.values(DEFAULT_PROJECTS).includes(projectNames[0])) {
       setProjectNames([DEFAULT_PROJECTS[nextKind]]);
     }
+  }
+
+  function goNext() {
+    if (!canContinue) return;
+    const nextStep = Math.min(3, step + 1);
+    writeSetupDraft(currentDraft({ step: nextStep }));
+    setStep(nextStep);
+  }
+
+  function goBack() {
+    const nextStep = Math.max(0, step - 1);
+    writeSetupDraft(currentDraft({ step: nextStep }));
+    setStep(nextStep);
   }
 
   function addProject() {
@@ -93,6 +186,7 @@ export function OnboardingOverlay({ onSetup, onComplete }: { onSetup: (input: On
       if (completion instanceof Promise) {
         await completion;
       }
+      clearSetupDraft();
     } catch (error) {
       reportError(error, { source: "onboarding" });
       setSetupError("Setup couldn't finish — storage is unavailable. Try again.");
@@ -115,10 +209,26 @@ export function OnboardingOverlay({ onSetup, onComplete }: { onSetup: (input: On
       >
         <div className="onboarding-body">
           <div>
-            <span className="eyebrow">Setup</span>
-            <h2 id="onboarding-title" className="onboarding-title">Make Today useful</h2>
+            <span className="eyebrow">Setup · {step + 1} of 4</span>
+            <h2 id="onboarding-title" className="onboarding-title">
+              {step === 0
+                ? "What are you planning for?"
+                : step === 1
+                  ? kind === "school"
+                    ? "Add your courses"
+                    : "Name your projects"
+                  : step === 2
+                    ? "Capture one real task"
+                    : "Optional finishing touches"}
+            </h2>
             <p className="onboarding-copy">
-              Start with a real workspace, one project, and one task you can act on today.
+              {step === 0
+                ? "Pick a workspace so Throughline can label projects the way you already think."
+                : step === 1
+                  ? "Start with one to three names. You can always add more later."
+                  : step === 2
+                    ? "Give Today something concrete to show the moment setup ends."
+                    : "Notifications and encrypted sync stay optional — local planning already works."}
             </p>
           </div>
 
@@ -203,14 +313,28 @@ export function OnboardingOverlay({ onSetup, onComplete }: { onSetup: (input: On
           </div>
           <div className="onboarding-actions">
             {step > 0 ? (
-              <Button onClick={() => setStep((current) => current - 1)}>Back</Button>
+              <Button type="button" onClick={goBack}>
+                Back
+              </Button>
             ) : null}
             {step < 3 ? (
-              <Button variant="primary" disabled={!canContinue} onClick={() => setStep((current) => current + 1)}>
+              <Button
+                type="button"
+                variant="primary"
+                disabled={!canContinue}
+                data-testid="onboarding-next"
+                onClick={goNext}
+              >
                 Next
               </Button>
             ) : (
-              <Button variant="accent" disabled={!canContinue || submitting} onClick={() => void finish()}>
+              <Button
+                type="button"
+                variant="accent"
+                disabled={!canContinue || submitting}
+                data-testid="onboarding-finish"
+                onClick={() => void finish()}
+              >
                 Finish setup
                 <Check weight="bold" size={16} />
               </Button>

@@ -6,11 +6,11 @@ export function AuthShell({ title, subtitle, children }: { title: string; subtit
   return (
     <div className="auth-screen">
       <div className="ik-card auth-card">
-        <Link to="/" aria-label="Throughline home" className="inline-flex items-center justify-center gap-2">
+        <Link to="/" aria-label="Throughline home" className="auth-brand">
           <span className="shell-brand-mark" aria-hidden="true">
-            <Mark size={18} />
+            <Mark size={20} />
           </span>
-          <span className="text-lg font-bold">Throughline</span>
+          <span>Throughline</span>
         </Link>
         <h1 className="auth-title">{title}</h1>
         <p className="auth-subtitle">{subtitle}</p>

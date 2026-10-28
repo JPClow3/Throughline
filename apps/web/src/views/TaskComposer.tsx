@@ -3,10 +3,12 @@ import { CaretDown, Plus, Trash } from "@phosphor-icons/react";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import type { TaskInput } from "../data/repositories";
 import { reportError } from "../sentry";
-import { Button, Field, Select, TextArea, TextInput } from "../ui";
+import { Button, Field, Select, TextArea, TextInput, WeekdayPicker } from "../ui";
 
 function toLocalInput(date?: Date) {
-  if (!date) return "";
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+    return "";
+  }
   const pad = (value: number) => String(value).padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
@@ -16,15 +18,17 @@ export function TaskComposer({
   goals = [],
   showGameLayer = false,
   initialDate,
+  initialTitle = "",
   onAddTask
 }: {
   courses: Course[];
   goals?: Goal[];
   showGameLayer?: boolean;
   initialDate?: Date;
+  initialTitle?: string;
   onAddTask: (input: TaskInput) => Promise<void>;
 }) {
-  const [title, setTitle] = useState("");
+  const [title, setTitle] = useState(initialTitle);
   const [description, setDescription] = useState("");
   const [courseId, setCourseId] = useState("");
   const [goalId, setGoalId] = useState("");
@@ -33,10 +37,12 @@ export function TaskComposer({
   const [priority, setPriority] = useState<Priority>("medium");
   const [energy, setEnergy] = useState(2);
   const [difficulty, setDifficulty] = useState(2);
+  const [estimatedMinutes, setEstimatedMinutes] = useState(50);
   const [attribute, setAttribute] = useState<RpgAttribute>("focus");
   const [tags, setTags] = useState("");
   const [subtasks, setSubtasks] = useState<Array<{ id: string; title: string; completed: boolean }>>([]);
   const [recurrence, setRecurrence] = useState<"daily" | "weekly" | "biweekly" | "monthly" | "custom" | "">("");
+  const [customDays, setCustomDays] = useState<number[]>([1, 2, 3, 4, 5]);
   const [expanded, setExpanded] = useState(false);
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -57,6 +63,10 @@ export function TaskComposer({
     if (!canSubmit) {
       return;
     }
+    if (recurrence === "custom" && customDays.length === 0) {
+      setSubmitError("Pick at least one weekday for custom recurrence.");
+      return;
+    }
 
     if (submittingRef.current) {
       return;
@@ -75,10 +85,16 @@ export function TaskComposer({
         priority,
         energy,
         difficulty,
+        estimatedMinutes,
         attributes: [attribute],
         tags: parseTags(tags),
         subtasks: subtasks.map((subtask) => ({ ...subtask, title: subtask.title.trim() })).filter((subtask) => subtask.title),
-        recurrence: recurrence ? { pattern: recurrence } : undefined
+        recurrence: recurrence
+          ? {
+              pattern: recurrence,
+              ...(recurrence === "custom" ? { daysOfWeek: customDays } : {})
+            }
+          : undefined
       });
 
       setTitle("");
@@ -90,7 +106,9 @@ export function TaskComposer({
       setTags("");
       setSubtasks([]);
       setPriority("medium");
+      setEstimatedMinutes(50);
       setRecurrence("");
+      setCustomDays([1, 2, 3, 4, 5]);
       setAttemptedSubmit(false);
     } catch (error) {
       reportError(error, { source: "task-create" });
@@ -153,19 +171,6 @@ export function TaskComposer({
         </Field>
       </div>
 
-      {goals.length ? (
-        <Field label="Goal">
-          <Select value={goalId} onChange={(event) => setGoalId(event.target.value)}>
-            <option value="">No goal</option>
-            {goals.map((goal) => (
-              <option key={goal.id} value={goal.id}>
-                {goal.title}
-              </option>
-            ))}
-          </Select>
-        </Field>
-      ) : null}
-
       <button className="details-toggle" type="button" aria-expanded={expanded} onClick={() => setExpanded((value) => !value)}>
         <CaretDown size={14} weight="bold" style={{ rotate: expanded ? "180deg" : undefined }} />
         Details
@@ -180,6 +185,18 @@ export function TaskComposer({
               placeholder="A short note about what done looks like"
             />
           </Field>
+          {goals.length ? (
+            <Field label="Goal">
+              <Select value={goalId} onChange={(event) => setGoalId(event.target.value)}>
+                <option value="">No goal</option>
+                {goals.map((goal) => (
+                  <option key={goal.id} value={goal.id}>
+                    {goal.title}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          ) : null}
           <div className="composer-grid">
             <Field label="Priority">
               <Select value={priority} onChange={(event) => setPriority(event.target.value as Priority)}>
@@ -189,6 +206,16 @@ export function TaskComposer({
                   </option>
                 ))}
               </Select>
+            </Field>
+            <Field label="Study minutes">
+              <TextInput
+                type="number"
+                min={5}
+                max={720}
+                step={5}
+                value={estimatedMinutes}
+                onChange={(event) => setEstimatedMinutes(Math.min(720, Math.max(5, Number(event.target.value) || 5)))}
+              />
             </Field>
             <Field label="Reminder">
               <TextInput type="datetime-local" value={reminderAt} onChange={(event) => setReminderAt(event.target.value)} />
@@ -204,8 +231,14 @@ export function TaskComposer({
               <option value="weekly">Weekly</option>
               <option value="biweekly">Biweekly</option>
               <option value="monthly">Monthly</option>
+              <option value="custom">Custom weekdays</option>
             </Select>
           </Field>
+          {recurrence === "custom" ? (
+            <Field label="Repeat on">
+              <WeekdayPicker value={customDays} onChange={setCustomDays} />
+            </Field>
+          ) : null}
           <Field label="Tags">
             <TextInput value={tags} onChange={(event) => setTags(event.target.value)} placeholder="reading, errand" />
           </Field>

@@ -87,7 +87,7 @@ describe("TimelineView", () => {
       }
     );
 
-    const editBtn = screen.getByRole("button", { name: "Interactive Timeline Task" });
+    const editBtn = screen.getByRole("button", { name: /Open task Interactive Timeline Task/ });
     fireEvent.click(editBtn);
     expect(onEdit).toHaveBeenCalledWith(expect.objectContaining({ id: "task-edit-1" }));
   });

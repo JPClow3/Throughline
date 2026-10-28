@@ -2,7 +2,7 @@ import { RedactedReminder } from "@throughline/domain";
 import { createHash, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import type { Sql } from "postgres";
 import type { StoredReminder, StoredSubscription, WebPushSubscription } from "./store";
-import type { UserRow } from "./userStore";
+import { EMAIL_VERIFICATION_TTL_MS, type SessionUser, type UserRow } from "./userStore";
 
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
@@ -245,14 +245,15 @@ export class PostgresUserStore {
       salt: input.salt,
       authHash: hashAuthKey(input.authKey),
       wrappedDek: input.wrappedDek,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      emailVerifiedAt: null
     };
 
     const recoveryHash = hashAuthKey(input.recoveryAuthKey);
 
     await this.sql`
-      INSERT INTO users (id, email, salt, auth_hash, wrapped_dek, created_at, recovery_hash, recovery_wrapped_dek)
-      VALUES (${row.id}, ${row.email}, ${row.salt}, ${row.authHash}, ${row.wrappedDek}, ${row.createdAt}, ${recoveryHash}, ${input.recoveryWrappedDek})
+      INSERT INTO users (id, email, salt, auth_hash, wrapped_dek, created_at, recovery_hash, recovery_wrapped_dek, email_verified_at)
+      VALUES (${row.id}, ${row.email}, ${row.salt}, ${row.authHash}, ${row.wrappedDek}, ${row.createdAt}, ${recoveryHash}, ${input.recoveryWrappedDek}, ${null})
     `;
 
     return row;
@@ -262,7 +263,19 @@ export class PostgresUserStore {
     const [row] = await this.sql<{ salt: string }[]>`
       SELECT salt FROM users WHERE email = ${normalizeEmail(email)}
     `;
-    return row?.salt ?? null;
+    return row?.salt ? row.salt : null;
+  }
+
+  async ensureSalt(userId: string, salt: string): Promise<void> {
+    const [row] = await this.sql<{ salt?: string }[]>`
+      SELECT salt FROM users WHERE id = ${userId}
+    `;
+    if (!row || row.salt) {
+      return;
+    }
+    await this.sql`
+      UPDATE users SET salt = ${salt} WHERE id = ${userId} AND (salt IS NULL OR salt = '')
+    `;
   }
 
   async verifyLogin(email: string, authKey: string): Promise<{ userId: string; salt: string; wrappedDek: string } | null> {
@@ -299,19 +312,21 @@ export class PostgresUserStore {
     if (existing) {
       return null;
     }
+    const verifiedAt = new Date().toISOString();
     const row: UserRow = {
       id: `user_${Buffer.from(randomBytes(12)).toString("hex")}`,
       email,
-      salt: "",
+      salt: Buffer.from(randomBytes(16)).toString("base64"),
       authHash: "",
       wrappedDek: input.dek,
       createdAt: new Date().toISOString(),
-      googleId: input.googleId
+      googleId: input.googleId,
+      emailVerifiedAt: verifiedAt
     };
 
     await this.sql`
-      INSERT INTO users (id, email, salt, auth_hash, wrapped_dek, created_at, google_id)
-      VALUES (${row.id}, ${row.email}, ${row.salt}, ${row.authHash}, ${row.wrappedDek}, ${row.createdAt}, ${input.googleId})
+      INSERT INTO users (id, email, salt, auth_hash, wrapped_dek, created_at, google_id, email_verified_at)
+      VALUES (${row.id}, ${row.email}, ${row.salt}, ${row.authHash}, ${row.wrappedDek}, ${row.createdAt}, ${input.googleId}, ${verifiedAt})
     `;
 
     return row;
@@ -333,6 +348,11 @@ export class PostgresUserStore {
       }
     }
 
+    const now = new Date().toISOString();
+    await this.sql`
+      UPDATE users SET email_verified_at = COALESCE(email_verified_at, ${now}) WHERE id = ${row.id}
+    `;
+
     return { userId: row.id, dek: row.wrapped_dek };
   }
 
@@ -349,9 +369,14 @@ export class PostgresUserStore {
     return token;
   }
 
-  async getSessionUser(token: string): Promise<{ userId: string; email: string } | null> {
-    const [row] = await this.sql<{ user_id: string; email: string; expires_at: string }[]>`
-      SELECT u.id AS user_id, u.email AS email, s.expires_at AS expires_at
+  async getSessionUser(token: string): Promise<SessionUser | null> {
+    const [row] = await this.sql<{
+      user_id: string;
+      email: string;
+      email_verified_at: string | null;
+      expires_at: string;
+    }[]>`
+      SELECT u.id AS user_id, u.email AS email, u.email_verified_at AS email_verified_at, s.expires_at AS expires_at
       FROM sessions s JOIN users u ON u.id = s.user_id
       WHERE s.token = ${token}
     `;
@@ -363,7 +388,58 @@ export class PostgresUserStore {
       return null;
     }
 
-    return { userId: row.user_id, email: row.email };
+    return {
+      userId: row.user_id,
+      email: row.email,
+      emailVerified: Boolean(row.email_verified_at)
+    };
+  }
+
+  async createEmailVerificationToken(userId: string): Promise<string> {
+    await this.sql`DELETE FROM email_verification_tokens WHERE user_id = ${userId}`;
+    const token = Buffer.from(randomBytes(32)).toString("hex");
+    const createdAt = new Date();
+    const expiresAt = new Date(createdAt.getTime() + EMAIL_VERIFICATION_TTL_MS);
+    await this.sql`
+      INSERT INTO email_verification_tokens (token, user_id, expires_at, created_at)
+      VALUES (${token}, ${userId}, ${expiresAt.toISOString()}, ${createdAt.toISOString()})
+    `;
+    return token;
+  }
+
+  async verifyEmailWithToken(
+    token: string
+  ): Promise<{ userId: string; email: string; alreadyVerified?: boolean } | null> {
+    const [row] = await this.sql<
+      { user_id: string; expires_at: string; email: string; email_verified_at: string | null }[]
+    >`
+      SELECT t.user_id AS user_id, t.expires_at AS expires_at, u.email AS email, u.email_verified_at AS email_verified_at
+      FROM email_verification_tokens t
+      JOIN users u ON u.id = t.user_id
+      WHERE t.token = ${token}
+    `;
+
+    if (!row) return null;
+
+    if (new Date(row.expires_at).getTime() < Date.now()) {
+      await this.sql`DELETE FROM email_verification_tokens WHERE token = ${token}`;
+      return null;
+    }
+
+    const alreadyVerified = Boolean(row.email_verified_at);
+    if (!alreadyVerified) {
+      const verifiedAt = new Date().toISOString();
+      await this.sql`UPDATE users SET email_verified_at = ${verifiedAt} WHERE id = ${row.user_id}`;
+    }
+    // Keep the token until expiry / resend so refresh and Strict Mode remounts stay idempotent.
+    return { userId: row.user_id, email: row.email, alreadyVerified };
+  }
+
+  async isEmailVerified(userId: string): Promise<boolean> {
+    const [row] = await this.sql<{ email_verified_at: string | null }[]>`
+      SELECT email_verified_at FROM users WHERE id = ${userId}
+    `;
+    return Boolean(row?.email_verified_at);
   }
 
   async updatePassword(userId: string, authKey: string, wrappedDek: string): Promise<void> {

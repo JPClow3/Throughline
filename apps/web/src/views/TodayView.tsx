@@ -1,28 +1,51 @@
-import { FocusSession, Task, deriveTodayBriefing } from "@throughline/domain";
-import { CheckCircle, Clock, LockKey, Plus, Timer, WarningCircle } from "@phosphor-icons/react";
-import { useMemo, type CSSProperties, type ReactNode } from "react";
+import { FocusSession, Task, deriveTodayBriefing, deriveUserProgress } from "@throughline/domain";
+import { CheckCircle, Clock, DownloadSimple, LockKey, Plus, Timer, WarningCircle } from "@phosphor-icons/react";
+import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import { downloadIcs } from "../lib/downloadIcs";
+import { reportError } from "../sentry";
 import { usePlanner } from "../state/PlannerProvider";
-import { Button, Card, EmptyState } from "../ui";
+import { Button, Card, EmptyState, Notice } from "../ui";
+import { GameProgressCard } from "./GameProgressCard";
 import { TaskCard } from "./TaskCard";
+
+export type TodayPressureKind = "due-today" | "overdue" | "blocked";
 
 export function TodayView({
   onNewTask,
   onEdit,
   onStartFocus,
   onUpdateTask,
+  onOpenNotes,
+  onBrowsePressure,
   showGameLayer = false
 }: {
   onNewTask: (date?: Date) => void;
   onEdit: (task: Task) => void;
   onStartFocus?: (task: Task) => void;
   onUpdateTask?: (task: Task) => void;
+  onOpenNotes?: (taskId: string) => void;
+  /** Jump to Board with a matching filter when a pressure row is pressed. */
+  onBrowsePressure?: (kind: TodayPressureKind) => void;
   showGameLayer?: boolean;
 }) {
-  const { tasks, courses, focusSessions, completeTask } = usePlanner();
+  const { tasks, courses, focusSessions, progress, completeTask, noteCountByTask } = usePlanner();
+  const [exportNotice, setExportNotice] = useState("");
+  const dueCount = tasks.filter((task) => task.dueAt).length;
 
   const briefing = useMemo(() => deriveTodayBriefing({ tasks, focusSessions: focusSessions as FocusSession[] }), [tasks, focusSessions]);
   const stats = briefing.stats;
   const courseMap = useMemo(() => new Map(courses.map((course) => [course.id, course])), [courses]);
+  const gameProgress = useMemo(() => progress ?? deriveUserProgress(tasks), [progress, tasks]);
+
+  function exportCalendar() {
+    try {
+      downloadIcs(tasks, courses);
+      setExportNotice(`Exported ${dueCount} due ${dueCount === 1 ? "task" : "tasks"} to throughline.ics`);
+    } catch (error) {
+      reportError(error, { source: "today-ics-export" });
+      setExportNotice(error instanceof Error ? error.message : "Calendar export failed");
+    }
+  }
 
   // "Also on the radar": the next few actionable tasks that are not already in
   // the priority list, so the main panel stays useful on quiet days.
@@ -76,11 +99,13 @@ export function TodayView({
                   task={task}
                   course={courseMap.get(task.courseId ?? "")}
                   showGameLayer={showGameLayer}
+                  noteCount={noteCountByTask.get(task.id) ?? 0}
                   onComplete={(target) => completeTask(target)}
                   onEdit={onEdit}
                   onUpdateTask={onUpdateTask}
                   offerEmptyStepInput={false}
                   onStartFocus={onStartFocus}
+                  onOpenNotes={onOpenNotes}
                 />
               ))}
             </div>
@@ -126,6 +151,7 @@ export function TodayView({
         </Card>
 
         <aside className="today-side" aria-label="Today pressure and guidance">
+          {showGameLayer ? <GameProgressCard progress={gameProgress} /> : null}
           <Card className="today-panel" aria-label="Guidance">
             <div className="today-section-head">
               <div>
@@ -156,9 +182,26 @@ export function TodayView({
                 </div>
               </div>
               <div className="today-pressure-list">
-                <PressureRow icon={<Clock size={16} weight="bold" />} label="Due today" value={`${stats.dueTodayCount}`} />
-                <PressureRow icon={<WarningCircle size={16} weight="bold" />} label="Overdue" value={`${briefing.overdueCount}`} tone={briefing.overdueCount ? "urgent" : undefined} />
-                <PressureRow icon={<LockKey size={16} weight="bold" />} label="Blocked" value={`${briefing.blockedCount}`} tone={briefing.blockedCount ? "blocked" : undefined} />
+                <PressureRow
+                  icon={<Clock size={16} weight="bold" />}
+                  label="Due today"
+                  value={`${stats.dueTodayCount}`}
+                  onClick={onBrowsePressure ? () => onBrowsePressure("due-today") : undefined}
+                />
+                <PressureRow
+                  icon={<WarningCircle size={16} weight="bold" />}
+                  label="Overdue"
+                  value={`${briefing.overdueCount}`}
+                  tone={briefing.overdueCount ? "urgent" : undefined}
+                  onClick={onBrowsePressure ? () => onBrowsePressure("overdue") : undefined}
+                />
+                <PressureRow
+                  icon={<LockKey size={16} weight="bold" />}
+                  label="Blocked"
+                  value={`${briefing.blockedCount}`}
+                  tone={briefing.blockedCount ? "blocked" : undefined}
+                  onClick={onBrowsePressure ? () => onBrowsePressure("blocked") : undefined}
+                />
                 <PressureRow icon={<Timer size={16} weight="bold" />} label="Focus logged" value={formatMinutes(stats.focusMinutesToday)} progress={Math.min(100, (stats.focusMinutesToday / 120) * 100)} />
                 <PressureRow
                   icon={<CheckCircle size={16} weight="bold" />}
@@ -177,6 +220,23 @@ export function TodayView({
                   </small>
                 </button>
               ) : null}
+              <div className="button-row" style={{ marginTop: "0.85rem" }}>
+                <Button
+                  type="button"
+                  variant="quiet"
+                  disabled={dueCount === 0}
+                  onClick={exportCalendar}
+                  aria-label="Export due tasks as calendar ICS"
+                >
+                  <DownloadSimple size={15} weight="bold" />
+                  Export calendar
+                </Button>
+              </div>
+              {exportNotice ? (
+                <Notice variant={exportNotice.startsWith("Exported") ? "success" : "error"} className="mt-3">
+                  {exportNotice}
+                </Notice>
+              ) : null}
             </section>
           </Card>
         </aside>
@@ -190,18 +250,19 @@ function PressureRow({
   label,
   value,
   tone,
-  progress = 0
+  progress = 0,
+  onClick
 }: {
   icon: ReactNode;
   label: string;
   value: string;
   tone?: "urgent" | "blocked" | "success";
   progress?: number;
+  onClick?: () => void;
 }) {
-  return (
-    <div
-      className={`pressure-row${tone ? ` pressure-${tone}` : ""}`}
-    >
+  const className = `pressure-row${tone ? ` pressure-${tone}` : ""}${onClick ? " is-action" : ""}`;
+  const body = (
+    <>
       {progress > 0 ? (
         <span
           className="pressure-progress"
@@ -212,8 +273,18 @@ function PressureRow({
       <span className="pressure-icon">{icon}</span>
       <span>{label}</span>
       <strong>{value}</strong>
-    </div>
+    </>
   );
+
+  if (onClick) {
+    return (
+      <button type="button" className={className} onClick={onClick} aria-label={`Open Board filtered to ${label}`}>
+        {body}
+      </button>
+    );
+  }
+
+  return <div className={className}>{body}</div>;
 }
 
 function guidanceIcon(kind: string) {
